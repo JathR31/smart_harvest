@@ -11,7 +11,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->validateCsrfTokens(except: [
+            'admin/api/import',
+            'admin/api/datasets/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -1,0 +1,6 @@
+farmer_name,municipality,crop_type,area_planted,planting_date,harvest_date,yield_kg
+Juan Dela Cruz,La Trinidad,Cabbage,2.5,2025-01-15,2025-04-15,3500
+Maria Santos,Baguio City,Lettuce,1.2,2025-02-01,2025-04-20,1800
+Pedro Reyes,Itogon,Carrots,3.0,2025-01-20,2025-05-10,4200
+Ana Garcia,Tublay,Potatoes,2.8,2025-02-15,2025-06-01,5600
+Jose Fernandez,La Trinidad,Tomatoes,1.5,2025-03-01,2025-06-15,2800

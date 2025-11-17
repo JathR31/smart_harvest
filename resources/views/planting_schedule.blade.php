@@ -157,8 +157,8 @@
                                 <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Optimal Planting</th>
                                 <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Expected Harvest</th>
                                 <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Duration</th>
-                                <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Conditions</th>
-                                <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Yield Prediction</th>
+                                <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">ML Prediction</th>
+                                <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Confidence</th>
                                 <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Status</th>
                             </tr>
                         </thead>
@@ -171,14 +171,18 @@
                                     </td>
                                     <td class="py-4 text-gray-800" x-text="schedule.planting_window"></td>
                                     <td class="py-4 text-gray-800" x-text="schedule.harvest_window"></td>
-                                    <td class="py-4 text-gray-800" x-text="schedule.duration + ' days'"></td>
-                                    <td class="py-4 text-gray-700">
-                                        <div x-text="'Temp: ' + schedule.avg_temp + '°C'"></div>
-                                        <div class="text-xs text-gray-500" x-text="'Rainfall: ' + schedule.avg_rainfall + 'mm'"></div>
-                                    </td>
+                                    <td class="py-4 text-gray-800" x-text="schedule.duration"></td>
                                     <td class="py-4 text-gray-800">
-                                        <div class="font-semibold" x-text="schedule.avg_yield + ' mt/ha'"></div>
-                                        <div class="text-xs text-gray-500">Based on history</div>
+                                        <div class="font-semibold text-green-600" x-text="schedule.yield_prediction"></div>
+                                        <div class="text-xs text-gray-500" x-text="'Historical: ' + schedule.historical_yield"></div>
+                                    </td>
+                                    <td class="py-4">
+                                        <div>
+                                            <span x-show="schedule.confidence === 'High'" class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">High</span>
+                                            <span x-show="schedule.confidence === 'Medium'" class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-medium">Medium</span>
+                                            <span x-show="schedule.confidence === 'Low'" class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">Low</span>
+                                        </div>
+                                        <div class="text-xs text-gray-500 mt-1" x-show="schedule.confidence_score" x-text="schedule.confidence_score + '%'"></div>
                                     </td>
                                     <td class="py-4">
                                         <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium" x-show="index < 3">Recommended</span>
@@ -190,142 +194,7 @@
                                 <td colspan="7" class="py-4 text-center text-gray-500">No planting schedule data available</td>
                             </tr>
                         </tbody>
-                            <tr class="border-b">
-                                <td class="py-4 text-gray-800 font-medium">Highland Cabbage</td>
-                                <td class="py-4 text-gray-800">October 1 - November 30</td>
-                                <td class="py-4 text-gray-800">January 15 - March 15</td>
-                                <td class="py-4 text-gray-800">90 days</td>
-                                <td class="py-4 text-gray-700">
-                                    <div>Rain: Low-Moderate</div>
-                                    <div class="text-xs text-gray-500">Cool (15-20°C)</div>
-                                </td>
-                                <td class="py-4 text-gray-800">
-                                    <div class="font-semibold">22.13 mt/ha</div>
-                                    <div class="text-xs text-gray-500">High confidence</div>
-                                </td>
-                                <td class="py-4">
-                                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Recommended</span>
-                                </td>
-                            </tr>
-                            <tr class="border-b">
-                                <td class="py-4 text-gray-800 font-medium">Arabica Coffee</td>
-                                <td class="py-4 text-gray-800">June 1 - July 31</td>
-                                <td class="py-4 text-gray-800">November (next year)</td>
-                                <td class="py-4 text-gray-800">365+ days</td>
-                                <td class="py-4 text-gray-700">
-                                    <div>Rain: Moderate-High</div>
-                                    <div class="text-xs text-gray-500">Cool (18-22°C)</div>
-                                </td>
-                                <td class="py-4 text-gray-800">
-                                    <div class="font-semibold">1.93 mt/ha</div>
-                                    <div class="text-xs text-gray-500">Medium confidence</div>
-                                </td>
-                                <td class="py-4">
-                                    <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">Consider</span>
-                                </td>
-                            </tr>
-                            <tr class="border-b">
-                                <td class="py-4 text-gray-800 font-medium">Sweet Potato</td>
-                                <td class="py-4 text-gray-800">March 1 - April 30</td>
-                                <td class="py-4 text-gray-800">July 1 - August 31</td>
-                                <td class="py-4 text-gray-800">120 days</td>
-                                <td class="py-4 text-gray-700">
-                                    <div>Rain: Moderate</div>
-                                    <div class="text-xs text-gray-500">Good (20-26°C)</div>
-                                </td>
-                                <td class="py-4 text-gray-800">
-                                    <div class="font-semibold">13.4 mt/ha</div>
-                                    <div class="text-xs text-gray-500">High confidence</div>
-                                </td>
-                                <td class="py-4">
-                                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Recommended</span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="py-4 text-gray-800 font-medium">Highland Potato</td>
-                                <td class="py-4 text-gray-800">December 1 - January 31</td>
-                                <td class="py-4 text-gray-800">April 1 - May 15</td>
-                                <td class="py-4 text-gray-800">110 days</td>
-                                <td class="py-4 text-gray-700">
-                                    <div>Rain: Low</div>
-                                    <div class="text-xs text-gray-500">Cool (14-20°C)</div>
-                                </td>
-                                <td class="py-4 text-gray-800">
-                                    <div class="font-semibold">19.61 mt/ha</div>
-                                    <div class="text-xs text-gray-500">High confidence</div>
-                                </td>
-                                <td class="py-4">
-                                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Recommended</span>
-                                </td>
-                            </tr>
-                        </tbody>
                     </table>
-                </div>
-            </div>
-
-            <!-- Upcoming Tasks -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-xl font-semibold text-green-700 mb-6">Upcoming Tasks</h2>
-                <div class="space-y-4">
-                    <!-- Task 1 -->
-                    <div class="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition">
-                        <div class="flex-1">
-                            <div class="flex items-center space-x-3 mb-1">
-                                <h3 class="font-medium text-gray-800">Terracing maintenance</h3>
-                                <span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">High</span>
-                            </div>
-                            <p class="text-sm text-gray-600">Rice (Tinawon)</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-xs text-gray-500">Due date</p>
-                            <p class="text-sm font-semibold text-gray-800">May 10</p>
-                        </div>
-                    </div>
-
-                    <!-- Task 2 -->
-                    <div class="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition">
-                        <div class="flex-1">
-                            <div class="flex items-center space-x-3 mb-1">
-                                <h3 class="font-medium text-gray-800">Seedling preparation</h3>
-                                <span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">High</span>
-                            </div>
-                            <p class="text-sm text-gray-600">Cabbage</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-xs text-gray-500">Due date</p>
-                            <p class="text-sm font-semibold text-gray-800">October 15</p>
-                        </div>
-                    </div>
-
-                    <!-- Task 3 -->
-                    <div class="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition">
-                        <div class="flex-1">
-                            <div class="flex items-center space-x-3 mb-1">
-                                <h3 class="font-medium text-gray-800">Irrigation check</h3>
-                                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-medium">Medium</span>
-                            </div>
-                            <p class="text-sm text-gray-600">Sweet Potato</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-xs text-gray-500">Due date</p>
-                            <p class="text-sm font-semibold text-gray-800">March 20</p>
-                        </div>
-                    </div>
-
-                    <!-- Task 4 -->
-                    <div class="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition">
-                        <div class="flex-1">
-                            <div class="flex items-center space-x-3 mb-1">
-                                <h3 class="font-medium text-gray-800">Organic fertilizer application</h3>
-                                <span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">High</span>
-                            </div>
-                            <p class="text-sm text-gray-600">Coffee</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-xs text-gray-500">Due date</p>
-                            <p class="text-sm font-semibold text-gray-800">June 5</p>
-                        </div>
-                    </div>
                 </div>
             </div>
         </main>
@@ -367,15 +236,13 @@
                         const optimalResponse = await fetch(`/api/planting/optimal?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
                         if (optimalResponse.ok) {
                             const optimalData = await optimalResponse.json();
-                            if (optimalData.optimal_crop) {
-                                this.optimal = {
-                                    crop: optimalData.optimal_crop.crop_type,
-                                    variety: optimalData.optimal_crop.variety,
-                                    next_date: this.formatDate(optimalData.next_planting_date),
-                                    expected_yield: optimalData.optimal_crop.avg_yield.toFixed(1),
-                                    confidence: optimalData.confidence || 'High'
-                                };
-                            }
+                            this.optimal = {
+                                crop: optimalData.crop,
+                                variety: optimalData.variety,
+                                next_date: optimalData.next_date,
+                                expected_yield: optimalData.expected_yield,
+                                confidence: optimalData.confidence || 'High'
+                            };
                         }
 
                         // Load planting schedule
@@ -383,14 +250,16 @@
                         if (scheduleResponse.ok) {
                             const scheduleData = await scheduleResponse.json();
                             this.schedules = scheduleData.map(item => ({
-                                crop_type: item.crop_type,
+                                crop_type: item.crop,
                                 variety: item.variety,
-                                planting_window: this.formatMonth(item.planting_month_start) + ' - ' + this.formatMonth(item.planting_month_end),
-                                harvest_window: this.formatMonth(item.harvest_month_start) + ' - ' + this.formatMonth(item.harvest_month_end),
+                                planting_window: item.optimal_planting,
+                                harvest_window: item.expected_harvest,
                                 duration: item.duration,
-                                avg_temp: item.avg_temp,
-                                avg_rainfall: item.avg_rainfall,
-                                avg_yield: item.avg_yield.toFixed(1)
+                                yield_prediction: item.yield_prediction,
+                                historical_yield: item.historical_yield,
+                                confidence: item.confidence,
+                                confidence_score: item.confidence_score,
+                                status: item.status
                             }));
                         }
                     } catch (error) {

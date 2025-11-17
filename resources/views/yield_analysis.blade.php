@@ -202,36 +202,6 @@
                                 <span>+2%</span>
                             </div>
                         </div>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-3">
-                                <span class="text-gray-700 font-medium">Soil Quality</span>
-                                <span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">High</span>
-                            </div>
-                            <div class="flex items-center text-green-600 font-semibold">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                                <span>+12%</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-3">
-                                <span class="text-gray-700 font-medium">Fertilizer Use</span>
-                                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-medium">Medium</span>
-                            </div>
-                            <div class="flex items-center text-green-600 font-semibold">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                                <span>+8%</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-3">
-                                <span class="text-gray-700 font-medium">Pest Control</span>
-                                <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">Low</span>
-                            </div>
-                            <div class="flex items-center text-red-600 font-semibold">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                <span>-3%</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -447,14 +417,14 @@
                             this.stats = await statsResponse.json();
                         }
 
-                        // Load comparison data (multi-year)
+                        // Load comparison data (multi-year) with ML predictions
                         const comparisonResponse = await fetch(`/api/yield/comparison?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
                         if (comparisonResponse.ok) {
                             this.comparisonData = await comparisonResponse.json();
                             this.updateYieldChart();
                         }
 
-                        // Load crop performance
+                        // Load crop performance with ML predictions
                         const cropResponse = await fetch(`/api/yield/crops?municipality=${encodeURIComponent(this.selectedMunicipality)}&year=${this.selectedYear}`);
                         if (cropResponse.ok) {
                             this.cropPerformance = await cropResponse.json();
@@ -483,19 +453,32 @@
                     }
 
                     const labels = this.comparisonData.map(d => d.year);
-                    const data = this.comparisonData.map(d => parseFloat(d.avg_yield));
+                    const actualData = this.comparisonData.map(d => parseFloat(d.actual));
+                    const predictedData = this.comparisonData.map(d => parseFloat(d.predicted));
 
                     this.yieldChart = new Chart(ctx, {
                         type: 'line',
                         data: {
                             labels: labels,
                             datasets: [{
-                                label: 'Average Yield (mt/ha)',
-                                data: data,
+                                label: 'Actual Yield (mt/ha)',
+                                data: actualData,
                                 borderColor: 'rgb(34, 197, 94)',
                                 backgroundColor: 'rgba(34, 197, 94, 0.1)',
                                 tension: 0.3,
-                                fill: true
+                                fill: true,
+                                pointRadius: 4,
+                                pointBackgroundColor: 'rgb(34, 197, 94)'
+                            }, {
+                                label: 'ML Predicted Yield (mt/ha)',
+                                data: predictedData,
+                                borderColor: 'rgb(59, 130, 246)',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                tension: 0.3,
+                                fill: false,
+                                borderDash: [5, 5],
+                                pointRadius: 4,
+                                pointBackgroundColor: 'rgb(59, 130, 246)'
                             }]
                         },
                         options: {
@@ -505,6 +488,15 @@
                                 legend: {
                                     display: true,
                                     position: 'bottom'
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        afterLabel: function(context) {
+                                            const index = context.dataIndex;
+                                            const confidence = this.comparisonData[index]?.confidence;
+                                            return confidence ? `Confidence: ${confidence}%` : '';
+                                        }.bind(this)
+                                    }
                                 }
                             },
                             scales: {
@@ -528,17 +520,24 @@
                         this.cropChart.destroy();
                     }
 
-                    const labels = this.cropPerformance.map(d => d.crop_type);
-                    const data = this.cropPerformance.map(d => parseFloat(d.avg_yield));
+                    const labels = this.cropPerformance.map(d => d.crop);
+                    const actualData = this.cropPerformance.map(d => parseFloat(d.yield));
+                    const predictedData = this.cropPerformance.map(d => d.predicted ? parseFloat(d.predicted) : parseFloat(d.yield));
 
                     this.cropChart = new Chart(ctx, {
                         type: 'bar',
                         data: {
                             labels: labels,
                             datasets: [{
-                                label: 'Average Yield (mt/ha)',
-                                data: data,
-                                backgroundColor: ['#10b981', '#059669', '#047857', '#065f46', '#064e3b']
+                                label: 'Actual Yield (mt/ha)',
+                                data: actualData,
+                                backgroundColor: '#10b981',
+                                borderRadius: 4
+                            }, {
+                                label: 'ML Predicted (mt/ha)',
+                                data: predictedData,
+                                backgroundColor: '#3b82f6',
+                                borderRadius: 4
                             }]
                         },
                         options: {
@@ -546,7 +545,17 @@
                             maintainAspectRatio: false,
                             plugins: {
                                 legend: {
-                                    display: false
+                                    display: true,
+                                    position: 'bottom'
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        afterLabel: function(context) {
+                                            const index = context.dataIndex;
+                                            const confidence = this.cropPerformance[index]?.confidence;
+                                            return confidence ? `Confidence: ${confidence}%` : '';
+                                        }.bind(this)
+                                    }
                                 }
                             },
                             scales: {

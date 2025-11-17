@@ -199,7 +199,7 @@
             <div class="mx-auto mb-4 w-12 h-12 flex items-center justify-center text-green-500">
                 <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-3.72 0-6.83 2.82-7.18 6.41C2.85 10.73 2 11.96 2 13.5c0 2.21 1.79 4 4 4h13c2.76 0 5-2.24 5-5 0-2.64-2.07-4.83-4.65-4.96z"/></svg>
             </div>
-            <h3 class="text-xl font-medium text-green-700 mb-1">Live Weather Insights</h3>
+                <h3 class="text-xl font-medium text-green-700 mb-1">Live Weather Insights</h3>
             <p class="mb-6 text-gray-600">Real-time weather monitoring for informed agricultural decisions</p>
 
             <!-- Municipality Dropdown -->

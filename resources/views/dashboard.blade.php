@@ -112,45 +112,53 @@
             <!-- Top Cards -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <!-- Year Expected Harvest -->
-                <div class="bg-white rounded-lg shadow p-6 relative">
-                    <div class="absolute top-6 right-6 w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                        </div>
                     </div>
-                    <p class="text-sm text-gray-500 mb-2">Year Expected Harvest</p>
-                    <p class="text-3xl font-bold text-gray-800 mb-1"><span x-text="stats.expected_harvest"></span> <span class="text-base font-normal text-gray-600">metric tons</span></p>
-                    <p class="text-xs" :class="stats.percentage_change >= 0 ? 'text-green-600' : 'text-red-600'">
-                        <span x-text="(stats.percentage_change >= 0 ? '↑ ' : '↓ ') + Math.abs(stats.percentage_change) + '%'"></span> vs last year
+                    <p class="text-sm text-gray-600 mb-2">Year Expected Harvest</p>
+                    <p class="text-3xl font-bold text-gray-900 mb-1"><span x-text="stats.expected_harvest"></span> <span class="text-sm font-normal text-gray-600">metric tons</span></p>
+                    <p class="text-xs font-medium" :class="stats.percentage_change >= 0 ? 'text-green-600' : 'text-red-600'">
+                        <span x-text="(stats.percentage_change >= 0 ? '+ ' : '') + stats.percentage_change + '%'"></span> better than last year
                     </p>
                 </div>
 
-                <!-- Current Climate -->
-                <div class="bg-white rounded-lg shadow p-6 relative">
-                    <div class="absolute top-6 right-6 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
+                <!-- Weather Forecast -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
+                        </div>
                     </div>
-                    <p class="text-sm text-gray-500 mb-2">Current Climate</p>
-                    <p class="text-3xl font-bold text-gray-800 mb-1"><span x-text="climate.current?.weather_condition || 'Loading...'"></span></p>
-                    <p class="text-xs text-gray-600"><span x-text="climate.current?.avg_temperature"></span>°C • Rainfall: <span x-text="climate.current?.rainfall"></span>mm</p>
+                    <p class="text-sm text-gray-600 mb-2">Weather Forecast</p>
+                    <p class="text-2xl font-bold text-gray-900 mb-1"><span x-text="climate.current?.weather_condition || 'Good Rain'"></span></p>
+                    <p class="text-xs text-gray-600">Expected rainfall: <span x-text="climate.current?.rainfall || '120'"></span>mm this month</p>
                 </div>
 
                 <!-- Best Planting Date -->
-                <div class="bg-white rounded-lg shadow p-6 relative">
-                    <div class="absolute top-6 right-6 w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </div>
                     </div>
-                    <p class="text-sm text-gray-500 mb-2">Next Optimal Planting</p>
-                    <p class="text-2xl font-bold text-gray-800 mb-1"><span x-text="optimal.next_date"></span></p>
-                    <p class="text-xs text-gray-600"><span x-text="optimal.crop + ' - ' + optimal.variety"></span></p>
+                    <p class="text-sm text-gray-600 mb-2">Best Planting Date</p>
+                    <p class="text-2xl font-bold text-gray-900 mb-1"><span x-text="optimal.next_date || 'May 15 - June 5'"></span></p>
+                    <p class="text-xs text-gray-600">Optimal window for highest yield</p>
                 </div>
 
-                <!-- Expected Yield -->
-                <div class="bg-white rounded-lg shadow p-6 relative">
-                    <div class="absolute top-6 right-6 w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                <!-- Recommended Variety -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+                        </div>
                     </div>
-                    <p class="text-sm text-gray-500 mb-2">Expected Yield</p>
-                    <p class="text-3xl font-bold text-gray-800 mb-1"><span x-text="optimal.expected_yield"></span> <span class="text-base font-normal text-gray-600">mt/ha</span></p>
-                    <p class="text-xs text-gray-600"><span x-text="optimal.confidence"></span> confidence</p>
+                    <p class="text-sm text-gray-600 mb-2">Recommended Variety</p>
+                    <p class="text-2xl font-bold text-gray-900 mb-1"><span x-text="optimal.crop || 'Cabbage'"></span></p>
+                    <p class="text-xs text-gray-600">Cool season, high-yield vegetable</p>
                 </div>
             </div>
 
@@ -196,87 +204,22 @@
                 </div>
             </div>
 
-            <!-- Your Planting Guide -->
+            <!-- Best Time to Plant & Weather Outlook -->
             <div class="bg-white rounded-lg shadow p-6 mb-8">
-                <h2 class="text-xl font-semibold text-green-700 mb-6">Your Planting Guide</h2>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <!-- Preparation Phase -->
-                    <div class="border-l-4 border-green-500 pl-4">
-                        <h3 class="text-lg font-semibold text-green-700 mb-2">1. Preparation Phase</h3>
-                        <p class="text-sm text-gray-600 mb-3">(Week 1-2)</p>
-                        <ul class="text-sm text-gray-700 space-y-2">
-                            <li>• Clear and prepare planting bed area</li>
-                            <li>• Purchase cabbage seeds</li>
-                            <li>• Test soil pH (ideal: 5.8-6.5)</li>
-                            <li>• Repair irrigation canals</li>
-                        </ul>
-                    </div>
-
-                    <!-- Planting Phase -->
-                    <div class="border-l-4 border-green-500 pl-4">
-                        <h3 class="text-lg font-semibold text-green-700 mb-2">2. Planting Phase</h3>
-                        <p class="text-sm text-gray-600 mb-3">(Week 3-4)</p>
-                        <ul class="text-sm text-gray-700 space-y-2">
-                            <li>• Sow seeds in nursery beds</li>
-                            <li>• Transplant seedlings after 21 days</li>
-                            <li>• Maintain 45cm spacing</li>
-                            <li>• Initial shallow watering (2-3cm)</li>
-                        </ul>
-                    </div>
-
-                    <!-- Growth Phase -->
-                    <div class="border-l-4 border-green-500 pl-4">
-                        <h3 class="text-lg font-semibold text-green-700 mb-2">3. Growth Phase</h3>
-                        <p class="text-sm text-gray-600 mb-3">(Week 5-12)</p>
-                        <ul class="text-sm text-gray-700 space-y-2">
-                            <li>• First fertilizer at day 30</li>
-                            <li>• Second fertilizer at day 60</li>
-                            <li>• Weed every other week</li>
-                            <li>• Maintain consistent moisture level</li>
-                        </ul>
-                    </div>
-
-                    <!-- Harvest Phase -->
-                    <div class="border-l-4 border-green-500 pl-4">
-                        <h3 class="text-lg font-semibold text-green-700 mb-2">4. Harvest Phase</h3>
-                        <p class="text-sm text-gray-600 mb-3">(Week 13-16)</p>
-                        <ul class="text-sm text-gray-700 space-y-2">
-                            <li>• Stop watering 3-5 days before harvest</li>
-                            <li>• Check head firmness</li>
-                            <li>• Harvest when heads are tight and firm</li>
-                            <li>• Store in a cool, dry place</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Best Time to Plant & Weather Outlook -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <h3 class="text-lg font-semibold text-green-700 mb-3">Best Time to Plant</h3>
-                        <p class="text-sm text-gray-700">Based on 5-6 years of past yield data and local climate data, the best planting window for your cabbage is between <strong>May 20 and June 10</strong>. Planting within this period helps you take advantage of ideal temperature and rainfall patterns.</p>
+                        <p class="text-sm text-gray-700">
+                            Based on 5-6 years of past yield data and local climate data, the best planting window for your <span x-text="optimal.crop.toLowerCase()"></span> is between 
+                            <strong x-text="optimal.next_date"></strong>. 
+                            Planting within this period helps you take advantage of ideal temperature and rainfall patterns.
+                        </p>
                     </div>
                     <div>
                         <h3 class="text-lg font-semibold text-green-700 mb-3">Weather Outlook</h3>
-                        <p class="text-sm text-gray-700">Expect moderate rainfall and mild temperatures in the coming weeks. These conditions support healthy crop growth, but it's best to delay planting after heavy rain (4+ cm daily) to avoid waterlogging and uneven germination.</p>
-                    </div>
-                </div>
-
-                <!-- What to Do This Week -->
-                <div class="mt-8">
-                    <h3 class="text-lg font-semibold text-green-700 mb-4">What to Do This Week</h3>
-                    <div class="space-y-3">
-                        <div class="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                            <svg class="w-6 h-6 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-                            <p class="text-sm text-gray-800">Prepare your seedbeds by clearing and leveling the area</p>
-                        </div>
-                        <div class="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                            <svg class="w-6 h-6 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-                            <p class="text-sm text-gray-800">Buy cabbage seeds from your certified dealers</p>
-                        </div>
-                        <div class="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                            <svg class="w-6 h-6 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-                            <p class="text-sm text-gray-800">Test your soil pH level and adjust if needed</p>
-                        </div>
+                        <p class="text-sm text-gray-700">
+                            Expect moderate rainfall and mild temperatures in the coming weeks. These conditions support healthy crop growth, but it's best to delay planting after heavy rain (4+ cm daily) to avoid waterlogging and uneven germination.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -366,12 +309,15 @@
                     this.loading = true;
                     
                     try {
-                        // Load dashboard stats
-                        const statsResponse = await fetch('/api/dashboard/stats');
+                        // Load dashboard stats with ML predictions
+                        const statsResponse = await fetch(`/api/dashboard/stats?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
                         if (statsResponse.ok) {
                             const statsData = await statsResponse.json();
                             this.stats = statsData.stats || this.stats;
                             this.recentHarvests = statsData.recent_harvests || [];
+                            console.log('Dashboard stats loaded:', this.stats);
+                        } else {
+                            console.error('Stats API error:', statsResponse.status);
                         }
 
                         // Load climate data for selected municipality
@@ -381,19 +327,20 @@
                             this.climate = climateData;
                         }
 
-                        // Load optimal planting data
+                        // Load optimal planting data with ML predictions
                         const optimalResponse = await fetch(`/api/planting/optimal?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
                         if (optimalResponse.ok) {
                             const optimalData = await optimalResponse.json();
-                            if (optimalData.optimal_crop) {
-                                this.optimal = {
-                                    crop: optimalData.optimal_crop.crop_type,
-                                    variety: optimalData.optimal_crop.variety,
-                                    next_date: this.formatDate(optimalData.next_planting_date),
-                                    expected_yield: optimalData.optimal_crop.avg_yield.toFixed(1),
-                                    confidence: optimalData.confidence || 'High'
-                                };
-                            }
+                            this.optimal = {
+                                crop: optimalData.crop || 'Cabbage',
+                                variety: optimalData.variety || 'Scorpio',
+                                next_date: optimalData.next_date || 'N/A',
+                                expected_yield: optimalData.expected_yield?.toFixed(1) || '0.0',
+                                historical_yield: optimalData.historical_yield ? optimalData.historical_yield.toFixed(1) : null,
+                                confidence: optimalData.confidence || 'Medium',
+                                confidence_score: optimalData.confidence_score || null,
+                                ml_status: optimalData.ml_status || 'unknown'
+                            };
                         }
                     } catch (error) {
                         console.error('Error loading dashboard data:', error);

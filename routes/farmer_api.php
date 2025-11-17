@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 
 // ========== FARMER DASHBOARD API ENDPOINTS ==========
 
-// Dashboard statistics API
+// Dashboard statistics API with ML predictions
 Route::get('/api/dashboard/stats', function () {
     if (!Auth::check()) {
         return response()->json(['error' => 'Unauthorized'], 401);
@@ -14,20 +14,41 @@ Route::get('/api/dashboard/stats', function () {
     
     $userId = Auth::id();
     $currentYear = now()->year;
+    $municipality = Auth::user()->location ?? 'La Trinidad';
+    $mlService = new \App\Services\MLApiService();
     
     // Get user's crop data
     $userCropData = \App\Models\CropData::where('user_id', $userId)->get();
     
-    // Year expected harvest (sum of all projected yields)
-    $expectedHarvest = $userCropData->where('status', '!=', 'Failed')
-        ->whereNotNull('yield_amount')
-        ->sum('yield_amount') / 1000; // Convert kg to MT
-    
-    // Get last year's data for comparison
+    // Get last year's actual harvest for comparison
     $lastYearHarvest = \App\Models\CropData::where('user_id', $userId)
         ->where('status', 'Harvested')
         ->whereYear('harvest_date', $currentYear - 1)
         ->sum('yield_amount') / 1000;
+    
+    // Get ML prediction for this year's expected harvest
+    $mlPrediction = $mlService->predict([
+        'municipality' => $municipality,
+        'crop_type' => 'Mixed Vegetables',
+        'area_planted' => $userCropData->avg('area_planted') ?? 1.0,
+        'month' => now()->month,
+        'year' => $currentYear
+    ]);
+    
+    $expectedHarvest = 0;
+    $mlConfidence = 0;
+    
+    if ($mlPrediction['status'] === 'success' && isset($mlPrediction['data']['prediction'])) {
+        $predictedYieldPerHa = $mlPrediction['data']['prediction']['predicted_yield_per_ha'];
+        $totalArea = $userCropData->sum('area_planted') ?? 1.0;
+        $expectedHarvest = $predictedYieldPerHa * $totalArea;
+        $mlConfidence = $mlPrediction['data']['prediction']['confidence'] * 100;
+    } else {
+        // Fallback to basic calculation if ML fails
+        $expectedHarvest = $userCropData->where('status', '!=', 'Failed')
+            ->whereNotNull('yield_amount')
+            ->sum('yield_amount') / 1000;
+    }
     
     $percentageChange = $lastYearHarvest > 0 
         ? (($expectedHarvest - $lastYearHarvest) / $lastYearHarvest) * 100 
@@ -41,21 +62,22 @@ Route::get('/api/dashboard/stats', function () {
         ->get()
         ->map(function($record) {
             return [
-                'crop' => $record->crop_type,
+                'id' => $record->id,
+                'crop_type' => $record->crop_type,
                 'variety' => $record->variety,
                 'municipality' => $record->municipality,
                 'year' => $record->harvest_date ? $record->harvest_date->year : now()->year,
-                'area_ha' => $record->area_planted,
-                'production_mt' => $record->yield_amount ? $record->yield_amount / 1000 : 0,
-                'yield_per_ha' => $record->area_planted > 0 && $record->yield_amount 
-                    ? ($record->yield_amount / 1000) / $record->area_planted 
-                    : 0,
+                'area_planted' => $record->area_planted,
+                'yield_amount' => $record->yield_amount ? $record->yield_amount / 1000 : 0,
             ];
         });
     
     return response()->json([
-        'expected_harvest' => round($expectedHarvest, 2),
-        'percentage_change' => round($percentageChange, 1),
+        'stats' => [
+            'expected_harvest' => round($expectedHarvest, 2),
+            'percentage_change' => round($percentageChange, 1),
+            'ml_confidence' => round($mlConfidence, 0),
+        ],
         'recent_harvests' => $recentHarvests,
     ]);
 });
@@ -127,7 +149,7 @@ Route::get('/api/yield/stats', function (Request $request) {
     ]);
 });
 
-// Yield comparison data (multi-year)
+// Yield comparison data (multi-year) with ML predictions
 Route::get('/api/yield/comparison', function (Request $request) {
     if (!Auth::check()) {
         return response()->json(['error' => 'Unauthorized'], 401);
@@ -135,6 +157,7 @@ Route::get('/api/yield/comparison', function (Request $request) {
     
     $municipality = Auth::user()->location ?? 'La Trinidad';
     $years = range(now()->year - 5, now()->year);
+    $mlService = new \App\Services\MLApiService();
     
     $data = [];
     foreach ($years as $year) {
@@ -149,17 +172,33 @@ Route::get('/api/yield/comparison', function (Request $request) {
             })
             ->avg();
         
+        // Get ML prediction for this year
+        $mlPrediction = $mlService->predict([
+            'municipality' => $municipality,
+            'crop_type' => 'Mixed Vegetables',
+            'area_planted' => 1.0,
+            'month' => 6,
+            'year' => $year
+        ]);
+        
+        $predicted = ($mlPrediction['status'] === 'success' && isset($mlPrediction['data']['prediction']['predicted_yield_per_ha']))
+            ? round($mlPrediction['data']['prediction']['predicted_yield_per_ha'], 2)
+            : round($avgYield ?? 0, 2);
+        
         $data[] = [
             'year' => $year,
             'actual' => round($avgYield ?? 0, 2),
-            'predicted' => round(($avgYield ?? 0) * (1 + (rand(-5, 5) / 100)), 2), // Simulated prediction
+            'predicted' => $predicted,
+            'confidence' => ($mlPrediction['status'] === 'success' && isset($mlPrediction['data']['prediction']['confidence']))
+                ? round($mlPrediction['data']['prediction']['confidence'] * 100, 1)
+                : null
         ];
     }
     
     return response()->json($data);
 });
 
-// Crop performance data
+// Crop performance data with ML predictions
 Route::get('/api/yield/crops', function (Request $request) {
     if (!Auth::check()) {
         return response()->json(['error' => 'Unauthorized'], 401);
@@ -167,8 +206,9 @@ Route::get('/api/yield/crops', function (Request $request) {
     
     $year = $request->query('year', now()->year);
     $municipality = Auth::user()->location ?? 'La Trinidad';
+    $mlService = new \App\Services\MLApiService();
     
-    $cropData = \App\Models\CropData::selectRaw('crop_type, AVG(yield_amount / area_planted / 1000) as avg_yield')
+    $cropData = \App\Models\CropData::selectRaw('crop_type, AVG(yield_amount / area_planted / 1000) as avg_yield, AVG(area_planted) as avg_area')
         ->where('status', 'Harvested')
         ->whereYear('harvest_date', $year)
         ->where('municipality', $municipality)
@@ -177,10 +217,27 @@ Route::get('/api/yield/crops', function (Request $request) {
         ->groupBy('crop_type')
         ->orderByDesc('avg_yield')
         ->get()
-        ->map(function($record) {
+        ->map(function($record) use ($municipality, $year, $mlService) {
+            // Get ML prediction for each crop
+            $mlPrediction = $mlService->predict([
+                'municipality' => $municipality,
+                'crop_type' => $record->crop_type,
+                'area_planted' => $record->avg_area ?? 1.0,
+                'month' => now()->month,
+                'year' => $year
+            ]);
+            
+            $predictedYield = ($mlPrediction['status'] === 'success' && isset($mlPrediction['data']['prediction']['predicted_yield_per_ha']))
+                ? round($mlPrediction['data']['prediction']['predicted_yield_per_ha'], 2)
+                : null;
+            
             return [
                 'crop' => $record->crop_type,
                 'yield' => round($record->avg_yield, 2),
+                'predicted' => $predictedYield,
+                'confidence' => ($mlPrediction['status'] === 'success' && isset($mlPrediction['data']['prediction']['confidence']))
+                    ? round($mlPrediction['data']['prediction']['confidence'] * 100, 1)
+                    : null
             ];
         });
     
@@ -218,20 +275,22 @@ Route::get('/api/yield/monthly', function (Request $request) {
 
 // ========== PLANTING SCHEDULE API ENDPOINTS ==========
 
-// Planting schedule recommendations
+// Planting schedule recommendations with ML predictions
 Route::get('/api/planting/schedule', function (Request $request) {
     if (!Auth::check()) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
     
     $municipality = Auth::user()->location ?? 'La Trinidad';
+    $mlService = new \App\Services\MLApiService();
     
     // Get crop statistics grouped by crop type
     $cropStats = \App\Models\CropData::selectRaw('
             crop_type,
             variety,
             AVG(DATEDIFF(harvest_date, planting_date)) as avg_duration,
-            AVG(yield_amount / area_planted / 1000) as avg_yield
+            AVG(yield_amount / area_planted / 1000) as avg_yield,
+            AVG(area_planted) as avg_area
         ')
         ->where('status', 'Harvested')
         ->where('municipality', $municipality)
@@ -243,8 +302,25 @@ Route::get('/api/planting/schedule', function (Request $request) {
         ->orderByDesc('avg_yield')
         ->take(10)
         ->get()
-        ->map(function($record) {
+        ->map(function($record) use ($municipality, $mlService) {
             $duration = round($record->avg_duration ?? 90);
+            
+            // Get ML prediction for optimal planting
+            $mlPrediction = $mlService->predict([
+                'municipality' => $municipality,
+                'crop_type' => $record->crop_type,
+                'area_planted' => $record->avg_area ?? 1.0,
+                'month' => now()->addDays(15)->month,
+                'year' => now()->year
+            ]);
+            
+            $predictedYield = ($mlPrediction['status'] === 'success' && isset($mlPrediction['data']['prediction']['predicted_yield_per_ha']))
+                ? round($mlPrediction['data']['prediction']['predicted_yield_per_ha'], 2)
+                : round($record->avg_yield, 2);
+            
+            $confidence = ($mlPrediction['status'] === 'success' && isset($mlPrediction['data']['prediction']['confidence']))
+                ? (round($mlPrediction['data']['prediction']['confidence'] * 100) >= 85 ? 'High' : 'Medium')
+                : 'Medium';
             
             return [
                 'crop' => $record->crop_type,
@@ -252,8 +328,12 @@ Route::get('/api/planting/schedule', function (Request $request) {
                 'optimal_planting' => now()->format('M d') . ' - ' . now()->addDays(30)->format('M d'),
                 'expected_harvest' => now()->addDays($duration)->format('M d') . ' - ' . now()->addDays($duration + 30)->format('M d'),
                 'duration' => $duration . ' days',
-                'yield_prediction' => round($record->avg_yield, 2) . ' mt/ha',
-                'confidence' => 'High',
+                'yield_prediction' => $predictedYield . ' mt/ha',
+                'historical_yield' => round($record->avg_yield, 2) . ' mt/ha',
+                'confidence' => $confidence,
+                'confidence_score' => ($mlPrediction['status'] === 'success' && isset($mlPrediction['data']['prediction']['confidence']))
+                    ? round($mlPrediction['data']['prediction']['confidence'] * 100, 1)
+                    : null,
                 'status' => 'Recommended',
             ];
         });
@@ -261,16 +341,17 @@ Route::get('/api/planting/schedule', function (Request $request) {
     return response()->json($cropStats);
 });
 
-// Next optimal planting date
+// Next optimal planting date with ML prediction
 Route::get('/api/planting/optimal', function (Request $request) {
     if (!Auth::check()) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
     
     $municipality = Auth::user()->location ?? 'La Trinidad';
+    $mlService = new \App\Services\MLApiService();
     
     // Get best performing crop from last year
-    $bestCrop = \App\Models\CropData::selectRaw('crop_type, variety, AVG(yield_amount / area_planted / 1000) as avg_yield')
+    $bestCrop = \App\Models\CropData::selectRaw('crop_type, variety, AVG(yield_amount / area_planted / 1000) as avg_yield, AVG(area_planted) as avg_area')
         ->where('status', 'Harvested')
         ->where('municipality', $municipality)
         ->whereYear('harvest_date', now()->year - 1)
@@ -281,15 +362,37 @@ Route::get('/api/planting/optimal', function (Request $request) {
         ->first();
     
     $nextDate = now()->addDays(15);
-    $expectedYield = $bestCrop ? round($bestCrop->avg_yield * 1.05, 2) : 5.8; // 5% improvement projection
+    $cropType = $bestCrop ? $bestCrop->crop_type : 'Cabbage';
+    
+    // Get ML prediction for next planting
+    $mlPrediction = $mlService->predict([
+        'municipality' => $municipality,
+        'crop_type' => $cropType,
+        'area_planted' => $bestCrop ? $bestCrop->avg_area : 1.0,
+        'month' => $nextDate->month,
+        'year' => $nextDate->year
+    ]);
+    
+    $expectedYield = ($mlPrediction['status'] === 'success' && isset($mlPrediction['data']['prediction']['predicted_yield_per_ha']))
+        ? round($mlPrediction['data']['prediction']['predicted_yield_per_ha'], 2)
+        : ($bestCrop ? round($bestCrop->avg_yield * 1.05, 2) : 5.8);
+    
+    $confidence = ($mlPrediction['status'] === 'success' && isset($mlPrediction['data']['prediction']['confidence']))
+        ? (round($mlPrediction['data']['prediction']['confidence'] * 100) >= 85 ? 'High' : 'Medium')
+        : 'Medium';
     
     return response()->json([
         'next_date' => $nextDate->format('M d'),
-        'crop' => $bestCrop ? $bestCrop->crop_type : 'Cabbage',
+        'crop' => $cropType,
         'variety' => $bestCrop ? $bestCrop->variety : 'Scorpio',
         'expected_yield' => $expectedYield,
+        'historical_yield' => $bestCrop ? round($bestCrop->avg_yield, 2) : null,
         'weather_window' => 14,
-        'confidence' => 'High',
+        'confidence' => $confidence,
+        'confidence_score' => ($mlPrediction['status'] === 'success' && isset($mlPrediction['data']['prediction']['confidence']))
+            ? round($mlPrediction['data']['prediction']['confidence'] * 100, 1)
+            : null,
+        'ml_status' => $mlPrediction['status'],
     ]);
 });
 
@@ -331,4 +434,37 @@ Route::get('/api/municipalities', function () {
             'Sablan', 'Tuba', 'Tublay'
         ]
     ]);
+});
+
+// ML-based forecast for future yields
+Route::get('/api/ml/forecast', function (Request $request) {
+    if (!Auth::check()) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    $municipality = $request->query('municipality', Auth::user()->location ?? 'La Trinidad');
+    $cropType = $request->query('crop_type', 'Mixed Vegetables');
+    $periods = $request->query('periods', 12);
+    
+    $mlService = new \App\Services\MLApiService();
+    
+    // Get ML forecast
+    $mlForecast = $mlService->forecast([
+        'municipality' => $municipality,
+        'crop_type' => $cropType,
+        'periods' => $periods
+    ]);
+    
+    if ($mlForecast['status'] === 'success') {
+        return response()->json([
+            'status' => 'success',
+            'forecast' => $mlForecast['data']['forecast']
+        ]);
+    } else {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Unable to generate forecast',
+            'details' => $mlForecast
+        ], 500);
+    }
 });
