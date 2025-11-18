@@ -77,6 +77,10 @@
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
                     <h1 class="text-2xl font-semibold text-green-700">Planting Schedule Optimizer</h1>
+                    <span x-show="mlConnected" class="px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full flex items-center">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                        ML Active
+                    </span>
                     <!-- Municipality Dropdown -->
                     <div x-data="{ open: false }" class="relative">
                         <button @click="open = !open" class="flex items-center space-x-2 px-4 py-2 bg-white border rounded-lg hover:bg-gray-50 transition">
@@ -153,11 +157,11 @@
                     <table class="w-full">
                         <thead>
                             <tr class="border-b text-left">
-                                <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Crop Variety</th>
-                                <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Optimal Planting</th>
-                                <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Expected Harvest</th>
+                                <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Crop & Variety</th>
+                                <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Planting Window</th>
+                                <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Harvest Window</th>
                                 <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Duration</th>
-                                <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">ML Prediction</th>
+                                <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Yield Forecast (ML)</th>
                                 <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Confidence</th>
                                 <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Status</th>
                             </tr>
@@ -166,11 +170,14 @@
                             <template x-for="(schedule, index) in schedules" :key="index">
                                 <tr class="border-b">
                                     <td class="py-4 text-gray-800 font-medium">
-                                        <div x-text="schedule.crop_type"></div>
+                                        <div class="flex items-center">
+                                            <span x-text="schedule.crop"></span>
+                                            <span x-show="schedule.ml_prediction" class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-semibold">ML</span>
+                                        </div>
                                         <div class="text-xs text-gray-500" x-text="schedule.variety"></div>
                                     </td>
-                                    <td class="py-4 text-gray-800" x-text="schedule.planting_window"></td>
-                                    <td class="py-4 text-gray-800" x-text="schedule.harvest_window"></td>
+                                    <td class="py-4 text-gray-800" x-text="schedule.optimal_planting"></td>
+                                    <td class="py-4 text-gray-800" x-text="schedule.expected_harvest"></td>
                                     <td class="py-4 text-gray-800" x-text="schedule.duration"></td>
                                     <td class="py-4 text-gray-800">
                                         <div class="font-semibold text-green-600" x-text="schedule.yield_prediction"></div>
@@ -185,8 +192,8 @@
                                         <div class="text-xs text-gray-500 mt-1" x-show="schedule.confidence_score" x-text="schedule.confidence_score + '%'"></div>
                                     </td>
                                     <td class="py-4">
-                                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium" x-show="index < 3">Recommended</span>
-                                        <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium" x-show="index >= 3">Consider</span>
+                                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium" x-text="schedule.status" x-show="schedule.status === 'Recommended'"></span>
+                                        <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium" x-text="schedule.status" x-show="schedule.status === 'Consider'"></span>
                                     </td>
                                 </tr>
                             </template>
@@ -218,6 +225,7 @@
                 },
                 schedules: [],
                 loading: false,
+                mlConnected: false,
 
                 init() {
                     this.loadPlantingData();
@@ -232,8 +240,8 @@
                     this.loading = true;
                     
                     try {
-                        // Load optimal planting data
-                        const optimalResponse = await fetch(`/api/planting/optimal?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
+                        // Load optimal planting data with ML
+                        const optimalResponse = await fetch(`{{ url('/api/planting/optimal') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
                         if (optimalResponse.ok) {
                             const optimalData = await optimalResponse.json();
                             this.optimal = {
@@ -243,24 +251,27 @@
                                 expected_yield: optimalData.expected_yield,
                                 confidence: optimalData.confidence || 'High'
                             };
+                            this.mlConnected = optimalData.ml_api_connected || false;
                         }
 
-                        // Load planting schedule
-                        const scheduleResponse = await fetch(`/api/planting/schedule?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
+                        // Load planting schedule from ML API
+                        const scheduleResponse = await fetch(`{{ url('/api/planting/schedule') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
                         if (scheduleResponse.ok) {
                             const scheduleData = await scheduleResponse.json();
                             this.schedules = scheduleData.map(item => ({
-                                crop_type: item.crop,
+                                crop: item.crop,
                                 variety: item.variety,
-                                planting_window: item.optimal_planting,
-                                harvest_window: item.expected_harvest,
+                                optimal_planting: item.optimal_planting,
+                                expected_harvest: item.expected_harvest,
                                 duration: item.duration,
                                 yield_prediction: item.yield_prediction,
                                 historical_yield: item.historical_yield,
                                 confidence: item.confidence,
                                 confidence_score: item.confidence_score,
-                                status: item.status
+                                status: item.status,
+                                ml_prediction: item.ml_prediction || false
                             }));
+                            console.log('✓ Planting schedules loaded:', this.schedules.length, 'ML predictions:', this.schedules.filter(s => s.ml_prediction).length);
                         }
                     } catch (error) {
                         console.error('Error loading planting data:', error);

@@ -77,6 +77,11 @@
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
                     <h1 class="text-2xl font-semibold text-gray-800">Dashboard</h1>
+                    <!-- ML Status Badge -->
+                    <span x-show="mlConnected" class="px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full flex items-center">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                        ML Active
+                    </span>
                     <!-- Municipality Dropdown -->
                     <div x-data="{ open: false }" class="relative">
                         <button @click="open = !open" class="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
@@ -117,11 +122,15 @@
                         <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                         </div>
+                        <span x-show="mlConnected" class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">ML</span>
                     </div>
-                    <p class="text-sm text-gray-600 mb-2">Year Expected Harvest</p>
+                    <p class="text-sm text-gray-600 mb-2">Year Expected Harvest (ML Prediction)</p>
                     <p class="text-3xl font-bold text-gray-900 mb-1"><span x-text="stats.expected_harvest"></span> <span class="text-sm font-normal text-gray-600">metric tons</span></p>
                     <p class="text-xs font-medium" :class="stats.percentage_change >= 0 ? 'text-green-600' : 'text-red-600'">
-                        <span x-text="(stats.percentage_change >= 0 ? '+ ' : '') + stats.percentage_change + '%'"></span> better than last year
+                        <span x-text="(stats.percentage_change >= 0 ? '+ ' : '') + stats.percentage_change + '%'"></span> vs historical avg
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1" x-show="stats.ml_confidence">
+                        Confidence: <span x-text="stats.ml_confidence + '%'"></span>
                     </p>
                 </div>
 
@@ -131,10 +140,11 @@
                         <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
                         </div>
+                        <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">Live</span>
                     </div>
-                    <p class="text-sm text-gray-600 mb-2">Weather Forecast</p>
-                    <p class="text-2xl font-bold text-gray-900 mb-1"><span x-text="climate.current?.weather_condition || 'Good Rain'"></span></p>
-                    <p class="text-xs text-gray-600">Expected rainfall: <span x-text="climate.current?.rainfall || '120'"></span>mm this month</p>
+                    <p class="text-sm text-gray-600 mb-2">Current Weather</p>
+                    <p class="text-2xl font-bold text-gray-900 mb-1"><span x-text="climate.current?.weather_condition || 'Loading...'"></span></p>
+                    <p class="text-xs text-gray-600">Rainfall: <span x-text="climate.current?.rainfall || '...'"></span>mm | Temp: <span x-text="climate.current?.avg_temperature || '...'"></span>°C</p>
                 </div>
 
                 <!-- Best Planting Date -->
@@ -143,10 +153,11 @@
                         <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         </div>
+                        <span x-show="mlConnected" class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">ML</span>
                     </div>
-                    <p class="text-sm text-gray-600 mb-2">Best Planting Date</p>
-                    <p class="text-2xl font-bold text-gray-900 mb-1"><span x-text="optimal.next_date || 'May 15 - June 5'"></span></p>
-                    <p class="text-xs text-gray-600">Optimal window for highest yield</p>
+                    <p class="text-sm text-gray-600 mb-2">Best Planting Window</p>
+                    <p class="text-2xl font-bold text-gray-900 mb-1"><span x-text="optimal.next_date || 'Loading...'"></span></p>
+                    <p class="text-xs text-gray-600">Optimal window for <span x-text="optimal.crop"></span></p>
                 </div>
 
                 <!-- Recommended Variety -->
@@ -155,10 +166,11 @@
                         <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
                         </div>
+                        <span x-show="mlConnected" class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">ML</span>
                     </div>
-                    <p class="text-sm text-gray-600 mb-2">Recommended Variety</p>
-                    <p class="text-2xl font-bold text-gray-900 mb-1"><span x-text="optimal.crop || 'Cabbage'"></span></p>
-                    <p class="text-xs text-gray-600">Cool season, high-yield vegetable</p>
+                    <p class="text-sm text-gray-600 mb-2">Top ML Recommendation</p>
+                    <p class="text-2xl font-bold text-gray-900 mb-1"><span x-text="optimal.crop || 'Loading...'"></span></p>
+                    <p class="text-xs text-gray-600">Expected yield: <span x-text="optimal.expected_yield || '...'"></span> MT/ha</p>
                 </div>
             </div>
 
@@ -208,17 +220,27 @@
             <div class="bg-white rounded-lg shadow p-6 mb-8">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <h3 class="text-lg font-semibold text-green-700 mb-3">Best Time to Plant</h3>
+                        <h3 class="text-lg font-semibold text-green-700 mb-3 flex items-center">
+                            Best Time to Plant
+                            <span x-show="mlConnected" class="ml-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">ML Prediction</span>
+                        </h3>
                         <p class="text-sm text-gray-700">
-                            Based on 5-6 years of past yield data and local climate data, the best planting window for your <span x-text="optimal.crop.toLowerCase()"></span> is between 
+                            Based on ML analysis of historical yield data (2015-2024) and real-time climate patterns, the best planting window for <strong><span x-text="optimal.crop"></span></strong> is between 
                             <strong x-text="optimal.next_date"></strong>. 
-                            Planting within this period helps you take advantage of ideal temperature and rainfall patterns.
+                            Expected yield: <strong><span x-text="optimal.expected_yield"></span> MT/ha</strong> with <strong><span x-text="optimal.confidence"></span></strong> confidence.
                         </p>
                     </div>
                     <div>
-                        <h3 class="text-lg font-semibold text-green-700 mb-3">Weather Outlook</h3>
+                        <h3 class="text-lg font-semibold text-green-700 mb-3 flex items-center">
+                            Current Weather Data
+                            <span class="ml-2 px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">Live</span>
+                        </h3>
                         <p class="text-sm text-gray-700">
-                            Expect moderate rainfall and mild temperatures in the coming weeks. These conditions support healthy crop growth, but it's best to delay planting after heavy rain (4+ cm daily) to avoid waterlogging and uneven germination.
+                            Current conditions in <strong x-text="selectedMunicipality"></strong>: 
+                            <span x-text="climate.current?.weather_condition || 'Loading...'"></span>, 
+                            <span x-text="climate.current?.avg_temperature || '...'"></span>°C, 
+                            <span x-text="climate.current?.rainfall || '...'"></span>mm rainfall. 
+                            Monitor weather patterns and avoid planting during heavy rain (25mm+ daily) to prevent waterlogging.
                         </p>
                     </div>
                 </div>
@@ -227,12 +249,19 @@
             <!-- Recent Harvest Data -->
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-xl font-semibold text-green-700">Recent Harvest Data</h2>
+                    <div class="flex items-center space-x-3">
+                        <h2 class="text-xl font-semibold text-green-700">Recent Harvest Records</h2>
+                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">Database</span>
+                        <span class="text-sm text-gray-500" x-text="'(' + recentHarvests.length + ' records)'"></span>
+                    </div>
                     <button class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center space-x-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                         <span>Export</span>
                     </button>
                 </div>
+                <p class="text-sm text-gray-600 mb-4">
+                    Showing latest harvest records from <strong x-text="selectedMunicipality"></strong> municipality (sorted by planting date)
+                </p>
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead>
@@ -280,7 +309,8 @@
                 ],
                 stats: {
                     expected_harvest: 0,
-                    percentage_change: 0
+                    percentage_change: 0,
+                    ml_confidence: 0
                 },
                 climate: {
                     current: null,
@@ -295,6 +325,7 @@
                 },
                 recentHarvests: [],
                 loading: false,
+                mlConnected: false,
 
                 init() {
                     this.loadDashboardData();
@@ -309,41 +340,48 @@
                     this.loading = true;
                     
                     try {
+                        console.log('Loading dashboard data for:', this.selectedMunicipality);
+                        
                         // Load dashboard stats with ML predictions
-                        const statsResponse = await fetch(`/api/dashboard/stats?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
+                        const statsResponse = await fetch(`{{ url('/api/dashboard/stats') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
                         if (statsResponse.ok) {
                             const statsData = await statsResponse.json();
                             this.stats = statsData.stats || this.stats;
                             this.recentHarvests = statsData.recent_harvests || [];
-                            console.log('Dashboard stats loaded:', this.stats);
+                            this.mlConnected = statsData.stats?.ml_api_connected || false;
+                            console.log('✓ Dashboard stats loaded:', this.stats);
+                            console.log('✓ ML API Connected:', this.mlConnected);
                         } else {
                             console.error('Stats API error:', statsResponse.status);
+                            this.mlConnected = false;
                         }
 
                         // Load climate data for selected municipality
-                        const climateResponse = await fetch(`/api/climate/current?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
+                        const climateResponse = await fetch(`{{ url('/api/climate/current') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
                         if (climateResponse.ok) {
                             const climateData = await climateResponse.json();
                             this.climate = climateData;
                         }
 
                         // Load optimal planting data with ML predictions
-                        const optimalResponse = await fetch(`/api/planting/optimal?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
+                        const optimalResponse = await fetch(`{{ url('/api/planting/optimal') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
                         if (optimalResponse.ok) {
                             const optimalData = await optimalResponse.json();
                             this.optimal = {
                                 crop: optimalData.crop || 'Cabbage',
                                 variety: optimalData.variety || 'Scorpio',
                                 next_date: optimalData.next_date || 'N/A',
-                                expected_yield: optimalData.expected_yield?.toFixed(1) || '0.0',
-                                historical_yield: optimalData.historical_yield ? optimalData.historical_yield.toFixed(1) : null,
+                                expected_yield: optimalData.expected_yield?.toFixed ? optimalData.expected_yield.toFixed(1) : optimalData.expected_yield || '0.0',
+                                historical_yield: optimalData.historical_yield ? (optimalData.historical_yield.toFixed ? optimalData.historical_yield.toFixed(1) : optimalData.historical_yield) : null,
                                 confidence: optimalData.confidence || 'Medium',
                                 confidence_score: optimalData.confidence_score || null,
                                 ml_status: optimalData.ml_status || 'unknown'
                             };
+                            console.log('✓ Optimal planting data loaded:', this.optimal);
                         }
                     } catch (error) {
                         console.error('Error loading dashboard data:', error);
+                        this.mlConnected = false;
                     } finally {
                         this.loading = false;
                     }

@@ -128,6 +128,166 @@ class MLApiService
     }
 
     /**
+     * Get top performing crops
+     */
+    public function getTopCrops(array $params = [])
+    {
+        try {
+            $response = Http::timeout($this->timeout)
+                ->retry($this->retryTimes, 100)
+                ->post($this->baseUrl . config('ml.endpoints.top_crops'), $params);
+
+            if ($response->successful()) {
+                return [
+                    'status' => 'success',
+                    'data' => $response->json(),
+                ];
+            }
+
+            return [
+                'status' => 'error',
+                'message' => 'Top crops request failed',
+                'status_code' => $response->status(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('ML API Top Crops Error: ' . $e->getMessage());
+            return [
+                'status' => 'error',
+                'message' => 'Error getting top crops',
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Get forecast for a specific crop and municipality
+     */
+    public function getForecast(array $params)
+    {
+        try {
+            $response = Http::timeout($this->timeout)
+                ->retry($this->retryTimes, 100)
+                ->post($this->baseUrl . config('ml.endpoints.forecast'), $params);
+
+            if ($response->successful()) {
+                return [
+                    'status' => 'success',
+                    'data' => $response->json(),
+                ];
+            }
+
+            return [
+                'status' => 'error',
+                'message' => 'Forecast request failed',
+                'status_code' => $response->status(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('ML API Forecast Error: ' . $e->getMessage());
+            return [
+                'status' => 'error',
+                'message' => 'Error getting forecast',
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Get dataset statistics
+     */
+    public function getDatasetStats()
+    {
+        try {
+            $response = Http::timeout($this->timeout)
+                ->retry($this->retryTimes, 100)
+                ->get($this->baseUrl . config('ml.endpoints.dataset_stats'));
+
+            if ($response->successful()) {
+                return [
+                    'status' => 'success',
+                    'data' => $response->json(),
+                ];
+            }
+
+            return [
+                'status' => 'error',
+                'message' => 'Dataset stats request failed',
+                'status_code' => $response->status(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('ML API Dataset Stats Error: ' . $e->getMessage());
+            return [
+                'status' => 'error',
+                'message' => 'Error getting dataset stats',
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Get model information
+     */
+    public function getModelInfo()
+    {
+        try {
+            $response = Http::timeout($this->timeout)
+                ->retry($this->retryTimes, 100)
+                ->get($this->baseUrl . config('ml.endpoints.model_info'));
+
+            if ($response->successful()) {
+                return [
+                    'status' => 'success',
+                    'data' => $response->json(),
+                ];
+            }
+
+            return [
+                'status' => 'error',
+                'message' => 'Model info request failed',
+                'status_code' => $response->status(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('ML API Model Info Error: ' . $e->getMessage());
+            return [
+                'status' => 'error',
+                'message' => 'Error getting model info',
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Batch predict multiple records
+     */
+    public function batchPredict(array $records)
+    {
+        try {
+            $response = Http::timeout($this->timeout)
+                ->retry($this->retryTimes, 100)
+                ->post($this->baseUrl . config('ml.endpoints.batch_predict'), ['records' => $records]);
+
+            if ($response->successful()) {
+                return [
+                    'status' => 'success',
+                    'data' => $response->json(),
+                ];
+            }
+
+            return [
+                'status' => 'error',
+                'message' => 'Batch prediction failed',
+                'status_code' => $response->status(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('ML API Batch Predict Error: ' . $e->getMessage());
+            return [
+                'status' => 'error',
+                'message' => 'Error making batch prediction',
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Get the ML API base URL
      */
     public function getBaseUrl()

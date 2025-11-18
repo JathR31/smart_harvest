@@ -15,9 +15,15 @@ return [
     'api_url' => env('ML_API_URL', 'http://127.0.0.1:5000'),
 
     'endpoints' => [
-        'health' => '/health',
+        'health' => '/api/health',
+        'model_info' => '/api/model-info',
         'predict' => '/api/predict',
+        'batch_predict' => '/api/batch-predict',
         'forecast' => '/api/forecast',
+        'top_crops' => '/api/top-crops',
+        'dataset' => '/api/dataset',
+        'dataset_stats' => '/api/dataset/stats',
+        'available_options' => '/api/available-options',
     ],
 
     /*
