@@ -176,45 +176,21 @@
 
             <!-- 7-Day Weather Forecast -->
             <div class="bg-white rounded-lg shadow p-6 mb-8">
-                <h2 class="text-xl font-semibold text-green-700 mb-6">7-Day Weather Forecast</h2>
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-semibold text-green-700">7-Day Weather Forecast</h2>
+                    <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">Live Data</span>
+                </div>
                 <div class="grid grid-cols-7 gap-4">
-                    <div class="text-center">
-                        <p class="text-sm text-gray-600 mb-3">Mon</p>
-                        <svg class="w-12 h-12 mx-auto mb-2 text-yellow-500" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-                        <p class="text-lg font-semibold">31°</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-sm text-gray-600 mb-3">Tue</p>
-                        <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M6.5 20C4 20 2 18 2 15.5c0-2.5 2-4.5 4.5-4.5.3 0 .6 0 .9.1C8.4 8.8 10.6 7 13 7c3.3 0 6 2.7 6 6 0 .3 0 .6-.1.9 1.4.4 2.4 1.7 2.4 3.2 0 1.9-1.6 3.4-3.5 3.4h-11z"/></svg>
-                        <p class="text-lg font-semibold">30°</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-sm text-gray-600 mb-3">Wed</p>
-                        <svg class="w-12 h-12 mx-auto mb-2 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M6.5 20C4 20 2 18 2 15.5c0-2.5 2-4.5 4.5-4.5.3 0 .6 0 .9.1C8.4 8.8 10.6 7 13 7c3.3 0 6 2.7 6 6 0 .3 0 .6-.1.9 1.4.4 2.4 1.7 2.4 3.2 0 1.9-1.6 3.4-3.5 3.4h-11z"/><path d="M8 16l1.5 4m3-4l1.5 4m3-4l1.5 4"/></svg>
-                        <p class="text-lg font-semibold">29°</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-sm text-gray-600 mb-3">Thu</p>
-                        <svg class="w-12 h-12 mx-auto mb-2 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M6.5 20C4 20 2 18 2 15.5c0-2.5 2-4.5 4.5-4.5.3 0 .6 0 .9.1C8.4 8.8 10.6 7 13 7c3.3 0 6 2.7 6 6 0 .3 0 .6-.1.9 1.4.4 2.4 1.7 2.4 3.2 0 1.9-1.6 3.4-3.5 3.4h-11z"/><path d="M8 16l1.5 4m3-4l1.5 4m3-4l1.5 4"/></svg>
-                        <p class="text-lg font-semibold">28°</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-sm text-gray-600 mb-3">Fri</p>
-                        <svg class="w-12 h-12 mx-auto mb-2 text-yellow-500" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-                        <p class="text-lg font-semibold">30°</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-sm text-gray-600 mb-3">Sat</p>
-                        <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M6.5 20C4 20 2 18 2 15.5c0-2.5 2-4.5 4.5-4.5.3 0 .6 0 .9.1C8.4 8.8 10.6 7 13 7c3.3 0 6 2.7 6 6 0 .3 0 .6-.1.9 1.4.4 2.4 1.7 2.4 3.2 0 1.9-1.6 3.4-3.5 3.4h-11z"/><circle cx="10" cy="18" r="1" opacity="0.5"/><circle cx="14" cy="18" r="1" opacity="0.5"/></svg>
-                        <p class="text-lg font-semibold">31°</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-sm text-gray-600 mb-3">Sun</p>
-                        <svg class="w-12 h-12 mx-auto mb-2 text-yellow-500" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-                        <p class="text-lg font-semibold">32°</p>
-                    </div>
+                    <template x-for="(day, index) in weatherForecast" :key="index">
+                        <div class="text-center">
+                            <p class="text-sm text-gray-600 mb-3" x-text="day.dayName"></p>
+                            <div x-html="getWeatherIcon(day.icon, day.description)"></div>
+                            <p class="text-lg font-semibold" x-text="Math.round(day.temp) + '°'"></p>
+                        </div>
+                    </template>
                 </div>
             </div>
+
 
             <!-- Best Time to Plant & Weather Outlook -->
             <div class="bg-white rounded-lg shadow p-6 mb-8">
@@ -245,63 +221,13 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Recent Harvest Data -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="flex items-center justify-between mb-6">
-                    <div class="flex items-center space-x-3">
-                        <h2 class="text-xl font-semibold text-green-700">Recent Harvest Records</h2>
-                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">Database</span>
-                        <span class="text-sm text-gray-500" x-text="'(' + recentHarvests.length + ' records)'"></span>
-                    </div>
-                    <button class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center space-x-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                        <span>Export</span>
-                    </button>
-                </div>
-                <p class="text-sm text-gray-600 mb-4">
-                    Showing latest harvest records from <strong x-text="selectedMunicipality"></strong> municipality (sorted by planting date)
-                </p>
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="border-b text-left">
-                                <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Crop</th>
-                                <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Municipality</th>
-                                <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Year</th>
-                                <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Area (HA)</th>
-                                <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Production (MT)</th>
-                                <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Yield (MT/HA)</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-sm">
-                            <template x-for="harvest in recentHarvests" :key="harvest.id">
-                                <tr class="border-b">
-                                    <td class="py-4 text-gray-800">
-                                        <div class="font-semibold" x-text="harvest.crop_type"></div>
-                                        <div class="text-xs text-gray-500" x-text="harvest.variety"></div>
-                                    </td>
-                                    <td class="py-4 text-gray-800" x-text="harvest.municipality"></td>
-                                    <td class="py-4 text-gray-800" x-text="harvest.year"></td>
-                                    <td class="py-4 text-gray-800" x-text="harvest.area_planted"></td>
-                                    <td class="py-4 text-gray-800" x-text="harvest.yield_amount"></td>
-                                    <td class="py-4 text-gray-800 font-semibold" x-text="(harvest.yield_amount / harvest.area_planted).toFixed(1)"></td>
-                                </tr>
-                            </template>
-                            <tr x-show="recentHarvests.length === 0">
-                                <td colspan="6" class="py-4 text-center text-gray-500">No recent harvest data available</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </main>
     </div>
 
     <script>
         function farmerDashboard() {
             return {
-                selectedMunicipality: 'La Trinidad',
+                selectedMunicipality: '{{ $userMunicipality ?? "La Trinidad" }}',
                 municipalities: [
                     'Atok', 'Baguio City', 'Bakun', 'Bokod', 'Buguias', 'Itogon', 
                     'Kabayan', 'Kapangan', 'Kibungan', 'La Trinidad', 'Mankayan', 
@@ -323,12 +249,30 @@
                     expected_yield: 0,
                     confidence: ''
                 },
+                weatherForecast: [],
                 recentHarvests: [],
                 loading: false,
                 mlConnected: false,
 
                 init() {
+                    console.log('Dashboard initialized for municipality:', this.selectedMunicipality);
                     this.loadDashboardData();
+                },
+
+                getWeatherIcon(iconCode, description) {
+                    const icons = {
+                        '01d': '<svg class="w-12 h-12 mx-auto mb-2 text-yellow-500" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>',
+                        '01n': '<svg class="w-12 h-12 mx-auto mb-2 text-gray-600" fill="currentColor" viewBox="0 0 24 24"><path d="M17.75 4.09L15.22 6.03L16.13 9.09L13.5 7.28L10.87 9.09L11.78 6.03L9.25 4.09L12.44 4L13.5 1L14.56 4L17.75 4.09M21.25 11L19.61 12.25L20.2 14.23L18.5 13.06L16.8 14.23L17.39 12.25L15.75 11L17.81 10.95L18.5 9L19.19 10.95L21.25 11M18.97 15.95C19.8 15.87 20.69 17.05 20.16 17.8C19.84 18.25 19.5 18.67 19.08 19.07C15.17 23 8.84 23 4.94 19.07C1.03 15.17 1.03 8.83 4.94 4.93C5.34 4.53 5.76 4.17 6.21 3.85C6.96 3.32 8.14 4.21 8.06 5.04C7.79 7.9 8.75 10.87 10.95 13.06C13.14 15.26 16.1 16.22 18.97 15.95M17.33 17.97C14.5 17.81 11.7 16.64 9.53 14.5C7.36 12.31 6.2 9.5 6.04 6.68C3.23 9.82 3.34 14.64 6.35 17.66C9.37 20.67 14.19 20.78 17.33 17.97Z"/></svg>',
+                        '02d': '<svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M6.5 20C4 20 2 18 2 15.5c0-2.5 2-4.5 4.5-4.5.3 0 .6 0 .9.1C8.4 8.8 10.6 7 13 7c3.3 0 6 2.7 6 6 0 .3 0 .6-.1.9 1.4.4 2.4 1.7 2.4 3.2 0 1.9-1.6 3.4-3.5 3.4h-11z"/></svg>',
+                        '03d': '<svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M6.5 20C4 20 2 18 2 15.5c0-2.5 2-4.5 4.5-4.5.3 0 .6 0 .9.1C8.4 8.8 10.6 7 13 7c3.3 0 6 2.7 6 6 0 .3 0 .6-.1.9 1.4.4 2.4 1.7 2.4 3.2 0 1.9-1.6 3.4-3.5 3.4h-11z"/></svg>',
+                        '04d': '<svg class="w-12 h-12 mx-auto mb-2 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M6.5 20C4 20 2 18 2 15.5c0-2.5 2-4.5 4.5-4.5.3 0 .6 0 .9.1C8.4 8.8 10.6 7 13 7c3.3 0 6 2.7 6 6 0 .3 0 .6-.1.9 1.4.4 2.4 1.7 2.4 3.2 0 1.9-1.6 3.4-3.5 3.4h-11z"/></svg>',
+                        '09d': '<svg class="w-12 h-12 mx-auto mb-2 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M6.5 20C4 20 2 18 2 15.5c0-2.5 2-4.5 4.5-4.5.3 0 .6 0 .9.1C8.4 8.8 10.6 7 13 7c3.3 0 6 2.7 6 6 0 .3 0 .6-.1.9 1.4.4 2.4 1.7 2.4 3.2 0 1.9-1.6 3.4-3.5 3.4h-11z"/><path d="M8 16l1.5 4m3-4l1.5 4m3-4l1.5 4"/></svg>',
+                        '10d': '<svg class="w-12 h-12 mx-auto mb-2 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M6.5 20C4 20 2 18 2 15.5c0-2.5 2-4.5 4.5-4.5.3 0 .6 0 .9.1C8.4 8.8 10.6 7 13 7c3.3 0 6 2.7 6 6 0 .3 0 .6-.1.9 1.4.4 2.4 1.7 2.4 3.2 0 1.9-1.6 3.4-3.5 3.4h-11z"/><path d="M8 16l1.5 4m3-4l1.5 4m3-4l1.5 4"/></svg>',
+                        '11d': '<svg class="w-12 h-12 mx-auto mb-2 text-yellow-600" fill="currentColor" viewBox="0 0 24 24"><path d="M6.5 20C4 20 2 18 2 15.5c0-2.5 2-4.5 4.5-4.5.3 0 .6 0 .9.1C8.4 8.8 10.6 7 13 7c3.3 0 6 2.7 6 6 0 .3 0 .6-.1.9 1.4.4 2.4 1.7 2.4 3.2 0 1.9-1.6 3.4-3.5 3.4h-11z"/><path d="M13 14l-2 4h2l-2 4"/></svg>',
+                        '13d': '<svg class="w-12 h-12 mx-auto mb-2 text-blue-200" fill="currentColor" viewBox="0 0 24 24"><path d="M6.5 20C4 20 2 18 2 15.5c0-2.5 2-4.5 4.5-4.5.3 0 .6 0 .9.1C8.4 8.8 10.6 7 13 7c3.3 0 6 2.7 6 6 0 .3 0 .6-.1.9 1.4.4 2.4 1.7 2.4 3.2 0 1.9-1.6 3.4-3.5 3.4h-11z"/><circle cx="8" cy="18" r="1"/><circle cx="12" cy="18" r="1"/><circle cx="16" cy="18" r="1"/></svg>',
+                        '50d': '<svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M3 15h18M3 10h18M3 5h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.5"/></svg>'
+                    };
+                    return icons[iconCode] || icons['02d'];
                 },
 
                 selectMunicipality(municipality) {
@@ -342,18 +286,59 @@
                     try {
                         console.log('Loading dashboard data for:', this.selectedMunicipality);
                         
-                        // Load dashboard stats with ML predictions
-                        const statsResponse = await fetch(`{{ url('/api/dashboard/stats') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
-                        if (statsResponse.ok) {
-                            const statsData = await statsResponse.json();
-                            this.stats = statsData.stats || this.stats;
-                            this.recentHarvests = statsData.recent_harvests || [];
-                            this.mlConnected = statsData.stats?.ml_api_connected || false;
-                            console.log('✓ Dashboard stats loaded:', this.stats);
-                            console.log('✓ ML API Connected:', this.mlConnected);
+                        // Load dashboard stats using ML yield analysis API (same as Yield Analysis tab)
+                        const timestamp = new Date().getTime();
+                        const yieldAnalysisResponse = await fetch(`{{ url('/api/ml/yield/analysis') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}&year=2025&_t=${timestamp}`);
+                        
+                        if (yieldAnalysisResponse.ok) {
+                            const yieldData = await yieldAnalysisResponse.json();
+                            console.log('📊 ML Yield Analysis Response:', yieldData);
+                            
+                            // Use ML data from yield analysis (same source as Yield Analysis tab)
+                            if (yieldData.stats && yieldData.ml_api_connected) {
+                                this.stats.expected_harvest = yieldData.stats.total_production || '0';
+                                this.stats.ml_confidence = 85;
+                                this.mlConnected = true;
+                                
+                                // Calculate percentage change from comparison data
+                                if (yieldData.comparison && yieldData.comparison.length > 1) {
+                                    const latest = yieldData.comparison[yieldData.comparison.length - 1];
+                                    const previous = yieldData.comparison[yieldData.comparison.length - 2];
+                                    if (latest && previous && previous.actual > 0) {
+                                        this.stats.percentage_change = Math.round(((latest.predicted - previous.actual) / previous.actual) * 100);
+                                    }
+                                }
+                                
+                                console.log('✓ Using ML data from Yield Analysis API');
+                                console.log('✓ Expected Harvest:', this.stats.expected_harvest);
+                                console.log('✓ ML Connected:', this.mlConnected);
+                            }
+                        }
+                        
+                        // Load recent harvests from database
+                        console.log('📋 Fetching recent harvests for:', this.selectedMunicipality);
+                        const harvestsResponse = await fetch(`{{ url('/api/dashboard/stats') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}&_t=${timestamp}`);
+                        console.log('📋 Harvests response status:', harvestsResponse.status);
+                        
+                        if (harvestsResponse.ok) {
+                            const harvestsData = await harvestsResponse.json();
+                            console.log('📋 Full harvests response:', harvestsData);
+                            console.log('📋 Recent harvests array:', harvestsData.recent_harvests);
+                            
+                            // Ensure we have an array
+                            if (harvestsData.recent_harvests && Array.isArray(harvestsData.recent_harvests)) {
+                                this.recentHarvests = harvestsData.recent_harvests;
+                                console.log('✓ Recent Harvests loaded:', this.recentHarvests.length, 'records');
+                                console.log('✓ Sample data:', this.recentHarvests[0]);
+                            } else {
+                                console.error('❌ recent_harvests is not an array:', typeof harvestsData.recent_harvests);
+                                this.recentHarvests = [];
+                            }
                         } else {
-                            console.error('Stats API error:', statsResponse.status);
-                            this.mlConnected = false;
+                            console.error('❌ Failed to load recent harvests:', harvestsResponse.status);
+                            const errorText = await harvestsResponse.text();
+                            console.error('❌ Error response:', errorText);
+                            this.recentHarvests = [];
                         }
 
                         // Load climate data for selected municipality
@@ -378,6 +363,24 @@
                                 ml_status: optimalData.ml_status || 'unknown'
                             };
                             console.log('✓ Optimal planting data loaded:', this.optimal);
+                        }
+
+                        // Load 7-day weather forecast
+                        const weatherResponse = await fetch(`{{ url('/api/weather') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}&_t=${timestamp}`);
+                        if (weatherResponse.ok) {
+                            const weatherData = await weatherResponse.json();
+                            console.log('🌤️ Weather data:', weatherData);
+                            
+                            if (weatherData.daily && Array.isArray(weatherData.daily)) {
+                                const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                                this.weatherForecast = weatherData.daily.slice(0, 7).map(day => ({
+                                    dayName: days[new Date(day.dt * 1000).getDay()],
+                                    temp: day.temp.max,
+                                    icon: day.weather[0].icon,
+                                    description: day.weather[0].description
+                                }));
+                                console.log('✓ Weather forecast loaded:', this.weatherForecast.length, 'days');
+                            }
                         }
                     } catch (error) {
                         console.error('Error loading dashboard data:', error);

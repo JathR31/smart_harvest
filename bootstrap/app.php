@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'admin/api/import',
             'admin/api/datasets/*',
+            'api/planting/*',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

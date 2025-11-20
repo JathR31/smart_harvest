@@ -221,7 +221,7 @@
                 error: false,
                 errorMessage: '',
                 municipalityOpen: false,
-                selectedMunicipality: 'Baguio City',
+                selectedMunicipality: '{{ $userMunicipality ?? "Baguio City" }}',
                 tempUnit: 'C',
                 municipalities: [
                     'Baguio City',
@@ -250,7 +250,7 @@
                     clouds: 0
                 },
                 soilMoisture: {
-                    level: 'Low',
+                    level: 'Medium',
                     lastWatered: '2 days',
                     nextWater: 'Soon'
                 },
@@ -261,6 +261,7 @@
 
                 async init() {
                     await this.fetchWeatherData();
+                    await this.fetchRainfallSoilData();
                 },
 
                 async fetchWeatherData() {
@@ -275,7 +276,7 @@
                             throw new Error(data.message || 'Failed to fetch weather data');
                         }
 
-                        // Update current weather
+                        // Update current weather (but don't override rain/precipitation/clouds yet)
                         this.current = {
                             temp: Math.round(data.current.temp),
                             feels_like: Math.round(data.current.feels_like),
@@ -309,10 +310,40 @@
                     }
                 },
 
+                async fetchRainfallSoilData() {
+                    try {
+                        console.log('Fetching rainfall and soil moisture data for:', this.selectedMunicipality);
+                        const response = await fetch(`{{ url('/api/climate/rainfall-soil') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
+                        const data = await response.json();
+                        
+                        if (response.ok && data.rainfall) {
+                            // Update rainfall data from database
+                            this.current.rain = data.rainfall.today;
+                            this.current.precipitation = data.rainfall.precipitation;
+                            this.current.clouds = data.rainfall.clouds;
+                            
+                            // Update soil moisture from database
+                            this.soilMoisture = {
+                                level: data.soilMoisture.level,
+                                lastWatered: data.soilMoisture.lastWatered,
+                                nextWater: data.soilMoisture.nextWater
+                            };
+                            
+                            console.log('✓ Rainfall/Soil data loaded from', data.source);
+                            console.log('  Rainfall today:', data.rainfall.today + 'mm');
+                            console.log('  Soil moisture:', data.soilMoisture.level);
+                        }
+                    } catch (err) {
+                        console.error('Rainfall/Soil fetch error:', err);
+                        // Keep default values if fetch fails
+                    }
+                },
+
                 async changeMunicipality(municipality) {
                     this.selectedMunicipality = municipality;
                     this.municipalityOpen = false;
                     await this.fetchWeatherData();
+                    await this.fetchRainfallSoilData();
                 },
 
                 updateCharts() {

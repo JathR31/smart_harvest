@@ -74,7 +74,6 @@
                     </div>
                 @else
                     <a href="{{ route('login') }}" class="px-4 py-2 font-bold hover:text-green-100 transition duration-150">LOGIN</a>
-                    <a href="{{ route('admin.login') }}" class="px-4 py-2 bg-green-500 rounded hover:bg-green-400 transition duration-150 font-bold">ADMIN</a>
                 @endauth
             </nav>
         </header>

@@ -103,16 +103,27 @@
                     <label for="municipality" class="block text-sm font-medium text-gray-700 mb-2">Municipality / City</label>
                     <div class="relative">
                         <select id="municipality" name="municipality" required
-                                class="w-full p-3 pl-10 border border-gray-200 rounded-xl bg-gray-50 appearance-none focus:ring-green-500 focus:border-green-500 transition duration-150 text-gray-500">
+                                class="w-full p-3 pl-10 border border-gray-200 rounded-xl bg-gray-50 appearance-none focus:ring-green-500 focus:border-green-500 transition duration-150 text-gray-700">
                             <option value="" disabled selected>Select your municipality</option>
-                            <option value="laguardia">La Trinidad</option>
-                            <option value="baguio">Baguio City</option>
-                            <option value="benguet">Benguet Province</option>
+                            <option value="Atok">Atok</option>
+                            <option value="Baguio City">Baguio City</option>
+                            <option value="Bakun">Bakun</option>
+                            <option value="Bokod">Bokod</option>
+                            <option value="Buguias">Buguias</option>
+                            <option value="Itogon">Itogon</option>
+                            <option value="Kabayan">Kabayan</option>
+                            <option value="Kapangan">Kapangan</option>
+                            <option value="Kibungan">Kibungan</option>
+                            <option value="La Trinidad">La Trinidad</option>
+                            <option value="Mankayan">Mankayan</option>
+                            <option value="Sablan">Sablan</option>
+                            <option value="Tuba">Tuba</option>
+                            <option value="Tublay">Tublay</option>
                         </select>
                         <svg class="absolute input-icon w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0l-4.243-4.243m-1.06-1.06L2.9 10.93a1.997 1.997 0 01-.007-2.834L7.14 3.793a1.997 1.997 0 012.828.007L13.414 7.9a1.998 1.998 0 010 2.828l-4.243 4.243z"></path></svg>
                         <svg class="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
-                    <p class="text-xs text-gray-500 mt-1 pl-1">Select your farm location in the Cordillera region</p>
+                    <p class="text-xs text-gray-500 mt-1 pl-1">Select your farm location in the Benguet Province</p>
                 </div>
 
                 <!-- Password -->

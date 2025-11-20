@@ -210,7 +210,7 @@
     <script>
         function plantingSchedule() {
             return {
-                selectedMunicipality: 'La Trinidad',
+                selectedMunicipality: '{{ $userMunicipality ?? "La Trinidad" }}',
                 municipalities: [
                     'Atok', 'Baguio City', 'Bakun', 'Bokod', 'Buguias', 'Itogon', 
                     'Kabayan', 'Kapangan', 'Kibungan', 'La Trinidad', 'Mankayan', 
@@ -241,9 +241,13 @@
                     
                     try {
                         // Load optimal planting data with ML
+                        console.log('Loading optimal planting data for:', this.selectedMunicipality);
                         const optimalResponse = await fetch(`{{ url('/api/planting/optimal') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
+                        console.log('Optimal API response status:', optimalResponse.status);
+                        
                         if (optimalResponse.ok) {
                             const optimalData = await optimalResponse.json();
+                            console.log('Optimal data received:', optimalData);
                             this.optimal = {
                                 crop: optimalData.crop,
                                 variety: optimalData.variety,
@@ -252,12 +256,20 @@
                                 confidence: optimalData.confidence || 'High'
                             };
                             this.mlConnected = optimalData.ml_api_connected || false;
+                        } else {
+                            console.error('Optimal API failed with status:', optimalResponse.status);
+                            const errorText = await optimalResponse.text();
+                            console.error('Error response:', errorText);
                         }
 
                         // Load planting schedule from ML API
+                        console.log('Loading planting schedule...');
                         const scheduleResponse = await fetch(`{{ url('/api/planting/schedule') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
+                        console.log('Schedule API response status:', scheduleResponse.status);
+                        
                         if (scheduleResponse.ok) {
                             const scheduleData = await scheduleResponse.json();
+                            console.log('Schedule data received:', scheduleData);
                             this.schedules = scheduleData.map(item => ({
                                 crop: item.crop,
                                 variety: item.variety,
@@ -271,7 +283,13 @@
                                 status: item.status,
                                 ml_prediction: item.ml_prediction || false
                             }));
-                            console.log('✓ Planting schedules loaded:', this.schedules.length, 'ML predictions:', this.schedules.filter(s => s.ml_prediction).length);
+                            console.log('✓ Planting schedules loaded:', this.schedules.length, 'crops');
+                            console.log('✓ ML predictions:', this.schedules.filter(s => s.ml_prediction).length);
+                            console.log('✓ Database records:', this.schedules.filter(s => !s.ml_prediction).length);
+                        } else {
+                            console.error('Schedule API failed with status:', scheduleResponse.status);
+                            const errorText = await scheduleResponse.text();
+                            console.error('Error response:', errorText);
                         }
                     } catch (error) {
                         console.error('Error loading planting data:', error);

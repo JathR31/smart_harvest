@@ -153,7 +153,7 @@
                 </div>
 
                 <!-- Top Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <!-- Best Performing Crop (ML Prediction) -->
                 <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg shadow-lg p-6 border-l-4 border-green-500">
                     <div class="flex items-center justify-between mb-2">
@@ -165,6 +165,17 @@
                     <p class="text-xs text-gray-500 mt-2" x-show="cropPerformance.length > 0" x-text="cropPerformance.length > 0 ? 'Confidence: ' + cropPerformance[0].confidence + '%' : ''"></p>
                 </div>
 
+                <!-- Average Yield (ML Powered) -->
+                <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg shadow-lg p-6 border-l-4 border-orange-500">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-sm text-gray-600 font-medium">Average Yield <span x-text="selectedYear"></span></p>
+                        <span class="px-2 py-1 bg-orange-500 text-white text-xs font-bold rounded-full">ML</span>
+                    </div>
+                    <p class="text-3xl font-bold text-orange-700 mb-1" x-text="stats.avg_yield || '0.0'"></p>
+                    <p class="text-sm text-gray-700 font-medium">MT/ha from ML analysis</p>
+                    <p class="text-xs text-gray-500 mt-2"><span x-text="selectedMunicipality"></span> region</p>
+                </div>
+
                 <!-- Average Predicted Yield -->
                 <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow-lg p-6 border-l-4 border-blue-500">
                     <div class="flex items-center justify-between mb-2">
@@ -172,7 +183,7 @@
                         <span class="px-2 py-1 bg-blue-500 text-white text-xs font-bold rounded-full">ML</span>
                     </div>
                     <p class="text-3xl font-bold text-blue-700 mb-1" x-text="cropPerformance.length > 0 ? (cropPerformance.reduce((sum, c) => sum + c.predicted, 0) / cropPerformance.length).toFixed(1) : '0.0'"></p>
-                    <p class="text-sm text-gray-700 font-medium">MT/ha across all crops</p>
+                    <p class="text-sm text-gray-700 font-medium">MT/ha ML forecast</p>
                     <p class="text-xs text-gray-500 mt-2"><span x-text="selectedMunicipality"></span> region</p>
                 </div>
 
@@ -183,7 +194,7 @@
                         <span class="px-2 py-1 bg-purple-500 text-white text-xs font-bold rounded-full">ML</span>
                     </div>
                     <p class="text-3xl font-bold text-purple-700 mb-1" x-text="cropPerformance.length > 0 ? cropPerformance.reduce((sum, c) => sum + c.predicted, 0).toFixed(1) : '0.0'"></p>
-                    <p class="text-sm text-gray-700 font-medium">MT (metric tons)</p>
+                    <p class="text-sm text-gray-700 font-medium">MT total forecast</p>
                     <p class="text-xs text-gray-500 mt-2"><span x-text="cropPerformance.length"></span> crops analyzed</p>
                 </div>
             </div>
@@ -263,48 +274,6 @@
                         </p>
                     </div>
                 </div>
-
-                <!-- ML Model Information -->
-                <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-lg shadow-lg p-6 border-l-4 border-indigo-500">
-                    <h2 class="text-lg font-semibold text-indigo-700 mb-2">ML Model Information</h2>
-                    <p class="text-sm text-gray-600 mb-4">Random Forest Regressor - Crop Sensitive</p>
-                    <div class="space-y-3">
-                        <div class="flex items-center justify-between p-3 bg-white rounded-lg">
-                            <div class="flex items-center space-x-3">
-                                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                <span class="text-gray-700 font-medium">Model Accuracy</span>
-                            </div>
-                            <div class="flex items-center">
-                                <span class="text-indigo-700 font-bold" x-text="cropPerformance.length > 0 ? Math.round(cropPerformance.reduce((sum, c) => sum + c.confidence, 0) / cropPerformance.length) + '%' : 'N/A'"></span>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between p-3 bg-white rounded-lg">
-                            <div class="flex items-center space-x-3">
-                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
-                                <span class="text-gray-700 font-medium">Crops Analyzed</span>
-                            </div>
-                            <div class="flex items-center">
-                                <span class="text-green-700 font-bold" x-text="cropPerformance.length"></span>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between p-3 bg-white rounded-lg">
-                            <div class="flex items-center space-x-3">
-                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                                <span class="text-gray-700 font-medium">API Status</span>
-                            </div>
-                            <div class="flex items-center">
-                                <span x-show="mlConnected" class="text-green-700 font-bold">Online</span>
-                                <span x-show="!mlConnected" class="text-red-700 font-bold">Offline</span>
-                            </div>
-                        </div>
-                        <div class="mt-4 p-3 bg-indigo-100 rounded-lg">
-                            <p class="text-xs text-indigo-800 text-center">
-                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                Trained on historical Benguet crop data (2015-2024)
-                            </p>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- ML Forecast Section -->
@@ -380,7 +349,7 @@
     <script>
         function yieldAnalysis() {
             return {
-                selectedMunicipality: 'La Trinidad',
+                selectedMunicipality: '{{ $userMunicipality ?? "La Trinidad" }}',
                 selectedYear: 2025,
                 municipalities: [
                     'Atok', 'Baguio City', 'Bakun', 'Bokod', 'Buguias', 'Itogon', 

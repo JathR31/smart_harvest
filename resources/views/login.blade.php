@@ -25,7 +25,8 @@
                 <svg class="w-8 h-8 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4m16 0c0 4.418-3.582 8-8 8s-8-3.582-8-8 3.582-8 8-8 8 3.582 8 8z"/></svg>
             </div>
             <h1 class="text-2xl font-semibold text-green-700 mb-1">SmartHarvest</h1>
-            <p class="text-gray-500 mb-8 text-sm">Sign in to access your dashboard</p>
+            <p class="text-gray-500 mb-2 text-sm">Sign in to access your dashboard</p>
+            <p class="text-xs text-gray-400 mb-6">For both Farmers and Admin</p>
         </div>
 
         @if ($errors->any())

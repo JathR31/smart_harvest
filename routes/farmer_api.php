@@ -274,14 +274,18 @@ Route::get('/api/yield/monthly', function (Request $request) {
 });
 
 // ========== PLANTING SCHEDULE API ENDPOINTS ==========
+// NOTE: Planting schedule routes have been moved to web.php for enhanced ML integration
+// The routes below are commented out to avoid conflicts
 
+/*
 // Planting schedule recommendations with ML predictions
 Route::get('/api/planting/schedule', function (Request $request) {
-    if (!Auth::check()) {
-        return response()->json(['error' => 'Unauthorized'], 401);
+    // Allow public access - get municipality from request or use default
+    $municipality = $request->query('municipality');
+    if (!$municipality && Auth::check()) {
+        $municipality = Auth::user()->location;
     }
-    
-    $municipality = Auth::user()->location ?? 'La Trinidad';
+    $municipality = $municipality ?? 'La Trinidad';
     $mlService = new \App\Services\MLApiService();
     
     // Get crop statistics grouped by crop type
@@ -343,11 +347,12 @@ Route::get('/api/planting/schedule', function (Request $request) {
 
 // Next optimal planting date with ML prediction
 Route::get('/api/planting/optimal', function (Request $request) {
-    if (!Auth::check()) {
-        return response()->json(['error' => 'Unauthorized'], 401);
+    // Allow public access - get municipality from request or use default
+    $municipality = $request->query('municipality');
+    if (!$municipality && Auth::check()) {
+        $municipality = Auth::user()->location;
     }
-    
-    $municipality = Auth::user()->location ?? 'La Trinidad';
+    $municipality = $municipality ?? 'La Trinidad';
     $mlService = new \App\Services\MLApiService();
     
     // Get best performing crop from last year
@@ -395,6 +400,8 @@ Route::get('/api/planting/optimal', function (Request $request) {
         'ml_status' => $mlPrediction['status'],
     ]);
 });
+*/
+// END OF COMMENTED OUT PLANTING ROUTES - Using enhanced versions from web.php instead
 
 // Climate data for municipality
 Route::get('/api/climate/current', function (Request $request) {
