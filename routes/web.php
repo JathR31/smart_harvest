@@ -12,6 +12,14 @@ Route::get('/', function () {
 
 // You would also have routes for login, admin, and register (Get Started)
 Route::get('/login', function () {
+    // If already authenticated, redirect to appropriate dashboard
+    if (Auth::check()) {
+        $user = Auth::user();
+        if ($user->role === 'Admin') {
+            return redirect()->route('admin.dashboard');
+        }
+        return redirect()->route('dashboard');
+    }
     return view('login');
 })->name('login');
 
@@ -21,15 +29,26 @@ Route::post('/login', function (Request $request) {
         'email' => 'required|email',
         'password' => 'required|string',
     ]);
+    
+    $remember = $request->has('remember');
 
-    if (Auth::attempt($credentials, $request->filled('remember'))) {
+    if (Auth::attempt($credentials, $remember)) {
+        $user = Auth::user();
+        
+        // Check if email is verified
+        if (!$user->hasVerifiedEmail()) {
+            Auth::logout();
+            return back()->withErrors([
+                'email' => 'Please verify your email address before logging in. Check your inbox for the verification link.'
+            ])->withInput();
+        }
+        
         $request->session()->regenerate();
         
         // Update last login timestamp
-        Auth::user()->update(['last_login' => now()]);
+        $user->update(['last_login' => now()]);
         
         // Redirect based on user role
-        $user = Auth::user();
         if ($user->role === 'Admin') {
             return redirect()->route('admin.dashboard');
         } else {
@@ -39,6 +58,93 @@ Route::post('/login', function (Request $request) {
 
     return back()->withErrors(['email' => 'Invalid credentials'])->withInput();
 })->name('login.attempt');
+
+// Email Verification Routes
+Route::get('/email/verify', function () {
+    // If email is already verified, check if password is set
+    if (Auth::user()->hasVerifiedEmail()) {
+        // If password not set, go to password setup
+        if (Auth::user()->password_set_at === null) {
+            return redirect()->route('password.setup');
+        }
+        // If password is set, go to dashboard
+        return redirect()->route(Auth::user()->role === 'Admin' ? 'admin.dashboard' : 'dashboard');
+    }
+    return view('auth.verify-email');
+})->middleware('auth')->name('verification.notice');
+
+Route::get('/email/verify/{id}/{hash}', function (Request $request) {
+    $user = \App\Models\User::findOrFail($request->id);
+    
+    if (!hash_equals((string) $request->hash, sha1($user->email))) {
+        abort(403, 'Invalid verification link.');
+    }
+    
+    if ($user->hasVerifiedEmail()) {
+        // If already verified, log them in and show simple confirmation
+        Auth::login($user);
+        return view('auth.verified-success', [
+            'message' => 'Your email has already been verified!',
+            'can_close' => true
+        ]);
+    }
+    
+    $user->markEmailAsVerified();
+    
+    // Log the user in automatically after verification
+    Auth::login($user);
+    $request->session()->regenerate();
+    
+    // Show simple success message that can be closed
+    return view('auth.verified-success', [
+        'message' => 'Email verified successfully!',
+        'can_close' => true
+    ]);
+})->middleware('signed')->name('verification.verify');
+
+Route::post('/email/resend', function (Request $request) {
+    if ($request->user()->hasVerifiedEmail()) {
+        return redirect()->route($request->user()->role === 'Admin' ? 'admin.dashboard' : 'dashboard');
+    }
+    
+    $request->user()->sendEmailVerificationNotification();
+    
+    return back()->with('message', 'Verification link sent!');
+})->middleware(['auth', 'throttle:6,1'])->name('verification.resend');
+
+// Check email verification status (for real-time verification detection)
+Route::get('/api/check-verification-status', function () {
+    if (!Auth::check()) {
+        return response()->json(['verified' => false, 'error' => 'Not authenticated'], 401);
+    }
+    
+    return response()->json([
+        'verified' => Auth::user()->hasVerifiedEmail()
+    ]);
+})->middleware('auth');
+
+// Password Setup Routes (After Email Verification)
+Route::get('/setup-password', function () {
+    // If user already has a real password (not temporary), redirect to dashboard
+    if (Auth::user()->password_set_at !== null) {
+        return redirect()->route(Auth::user()->role === 'Admin' ? 'admin.dashboard' : 'dashboard');
+    }
+    return view('auth.setup-password');
+})->middleware(['auth', 'verified'])->name('password.setup');
+
+Route::post('/setup-password', function (Request $request) {
+    $validated = $request->validate([
+        'password' => 'required|string|min:8|confirmed',
+    ]);
+    
+    $user = Auth::user();
+    $user->password = Hash::make($validated['password']);
+    $user->password_set_at = now();
+    $user->save();
+    
+    return redirect()->route($user->role === 'Admin' ? 'admin.dashboard' : 'dashboard')
+        ->with('message', 'Password set successfully! Welcome to SmartHarvest.');
+})->middleware(['auth', 'verified'])->name('password.setup.store');
 
 // Redirect /admin to main login page
 Route::get('/admin', function () {
@@ -53,6 +159,13 @@ Route::get('/admin/dashboard', function () {
     if (!Auth::check() || Auth::user()->role !== 'Admin') {
         return redirect()->route('login')->withErrors(['error' => 'Admin access required']);
     }
+    
+    // Check if password is set
+    if (Auth::user()->password_set_at === null) {
+        return redirect()->route('password.setup')
+            ->with('message', 'Please set your password to continue.');
+    }
+    
     return view('admin_dash');
 })->name('admin.dashboard');
 
@@ -1989,6 +2102,18 @@ Route::get('/dashboard', function () {
         return redirect()->route('login');
     }
     $user = Auth::user();
+    
+    // Check if email is verified
+    if (!$user->hasVerifiedEmail()) {
+        return redirect()->route('verification.notice');
+    }
+    
+    // Check if password is set
+    if ($user->password_set_at === null) {
+        return redirect()->route('password.setup')
+            ->with('message', 'Please set your password to continue.');
+    }
+    
     $userMunicipality = $user->location ?? 'La Trinidad';
     return view('dashboard', ['userMunicipality' => $userMunicipality]);
 })->name('dashboard');
@@ -2095,7 +2220,7 @@ Route::get('/api/weather', function (Request $request) {
                     'temp' => ['max' => 25 + rand(-3, 3), 'min' => 15 + rand(-3, 3)],
                     'weather' => [['icon' => '02d']]
                 ];
-            }, range(0, 6))
+            }, range(0, 4))
         ]);
     }
     
@@ -2174,7 +2299,7 @@ Route::get('/api/weather', function (Request $request) {
             'daily' => []
         ];
         
-        // Group forecast by day for daily data
+        // Group forecast by day for daily data (limit to 5 days)
         $dailyGroups = [];
         foreach ($forecastData['list'] as $item) {
             $date = date('Y-m-d', $item['dt']);
@@ -2184,7 +2309,8 @@ Route::get('/api/weather', function (Request $request) {
             $dailyGroups[$date][] = $item;
         }
         
-        foreach (array_slice(array_keys($dailyGroups), 0, 7) as $date) {
+        // Process available days from API (max 5 days)
+        foreach (array_slice(array_keys($dailyGroups), 0, 5) as $date) {
             $dayData = $dailyGroups[$date];
             $temps = array_map(fn($d) => $d['main']['temp'], $dayData);
             $transformedData['daily'][] = [
@@ -2390,6 +2516,14 @@ Route::get('/api/ml/test-prediction', function () {
 require __DIR__.'/farmer_api.php';
 
 Route::get('/register', function () {
+    // If already authenticated, redirect to appropriate dashboard
+    if (Auth::check()) {
+        $user = Auth::user();
+        if ($user->role === 'Admin') {
+            return redirect()->route('admin.dashboard');
+        }
+        return redirect()->route('dashboard');
+    }
     return view('register');
 })->name('register');
 
@@ -2399,20 +2533,24 @@ Route::post('/register', function (Request $request) {
         'full_name' => 'required|string|max:255',
         'email' => 'required|email|unique:users,email|max:255',
         'municipality' => 'required|string',
-        'password' => 'required|string|min:8|confirmed',
     ]);
 
+    // Create user with temporary random password
     $user = \App\Models\User::create([
         'name' => $validated['full_name'],
         'email' => $validated['email'],
         'location' => $validated['municipality'],
         'role' => 'Farmer',
         'status' => 'active',
-        'password' => Hash::make($validated['password']),
+        'password' => Hash::make(\Illuminate\Support\Str::random(32)), // Temporary password
     ]);
 
+    // Send email verification notification
+    $user->sendEmailVerificationNotification();
+    
     Auth::login($user);
     $request->session()->regenerate();
 
-    return redirect()->route('dashboard');
+    return redirect()->route('verification.notice')
+        ->with('message', 'Please check your email to verify your account. You will set your password after verification.');
 })->name('register.attempt');

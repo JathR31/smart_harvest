@@ -283,9 +283,8 @@ Route::get('/api/yield/interpretation/comparison', function (Request $request) {
     
     $municipality = $request->query('municipality', Auth::user()->location ?? 'La Trinidad');
     $year = $request->query('year', now()->year);
-    $mlService = new \App\Services\MLApiService();
     
-    // Get yield comparison data with ML predictions
+    // Get yield comparison data
     $years = range($year - 5, $year);
     $yieldData = [];
     
@@ -301,27 +300,13 @@ Route::get('/api/yield/interpretation/comparison', function (Request $request) {
             })
             ->avg();
         
-        // Get ML prediction for this year
-        $mlPrediction = $mlService->predict([
-            'municipality' => $municipality,
-            'crop_type' => 'Mixed Vegetables',
-            'area_planted' => 1.0,
-            'month' => 6,
-            'year' => $y
-        ]);
-        
-        $predicted = ($mlPrediction['status'] === 'success' && isset($mlPrediction['data']['prediction']['predicted_yield_per_ha']))
-            ? round($mlPrediction['data']['prediction']['predicted_yield_per_ha'], 2)
-            : null;
-        
         $yieldData[] = [
             'year' => $y,
-            'actual_yield' => round($avgYield ?? 0, 2),
-            'ml_predicted_yield' => $predicted
+            'avg_yield' => round($avgYield ?? 0, 2)
         ];
     }
     
-    $aiService = new \App\Services\GroqService();
+    $aiService = new \App\Services\HuggingFaceService();
     $interpretation = $aiService->interpretYieldComparison($yieldData);
     
     return response()->json($interpretation);
@@ -335,10 +320,9 @@ Route::get('/api/yield/interpretation/crops', function (Request $request) {
     
     $municipality = $request->query('municipality', Auth::user()->location ?? 'La Trinidad');
     $year = $request->query('year', now()->year);
-    $mlService = new \App\Services\MLApiService();
     
-    // Get crop performance data with ML predictions
-    $cropData = \App\Models\CropData::selectRaw('crop_type, AVG(yield_amount / area_planted / 1000) as avg_yield, AVG(area_planted) as avg_area')
+    // Get crop performance data
+    $cropData = \App\Models\CropData::selectRaw('crop_type, AVG(yield_amount / area_planted / 1000) as avg_yield')
         ->where('status', 'Harvested')
         ->whereYear('harvest_date', $year)
         ->where('municipality', $municipality)
@@ -347,29 +331,15 @@ Route::get('/api/yield/interpretation/crops', function (Request $request) {
         ->groupBy('crop_type')
         ->orderByDesc('avg_yield')
         ->get()
-        ->map(function($record) use ($municipality, $year, $mlService) {
-            // Get ML prediction for next year
-            $mlPrediction = $mlService->predict([
-                'municipality' => $municipality,
-                'crop_type' => $record->crop_type,
-                'area_planted' => $record->avg_area ?? 1.0,
-                'month' => now()->month,
-                'year' => $year + 1
-            ]);
-            
-            $predictedYield = ($mlPrediction['status'] === 'success' && isset($mlPrediction['data']['prediction']['predicted_yield_per_ha']))
-                ? round($mlPrediction['data']['prediction']['predicted_yield_per_ha'], 2)
-                : null;
-            
+        ->map(function($record) {
             return [
                 'crop' => $record->crop_type,
-                'current_yield' => round($record->avg_yield, 2),
-                'ml_predicted_next_year' => $predictedYield
+                'avg_yield' => round($record->avg_yield, 2)
             ];
-        })
+        ])
         ->toArray();
     
-    $aiService = new \App\Services\GroqService();
+    $aiService = new \App\Services\HuggingFaceService();
     $interpretation = $aiService->interpretCropPerformance($cropData);
     
     return response()->json($interpretation);
@@ -383,10 +353,9 @@ Route::get('/api/yield/interpretation/monthly', function (Request $request) {
     
     $municipality = $request->query('municipality', Auth::user()->location ?? 'La Trinidad');
     $year = $request->query('year', now()->year);
-    $mlService = new \App\Services\MLApiService();
     
-    // Get monthly data with ML predictions
-    $monthlyData = \App\Models\CropData::selectRaw('MONTH(harvest_date) as month, SUM(yield_amount) as total_yield, COUNT(*) as harvest_count')
+    // Get monthly data
+    $monthlyData = \App\Models\CropData::selectRaw('MONTH(harvest_date) as month, SUM(yield_amount) as total_yield')
         ->where('status', 'Harvested')
         ->whereYear('harvest_date', $year)
         ->where('municipality', $municipality)
@@ -395,194 +364,19 @@ Route::get('/api/yield/interpretation/monthly', function (Request $request) {
         ->groupBy('month')
         ->orderBy('month')
         ->get()
-        ->map(function($record) use ($municipality, $year, $mlService) {
+        ->map(function($record) {
             $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            
-            // Get ML prediction for this month
-            $mlPrediction = $mlService->predict([
-                'municipality' => $municipality,
-                'crop_type' => 'Mixed Vegetables',
-                'area_planted' => 1.0,
-                'month' => $record->month,
-                'year' => $year
-            ]);
-            
-            $mlYield = ($mlPrediction['status'] === 'success' && isset($mlPrediction['data']['prediction']['predicted_yield_per_ha']))
-                ? round($mlPrediction['data']['prediction']['predicted_yield_per_ha'], 2)
-                : null;
-            
             return [
                 'month' => $months[$record->month - 1],
-                'actual_harvest' => round($record->total_yield / 1000, 2),
-                'ml_predicted_yield_per_ha' => $mlYield,
-                'harvest_count' => $record->harvest_count
+                'yield' => round($record->total_yield / 1000, 2)
             ];
-        })
+        ])
         ->toArray();
     
-    $aiService = new \App\Services\GroqService();
+    $aiService = new \App\Services\HuggingFaceService();
     $interpretation = $aiService->interpretMonthlyTrends($monthlyData);
     
     return response()->json($interpretation);
-});
-
-// Weather forecast interpretations using AI
-Route::get('/api/weather/interpretation/temperature', function (Request $request) {
-    if (!Auth::check()) {
-        return response()->json(['error' => 'Unauthorized'], 401);
-    }
-    
-    $municipality = $request->query('municipality', Auth::user()->location ?? 'Baguio City');
-    
-    try {
-        // Get 5-day forecast data
-        $weatherResponse = Http::get('https://api.openweathermap.org/data/2.5/onecall', [
-            'lat' => 16.4023,
-            'lon' => 120.5960,
-            'exclude' => 'minutely,alerts',
-            'units' => 'metric',
-            'appid' => config('services.openweather.key')
-        ]);
-        
-        if (!$weatherResponse->successful()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to fetch weather data'
-            ], 500);
-        }
-        
-        $weatherData = $weatherResponse->json();
-        
-        if (!isset($weatherData['daily']) || empty($weatherData['daily'])) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'No forecast data available'
-            ], 500);
-        }
-        
-        $daily = array_slice($weatherData['daily'], 0, 5);
-        
-        // Prepare temperature data for AI
-        $tempData = [];
-        $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-        
-        for ($i = 0; $i < count($daily); $i++) {
-            $day = $daily[$i];
-            $tempData[] = [
-                'day' => $days[$i] ?? 'Day ' . ($i + 1),
-                'high' => round($day['temp']['max'] ?? 0),
-                'low' => round($day['temp']['min'] ?? 0),
-                'avg' => round((($day['temp']['max'] ?? 0) + ($day['temp']['min'] ?? 0)) / 2)
-            ];
-        }
-        
-        $aiService = new \App\Services\GroqService();
-        $interpretation = $aiService->interpretTemperatureForecast($tempData, $municipality);
-        
-        return response()->json($interpretation);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Error generating interpretation: ' . $e->getMessage()
-        ], 500);
-    }
-});
-
-Route::get('/api/weather/interpretation/rainfall', function (Request $request) {
-    if (!Auth::check()) {
-        return response()->json(['error' => 'Unauthorized'], 401);
-    }
-    
-    $municipality = $request->query('municipality', Auth::user()->location ?? 'Baguio City');
-    
-    try {
-        // Get rainfall data (simulated weekly data)
-        $rainfallData = [
-            ['week' => 'Week 1', 'rainfall' => 40],
-            ['week' => 'Week 2', 'rainfall' => 75],
-            ['week' => 'Week 3', 'rainfall' => 55],
-            ['week' => 'Week 4', 'rainfall' => 45]
-        ];
-        
-        $aiService = new \App\Services\GroqService();
-        $interpretation = $aiService->interpretRainfallForecast($rainfallData, $municipality);
-        
-        return response()->json($interpretation);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Error generating interpretation: ' . $e->getMessage()
-        ], 500);
-    }
-});
-
-Route::get('/api/weather/interpretation/hourly', function (Request $request) {
-    if (!Auth::check()) {
-        return response()->json(['error' => 'Unauthorized'], 401);
-    }
-    
-    $municipality = $request->query('municipality', Auth::user()->location ?? 'Baguio City');
-    
-    try {
-        $apiKey = env('OPENWEATHER_API_KEY');
-        
-        if (!$apiKey) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Weather API key not configured'
-            ], 500);
-        }
-        
-        // Get coordinates for municipality
-        $coordinates = [
-            'Baguio City' => ['lat' => 16.4023, 'lon' => 120.5960],
-            'La Trinidad' => ['lat' => 16.4561, 'lon' => 120.5895],
-            'Itogon' => ['lat' => 16.3667, 'lon' => 120.6833],
-            'Sablan' => ['lat' => 16.4833, 'lon' => 120.5500],
-            'Tuba' => ['lat' => 16.3167, 'lon' => 120.5500],
-            'Tublay' => ['lat' => 16.5167, 'lon' => 120.6167],
-        ];
-        
-        $coords = $coordinates[$municipality] ?? $coordinates['Baguio City'];
-        
-        // Fetch weather data from OpenWeather
-        $url = "https://api.openweathermap.org/data/3.0/onecall?lat={$coords['lat']}&lon={$coords['lon']}&exclude=minutely,daily,alerts&units=metric&appid={$apiKey}";
-        $response = @file_get_contents($url);
-        
-        if ($response === false) {
-            throw new \Exception('Failed to fetch weather data');
-        }
-        
-        $weatherData = json_decode($response, true);
-        
-        if (!isset($weatherData['hourly']) || !is_array($weatherData['hourly'])) {
-            throw new \Exception('Invalid weather data format');
-        }
-        
-        // Extract hourly data for next 8 hours
-        $hourlyData = [];
-        for ($i = 0; $i < 8 && $i < count($weatherData['hourly']); $i++) {
-            $hour = $weatherData['hourly'][$i];
-            $hourlyData[] = [
-                'time' => date('g A', $hour['dt'] ?? time()),
-                'temp' => round($hour['temp'] ?? 0),
-                'humidity' => $hour['humidity'] ?? 0,
-                'wind_speed' => round($hour['wind_speed'] ?? 0, 1),
-                'description' => $hour['weather'][0]['description'] ?? 'Unknown',
-                'icon' => $hour['weather'][0]['icon'] ?? '01d'
-            ];
-        }
-        
-        $aiService = new \App\Services\GroqService();
-        $interpretation = $aiService->interpretHourlyForecast($hourlyData, $municipality);
-        
-        return response()->json($interpretation);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Error generating interpretation: ' . $e->getMessage()
-        ], 500);
-    }
 });
 
 // ========== PLANTING SCHEDULE API ENDPOINTS ==========

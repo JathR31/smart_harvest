@@ -55,7 +55,7 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                     <span>Settings</span>
                 </a>
-                <form method="POST" action="{{ route('logout') }}">
+                <form method="POST" action="{{ route('logout') }}" onsubmit="sessionStorage.setItem('isLoggedOut','true');">
                     @csrf
                     <button type="submit" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition w-full text-left">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
@@ -80,7 +80,7 @@
                     <!-- ML Status Badge -->
                     <span x-show="mlConnected" class="px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full flex items-center">
                         <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
-                        ML Active
+                        Active
                     </span>
                     <!-- Municipality Dropdown -->
                     <div x-data="{ open: false }" class="relative">
@@ -122,9 +122,9 @@
                         <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                         </div>
-                        <span x-show="mlConnected" class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">ML</span>
+                        <span x-show="mlConnected" class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">Predicted</span>
                     </div>
-                    <p class="text-sm text-gray-600 mb-2">Year Expected Harvest (ML Prediction)</p>
+                    <p class="text-sm text-gray-600 mb-2">Year Expected Harvest (Prediction)</p>
                     <p class="text-3xl font-bold text-gray-900 mb-1"><span x-text="stats.expected_harvest"></span> <span class="text-sm font-normal text-gray-600">metric tons</span></p>
                     <p class="text-xs font-medium" :class="stats.percentage_change >= 0 ? 'text-green-600' : 'text-red-600'">
                         <span x-text="(stats.percentage_change >= 0 ? '+ ' : '') + stats.percentage_change + '%'"></span> vs historical avg
@@ -166,9 +166,9 @@
                         <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
                         </div>
-                        <span x-show="mlConnected" class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">ML</span>
+                        <span x-show="mlConnected" class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">Recommended</span>
                     </div>
-                    <p class="text-sm text-gray-600 mb-2">Top ML Recommendation</p>
+                    <p class="text-sm text-gray-600 mb-2">Top Recommendation</p>
                     <p class="text-2xl font-bold text-gray-900 mb-1"><span x-text="optimal.crop || 'Loading...'"></span></p>
                     <p class="text-xs text-gray-600">Expected yield: <span x-text="optimal.expected_yield || '...'"></span> MT/ha</p>
                 </div>
@@ -198,10 +198,10 @@
                     <div>
                         <h3 class="text-lg font-semibold text-green-700 mb-3 flex items-center">
                             Best Time to Plant
-                            <span x-show="mlConnected" class="ml-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">ML Prediction</span>
+                            <span x-show="mlConnected" class="ml-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">Prediction</span>
                         </h3>
                         <p class="text-sm text-gray-700">
-                            Based on ML analysis of historical yield data (2015-2024) and real-time climate patterns, the best planting window for <strong><span x-text="optimal.crop"></span></strong> is between 
+                           The best planting window for <strong><span x-text="optimal.crop"></span></strong> is between 
                             <strong x-text="optimal.next_date"></strong>. 
                             Expected yield: <strong><span x-text="optimal.expected_yield"></span> MT/ha</strong> with <strong><span x-text="optimal.confidence"></span></strong> confidence.
                         </p>
@@ -397,6 +397,22 @@
                 }
             }
         }
+    </script>
+
+    <script>
+        // Prevent back button after logout
+        if (typeof(Storage) !== 'undefined') {
+            if (sessionStorage.getItem('isLoggedOut') === 'true') {
+                sessionStorage.removeItem('isLoggedOut');
+                window.location.replace('{{ route("login") }}');
+            }
+        }
+        
+        // Disable browser back button
+        history.pushState(null, null, location.href);
+        window.onpopstate = function () {
+            history.go(1);
+        };
     </script>
 
 </body>

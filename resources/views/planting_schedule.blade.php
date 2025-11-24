@@ -55,7 +55,7 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                     <span>Settings</span>
                 </a>
-                <form method="POST" action="{{ route('logout') }}">
+                <form method="POST" action="{{ route('logout') }}" onsubmit="sessionStorage.setItem('isLoggedOut','true');">
                     @csrf
                     <button type="submit" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition w-full text-left">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
@@ -79,7 +79,7 @@
                     <h1 class="text-2xl font-semibold text-green-700">Planting Schedule Optimizer</h1>
                     <span x-show="mlConnected" class="px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full flex items-center">
                         <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
-                        ML Active
+                        Active
                     </span>
                     <!-- Municipality Dropdown -->
                     <div x-data="{ open: false }" class="relative">
@@ -161,7 +161,7 @@
                                 <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Planting Window</th>
                                 <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Harvest Window</th>
                                 <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Duration</th>
-                                <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Yield Forecast (ML)</th>
+                                <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Yield Forecast</th>
                                 <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Confidence</th>
                                 <th class="pb-3 text-sm font-semibold text-gray-600 uppercase">Status</th>
                             </tr>
@@ -172,7 +172,7 @@
                                     <td class="py-4 text-gray-800 font-medium">
                                         <div class="flex items-center">
                                             <span x-text="schedule.crop"></span>
-                                            <span x-show="schedule.ml_prediction" class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-semibold">ML</span>
+                                            <span x-show="schedule.ml_prediction" class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-semibold">Predicted</span>
                                         </div>
                                         <div class="text-xs text-gray-500" x-text="schedule.variety"></div>
                                     </td>
@@ -240,7 +240,7 @@
                     this.loading = true;
                     
                     try {
-                        // Load optimal planting data with ML
+                        // Load optimal planting data
                         console.log('Loading optimal planting data for:', this.selectedMunicipality);
                         const optimalResponse = await fetch(`{{ url('/api/planting/optimal') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
                         console.log('Optimal API response status:', optimalResponse.status);
@@ -262,7 +262,7 @@
                             console.error('Error response:', errorText);
                         }
 
-                        // Load planting schedule from ML API
+                        // Load planting schedule from API
                         console.log('Loading planting schedule...');
                         const scheduleResponse = await fetch(`{{ url('/api/planting/schedule') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
                         console.log('Schedule API response status:', scheduleResponse.status);
@@ -284,7 +284,7 @@
                                 ml_prediction: item.ml_prediction || false
                             }));
                             console.log('✓ Planting schedules loaded:', this.schedules.length, 'crops');
-                            console.log('✓ ML predictions:', this.schedules.filter(s => s.ml_prediction).length);
+                            console.log('✓ Predictions:', this.schedules.filter(s => s.ml_prediction).length);
                             console.log('✓ Database records:', this.schedules.filter(s => !s.ml_prediction).length);
                         } else {
                             console.error('Schedule API failed with status:', scheduleResponse.status);

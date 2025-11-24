@@ -56,9 +56,12 @@
             </div>
         </div>
 
-        <p class="text-gray-600 mb-8 text-center sm:text-left">
+        <p class="text-gray-600 mb-4 text-center sm:text-left">
             Join thousands of farmers in the Cordillera region using data-driven insights to optimize their planting schedules and maximize yields.
         </p>
+        <div class="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+            <strong>Note:</strong> You'll set your password after verifying your email address.
+        </div>
 
         @if ($errors->any())
             <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
@@ -124,27 +127,6 @@
                         <svg class="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 pl-1">Select your farm location in the Benguet Province</p>
-                </div>
-
-                <!-- Password -->
-                <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                    <div class="relative">
-                        <input id="password" type="password" name="password" required
-                               class="w-full p-3 pl-10 border border-gray-200 rounded-xl bg-gray-50 focus:ring-green-500 focus:border-green-500 transition duration-150">
-                        <svg class="absolute input-icon w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6-6h12m-6-6V7a2 2 0 00-2-2H8a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2z"></path></svg>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1 pl-1">Password must be at least 8 characters long.</p>
-                </div>
-
-                <!-- Confirm Password -->
-                <div>
-                    <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
-                    <div class="relative">
-                        <input id="password_confirmation" type="password" name="password_confirmation" required
-                               class="w-full p-3 pl-10 border border-gray-200 rounded-xl bg-gray-50 focus:ring-green-500 focus:border-green-500 transition duration-150">
-                        <svg class="absolute input-icon w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6-6h12m-6-6V7a2 2 0 00-2-2H8a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2z"></path></svg>
-                    </div>
                 </div>
 
             </div>

@@ -56,7 +56,7 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                     <span>Settings</span>
                 </a>
-                <form method="POST" action="{{ route('logout') }}">
+                <form method="POST" action="{{ route('logout') }}" onsubmit="sessionStorage.setItem('isLoggedOut','true');">
                     @csrf
                     <button type="submit" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition w-full text-left">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
@@ -126,39 +126,20 @@
             <div x-show="loading" class="flex items-center justify-center py-20">
                 <div class="text-center">
                     <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-green-500 border-t-transparent mb-4"></div>
-                    <p class="text-gray-600 font-medium">Loading ML-powered yield analysis...</p>
-                    <p class="text-sm text-gray-500 mt-2">Fetching predictions from Machine Learning API</p>
+                    <p class="text-gray-600 font-medium">Loading yield analysis...</p>
+                    <p class="text-sm text-gray-500 mt-2">Fetching predictions from API</p>
                 </div>
             </div>
 
             <!-- Main Content -->
             <div x-show="!loading">
-                <!-- ML Status Badge -->
-                <div class="mb-6 flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                        <span x-show="mlConnected" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-sm font-medium flex items-center shadow-lg">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                            </svg>
-                            ML-Powered Analysis
-                        </span>
-                        <span x-show="!mlConnected" class="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium flex items-center shadow-lg">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                            </svg>
-                            ML API Offline
-                        </span>
-                        <span class="text-sm text-gray-600" x-text="mlConnected ? 'Real-time predictions from Python ML API (Port 5000)' : 'Unable to connect to ML API'"></span>
-                    </div>
-                </div>
-
                 <!-- Top Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <!-- Best Performing Crop (ML Prediction) -->
                 <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg shadow-lg p-6 border-l-4 border-green-500">
                     <div class="flex items-center justify-between mb-2">
-                        <p class="text-sm text-gray-600 font-medium">Top ML Predicted Crop</p>
-                        <span class="px-2 py-1 bg-green-500 text-white text-xs font-bold rounded-full">ML</span>
+                        <p class="text-sm text-gray-600 font-medium">Top Predicted Crop</p>
+                        <span class="px-2 py-1 bg-green-500 text-white text-xs font-bold rounded-full">Predicted</span>
                     </div>
                     <p class="text-3xl font-bold text-green-700 mb-1" x-text="cropPerformance.length > 0 ? cropPerformance[0].crop : 'Loading...'"></p>
                     <p class="text-sm text-gray-700 font-medium" x-text="cropPerformance.length > 0 ? cropPerformance[0].predicted.toFixed(1) + ' MT/ha predicted' : ''"></p>
@@ -169,10 +150,10 @@
                 <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg shadow-lg p-6 border-l-4 border-orange-500">
                     <div class="flex items-center justify-between mb-2">
                         <p class="text-sm text-gray-600 font-medium">Average Yield <span x-text="selectedYear"></span></p>
-                        <span class="px-2 py-1 bg-orange-500 text-white text-xs font-bold rounded-full">ML</span>
+                        <span class="px-2 py-1 bg-orange-500 text-white text-xs font-bold rounded-full">Analysis</span>
                     </div>
                     <p class="text-3xl font-bold text-orange-700 mb-1" x-text="stats.avg_yield || '0.0'"></p>
-                    <p class="text-sm text-gray-700 font-medium">MT/ha from ML analysis</p>
+                    <p class="text-sm text-gray-700 font-medium">MT/ha from analysis</p>
                     <p class="text-xs text-gray-500 mt-2"><span x-text="selectedMunicipality"></span> region</p>
                 </div>
 
@@ -180,10 +161,10 @@
                 <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow-lg p-6 border-l-4 border-blue-500">
                     <div class="flex items-center justify-between mb-2">
                         <p class="text-sm text-gray-600 font-medium">Avg Predicted Yield <span x-text="selectedYear"></span></p>
-                        <span class="px-2 py-1 bg-blue-500 text-white text-xs font-bold rounded-full">ML</span>
+                        <span class="px-2 py-1 bg-blue-500 text-white text-xs font-bold rounded-full">Forecast</span>
                     </div>
                     <p class="text-3xl font-bold text-blue-700 mb-1" x-text="cropPerformance.length > 0 ? (cropPerformance.reduce((sum, c) => sum + c.predicted, 0) / cropPerformance.length).toFixed(1) : '0.0'"></p>
-                    <p class="text-sm text-gray-700 font-medium">MT/ha ML forecast</p>
+                    <p class="text-sm text-gray-700 font-medium">MT/ha forecast</p>
                     <p class="text-xs text-gray-500 mt-2"><span x-text="selectedMunicipality"></span> region</p>
                 </div>
 
@@ -191,7 +172,7 @@
                 <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg shadow-lg p-6 border-l-4 border-purple-500">
                     <div class="flex items-center justify-between mb-2">
                         <p class="text-sm text-gray-600 font-medium">Total Predicted Production</p>
-                        <span class="px-2 py-1 bg-purple-500 text-white text-xs font-bold rounded-full">ML</span>
+                        <span class="px-2 py-1 bg-purple-500 text-white text-xs font-bold rounded-full">Total</span>
                     </div>
                     <p class="text-3xl font-bold text-purple-700 mb-1" x-text="cropPerformance.length > 0 ? cropPerformance.reduce((sum, c) => sum + c.predicted, 0).toFixed(1) : '0.0'"></p>
                     <p class="text-sm text-gray-700 font-medium">MT total forecast</p>
@@ -205,10 +186,10 @@
                 <div class="bg-white rounded-lg shadow-lg p-6 border-t-4 border-green-500">
                     <div class="flex items-center justify-between mb-2">
                         <div>
-                            <h2 class="text-lg font-semibold text-green-700">Historical vs ML Predictions</h2>
+                            <h2 class="text-lg font-semibold text-green-700">Historical vs Predictions</h2>
                             <p class="text-sm text-gray-600 mt-1">6-year trend analysis (2020-2025)</p>
                         </div>
-                        <span class="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full">ML Model</span>
+                        <span class="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full">Model</span>
                     </div>
                     <div class="h-64 mt-4">
                         <canvas id="yieldComparisonChart"></canvas>
@@ -220,11 +201,23 @@
                         </div>
                         <div class="flex items-center">
                             <div class="w-4 h-4 bg-blue-500 rounded-full mr-2"></div>
-                            <span class="text-gray-600">ML Predictions</span>
+                            <span class="text-gray-600">Predictions</span>
                         </div>
-                        <div class="flex items-center">
-                            <svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            <span class="text-gray-500" x-text="comparisonData.length > 0 ? 'Avg Confidence: ' + Math.round(comparisonData.reduce((sum, d) => sum + d.confidence, 0) / comparisonData.length) + '%' : ''"></span>
+                    </div>
+                    <!-- Graph Interpretation -->
+                    <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div class="flex items-start space-x-2">
+                            <svg class="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                            <div class="flex-1">
+                                <p class="text-xs font-semibold text-gray-700 mb-2">Graph Interpretation</p>
+                                <div x-show="comparisonInterpretation.loading" class="text-xs text-gray-500 italic">Analyzing trends...</div>
+                                <div x-show="!comparisonInterpretation.loading && comparisonInterpretation.text" 
+                                     class="text-xs text-gray-700 space-y-1"
+                                     x-html="comparisonInterpretation.text.replace(/•/g, '<br>•')"></div>
+                                <p x-show="!comparisonInterpretation.loading && comparisonInterpretation.error" 
+                                   class="text-xs text-red-600" 
+                                   x-text="comparisonInterpretation.error"></p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -233,10 +226,10 @@
                 <div class="bg-white rounded-lg shadow-lg p-6 border-t-4 border-blue-500">
                     <div class="flex items-center justify-between mb-2">
                         <div>
-                            <h2 class="text-lg font-semibold text-blue-700">ML Predicted Crop Performance</h2>
+                            <h2 class="text-lg font-semibold text-blue-700">Predicted Crop Performance</h2>
                             <p class="text-sm text-gray-600 mt-1">Predicted yield per hectare - <span x-text="selectedMunicipality"></span></p>
                         </div>
-                        <span class="px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full">ML Predictions</span>
+                        <span class="px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full">Predictions</span>
                     </div>
                     <div class="h-64 mt-4">
                         <canvas id="cropPerformanceChart"></canvas>
@@ -250,6 +243,22 @@
                             </div>
                         </template>
                     </div>
+                    <!-- Graph Interpretation -->
+                    <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div class="flex items-start space-x-2">
+                            <svg class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                            <div class="flex-1">
+                                <p class="text-xs font-semibold text-gray-700 mb-2">Graph Interpretation</p>
+                                <div x-show="cropInterpretation.loading" class="text-xs text-gray-500 italic">Analyzing crops...</div>
+                                <div x-show="!cropInterpretation.loading && cropInterpretation.text" 
+                                     class="text-xs text-gray-700 space-y-1"
+                                     x-html="cropInterpretation.text.replace(/•/g, '<br>•')"></div>
+                                <p x-show="!cropInterpretation.loading && cropInterpretation.error" 
+                                   class="text-xs text-red-600" 
+                                   x-text="cropInterpretation.error"></p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -259,10 +268,10 @@
                 <div class="bg-white rounded-lg shadow-lg p-6 border-t-4 border-purple-500">
                     <div class="flex items-center justify-between mb-2">
                         <div>
-                            <h2 class="text-lg font-semibold text-purple-700">ML Seasonal Predictions</h2>
+                            <h2 class="text-lg font-semibold text-purple-700">Seasonal Predictions</h2>
                             <p class="text-sm text-gray-600 mt-1">Monthly yield forecast for <span x-text="selectedYear"></span></p>
                         </div>
-                        <span class="px-3 py-1 bg-purple-500 text-white text-xs font-bold rounded-full">ML Forecast</span>
+                        <span class="px-3 py-1 bg-purple-500 text-white text-xs font-bold rounded-full">Forecast</span>
                     </div>
                     <div class="h-64 mt-4">
                         <canvas id="monthlyYieldChart"></canvas>
@@ -273,6 +282,22 @@
                             Higher yields predicted during cool season (Oct-Mar) in Benguet region
                         </p>
                     </div>
+                    <!-- Graph Interpretation -->
+                    <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div class="flex items-start space-x-2">
+                            <svg class="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                            <div class="flex-1">
+                                <p class="text-xs font-semibold text-gray-700 mb-2">Graph Interpretation</p>
+                                <div x-show="monthlyInterpretation.loading" class="text-xs text-gray-500 italic">Analyzing seasonal patterns...</div>
+                                <div x-show="!monthlyInterpretation.loading && monthlyInterpretation.text" 
+                                     class="text-xs text-gray-700 space-y-1"
+                                     x-html="monthlyInterpretation.text.replace(/•/g, '<br>•')"></div>
+                                <p x-show="!monthlyInterpretation.loading && monthlyInterpretation.error" 
+                                   class="text-xs text-red-600" 
+                                   x-text="monthlyInterpretation.error"></p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -281,9 +306,9 @@
                 <div class="flex items-center justify-between mb-4">
                     <div>
                         <h2 class="text-xl font-semibold text-purple-700">6-Year Production Forecast (2025-2030)</h2>
-                        <p class="text-sm text-gray-600 mt-1">ML-powered predictions for <span x-text="selectedMunicipality"></span></p>
+                        <p class="text-sm text-gray-600 mt-1">Predictions for <span x-text="selectedMunicipality"></span></p>
                     </div>
-                    <span class="px-3 py-1 bg-purple-500 text-white text-xs font-semibold rounded-full">ML Prediction</span>
+                    <span class="px-3 py-1 bg-purple-500 text-white text-xs font-semibold rounded-full">Prediction</span>
                 </div>
                 
                 <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
@@ -304,44 +329,6 @@
                 </div>
             </div>
 
-            <!-- Key Insights -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-xl font-semibold text-green-700 mb-6">Key Insights</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Insight 1 -->
-                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <div class="flex items-start space-x-3">
-                            <svg class="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                            <div>
-                                <h3 class="font-semibold text-green-800 mb-1">Improved Yields</h3>
-                                <p class="text-sm text-green-700">Vegetable crops show 15% improvement with optimal cool season planting in Benguet.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Insight 2 -->
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <div class="flex items-start space-x-3">
-                            <svg class="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
-                            <div>
-                                <h3 class="font-semibold text-blue-800 mb-1">Weather Impact</h3>
-                                <p class="text-sm text-blue-700">Consistent rainfall patterns in 2025 contributed to higher yields across all varieties.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Insight 3 -->
-                    <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                        <div class="flex items-start space-x-3">
-                            <svg class="w-6 h-6 text-orange-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                            <div>
-                                <h3 class="font-semibold text-orange-800 mb-1">Regional Performance</h3>
-                                <p class="text-sm text-orange-700">ML predictions show consistent production growth trends for this region.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
             </div>
         </main>
     </div>
@@ -372,6 +359,9 @@
                 yieldChart: null,
                 cropChart: null,
                 monthlyChart: null,
+                comparisonInterpretation: { text: '', loading: false, error: '' },
+                cropInterpretation: { text: '', loading: false, error: '' },
+                monthlyInterpretation: { text: '', loading: false, error: '' },
 
                 init() {
                     this.loadYieldData();
@@ -391,14 +381,14 @@
                     this.loading = true;
                     
                     try {
-                        // Load all data from ML API endpoint
-                        console.log('Loading ML-powered yield analysis...');
+                        // Load all data from API endpoint
+                        console.log('Loading yield analysis...');
                         console.log('Fetching from municipality:', this.selectedMunicipality, 'year:', this.selectedYear);
                         const response = await fetch(`{{ url('/api/ml/yield/analysis') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}&year=${this.selectedYear}`);
                         
                         if (response.ok) {
                             const data = await response.json();
-                            console.log('ML API Response:', data);
+                            console.log('API Response:', data);
                             
                             // Update ML connection status
                             this.mlConnected = data.ml_api_connected || false;
@@ -409,26 +399,29 @@
                             // Update comparison data
                             this.comparisonData = data.comparison || [];
                             this.updateYieldChart();
+                            this.loadComparisonInterpretation();
                             
                             // Update crop performance
                             this.cropPerformance = data.crops || [];
                             this.updateCropChart();
+                            this.loadCropInterpretation();
                             
                             // Update monthly data
                             this.monthlyData = data.monthly || [];
                             this.updateMonthlyChart();
+                            this.loadMonthlyInterpretation();
                             
                             // Update forecast data
                             this.forecastData = data.forecast || [];
                             
-                            // Show ML status
+                            // Show status
                             if (data.ml_status === 'success') {
-                                console.log('✓ ML predictions loaded successfully');
-                                console.log('Connected to ML API at http://127.0.0.1:5000');
+                                console.log('✓ Predictions loaded successfully');
+                                console.log('Connected to API at http://127.0.0.1:5000');
                             } else {
-                                console.warn('ML API Status:', data.ml_status);
+                                console.warn('API Status:', data.ml_status);
                                 if (data.error) {
-                                    console.error('ML API Error:', data.error);
+                                    console.error('API Error:', data.error);
                                 }
                             }
                         } else {
@@ -436,7 +429,7 @@
                             this.mlConnected = false;
                         }
                     } catch (error) {
-                        console.error('Error loading ML yield data:', error);
+                        console.error('Error loading yield data:', error);
                         this.mlConnected = false;
                     } finally {
                         this.loading = false;
@@ -473,7 +466,7 @@
                                 pointBorderWidth: 2,
                                 borderWidth: 3
                             }, {
-                                label: 'ML Predictions',
+                                label: 'Predictions',
                                 data: predictedData,
                                 borderColor: 'rgb(59, 130, 246)',
                                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -504,7 +497,7 @@
                                             const label = context.dataset.label;
                                             return [
                                                 `${label}: ${value.toFixed(2)} MT/ha`,
-                                                `ML Confidence: ${confidence}%`
+                                                `Confidence: ${confidence}%`
                                             ];
                                         }.bind(this)
                                     },
@@ -570,7 +563,7 @@
                         data: {
                             labels: labels,
                             datasets: [{
-                                label: 'ML Predicted Yield (MT/ha)',
+                                label: 'Predicted Yield (MT/ha)',
                                 data: predictedData,
                                 backgroundColor: backgroundColors,
                                 borderColor: backgroundColors.map(c => c.replace('0.8', '1')),
@@ -657,7 +650,7 @@
                         data: {
                             labels: labels,
                             datasets: [{
-                                label: 'ML Predicted Yield (MT/ha)',
+                                label: 'Predicted Yield (MT/ha)',
                                 data: data,
                                 borderColor: 'rgb(168, 85, 247)',
                                 backgroundColor: 'rgba(168, 85, 247, 0.2)',
@@ -729,6 +722,57 @@
                             }
                         }
                     });
+                },
+
+                async loadComparisonInterpretation() {
+                    this.comparisonInterpretation = { text: '', loading: true, error: '' };
+                    try {
+                        const response = await fetch(`{{ url('/api/yield/interpretation/comparison') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}&year=${this.selectedYear}`);
+                        const data = await response.json();
+                        
+                        if (data.status === 'success') {
+                            this.comparisonInterpretation = { text: data.interpretation, loading: false, error: '' };
+                        } else {
+                            this.comparisonInterpretation = { text: '', loading: false, error: data.message || 'Failed to load interpretation' };
+                        }
+                    } catch (error) {
+                        console.error('Error loading comparison interpretation:', error);
+                        this.comparisonInterpretation = { text: '', loading: false, error: 'Connection error' };
+                    }
+                },
+
+                async loadCropInterpretation() {
+                    this.cropInterpretation = { text: '', loading: true, error: '' };
+                    try {
+                        const response = await fetch(`{{ url('/api/yield/interpretation/crops') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}&year=${this.selectedYear}`);
+                        const data = await response.json();
+                        
+                        if (data.status === 'success') {
+                            this.cropInterpretation = { text: data.interpretation, loading: false, error: '' };
+                        } else {
+                            this.cropInterpretation = { text: '', loading: false, error: data.message || 'Failed to load interpretation' };
+                        }
+                    } catch (error) {
+                        console.error('Error loading crop interpretation:', error);
+                        this.cropInterpretation = { text: '', loading: false, error: 'Connection error' };
+                    }
+                },
+
+                async loadMonthlyInterpretation() {
+                    this.monthlyInterpretation = { text: '', loading: true, error: '' };
+                    try {
+                        const response = await fetch(`{{ url('/api/yield/interpretation/monthly') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}&year=${this.selectedYear}`);
+                        const data = await response.json();
+                        
+                        if (data.status === 'success') {
+                            this.monthlyInterpretation = { text: data.interpretation, loading: false, error: '' };
+                        } else {
+                            this.monthlyInterpretation = { text: '', loading: false, error: data.message || 'Failed to load interpretation' };
+                        }
+                    } catch (error) {
+                        console.error('Error loading monthly interpretation:', error);
+                        this.monthlyInterpretation = { text: '', loading: false, error: 'Connection error' };
+                    }
                 }
             }
         }

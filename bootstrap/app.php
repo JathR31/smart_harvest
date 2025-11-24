@@ -16,6 +16,16 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin/api/datasets/*',
             'api/planting/*',
         ]);
+        
+        // Register middleware aliases
+        $middleware->alias([
+            'prevent.back' => \App\Http\Middleware\PreventBackHistory::class,
+        ]);
+        
+        // Apply prevent back middleware to web routes
+        $middleware->web(append: [
+            \App\Http\Middleware\PreventBackHistory::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -40,7 +40,7 @@
             
             <!-- Email / Username Field -->
             <div class="mb-4">
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email / Username</label>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email:</label>
                 <div class="relative">
                     <input id="email" type="text" name="email" required autofocus
                            class="w-full p-3 pl-10 border border-gray-200 rounded-xl bg-gray-50 focus:ring-green-500 focus:border-green-500 transition duration-150"
@@ -84,12 +84,7 @@
             </a>
         </div>
 
-        <!-- Demo Credentials -->
-        <div class="mt-6 pt-4 border-t border-gray-100 text-sm text-gray-500 text-left">
-            <p class="font-semibold mb-1">Demo Credentials:</p>
-            <p>Email: <span class="text-gray-700">farmer</span></p>
-            <p>Password: <span class="text-gray-700">farmer</span></p>
-        </div>
+
     </div>
 </body>
 </html>

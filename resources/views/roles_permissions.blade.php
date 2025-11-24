@@ -88,7 +88,7 @@
                         </svg>
                         <span>Monitoring</span>
                     </a>
-                    <form method="POST" action="{{ route('logout') }}" class="sidebar-item">
+                    <form method="POST" action="{{ route('logout') }}" class="sidebar-item" onsubmit="sessionStorage.setItem('isLoggedOut','true');">
                         @csrf
                         <button type="submit" class="flex items-center space-x-3 px-4 py-3 rounded w-full text-left">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
