@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Translation API Test - Direct</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-lg">
+        <h1 class="text-2xl font-bold mb-4">Translation API Direct Test</h1>
+        
+        <div class="mb-4">
+            <label class="block font-semibold mb-2">Select Language:</label>
+            <select id="language" class="border p-2 rounded w-full">
+                <option value="en">English</option>
+                <option value="tl">Tagalog</option>
+                <option value="ilo">Ilocano</option>
+                <option value="kan">Kankanaey</option>
+                <option value="ibl">Ibaloi</option>
+            </select>
+        </div>
+
+        <button id="translateBtn" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+            Translate Text Below
+        </button>
+
+        <div class="mt-6">
+            <h2 class="font-bold mb-2">Text to Translate:</h2>
+            <div class="space-y-2">
+                <p class="border p-2 rounded" data-translate data-translate-id="text1">Welcome to SmartHarvest</p>
+                <p class="border p-2 rounded" data-translate data-translate-id="text2">Optimize Your Planting with Data</p>
+                <p class="border p-2 rounded" data-translate data-translate-id="text3">Get Started Today</p>
+                <p class="border p-2 rounded" data-translate data-translate-id="text4">Join thousands of farmers</p>
+            </div>
+        </div>
+
+        <div class="mt-6">
+            <h2 class="font-bold mb-2">Console Log:</h2>
+            <div id="log" class="bg-gray-900 text-green-400 p-4 rounded font-mono text-sm h-64 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <script>
+        const logDiv = document.getElementById('log');
+        const originalTexts = {};
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'text-red-400' : type === 'success' ? 'text-green-400' : 'text-blue-400';
+            logDiv.innerHTML += `<div class="${color}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        document.getElementById('translateBtn').addEventListener('click', async function() {
+            const targetLang = document.getElementById('language').value;
+            
+            if (targetLang === 'en') {
+                log('Selected English - reloading original text', 'info');
+                location.reload();
+                return;
+            }
+
+            log(`🌐 Starting translation to: ${targetLang}`, 'info');
+            
+            const elements = document.querySelectorAll('[data-translate]');
+            log(`📝 Found ${elements.length} elements to translate`, 'info');
+            
+            // Store original texts
+            const texts = Array.from(elements).map(el => {
+                const id = el.getAttribute('data-translate-id');
+                if (!originalTexts[id]) {
+                    originalTexts[id] = el.textContent.trim();
+                }
+                return originalTexts[id];
+            });
+            
+            log(`📤 Texts: ${JSON.stringify(texts)}`, 'info');
+            
+            try {
+                const url = '/dashboard/SmartHarvest/public/api/translate/batch';
+                log(`🌐 Calling API: ${url}`, 'info');
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        texts: texts,
+                        target_language: targetLang
+                    })
+                });
+                
+                log(`📥 Response status: ${response.status}`, response.ok ? 'success' : 'error');
+                
+                const data = await response.json();
+                log(`📦 Response: ${JSON.stringify(data, null, 2)}`, 'info');
+                
+                if (data.status === 'success') {
+                    log('✅ Translation successful! Applying...', 'success');
+                    elements.forEach((el, index) => {
+                        if (data.translations[index]?.translatedText) {
+                            const original = el.textContent.trim();
+                            const translated = data.translations[index].translatedText;
+                            log(`${index + 1}. "${original}" → "${translated}"`, 'success');
+                            el.textContent = translated;
+                        }
+                    });
+                    log('🎉 Translation complete!', 'success');
+                } else {
+                    log(`❌ Translation failed: ${data.message || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                log(`💥 Error: ${error.message}`, 'error');
+                log(`Stack: ${error.stack}`, 'error');
+            }
+        });
+
+        log('✅ Test page loaded and ready!', 'success');
+    </script>
+</body>
+</html>

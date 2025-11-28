@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Weather Forecast - SmartHarvest</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -78,10 +79,6 @@
             <div class="flex items-center justify-between">
                 <h1 class="text-2xl font-semibold text-green-700">Weather Dashboard</h1>
                 <div class="flex items-center space-x-4">
-                    <div class="relative">
-                        <input type="text" placeholder="Search..." class="pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
-                        <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                    </div>
                     <!-- Municipality Dropdown -->
                     <div class="relative">
                         <button @click="municipalityOpen = !municipalityOpen" class="flex items-center space-x-2 px-4 py-2 bg-white border rounded-lg hover:bg-gray-50 transition">
@@ -93,6 +90,21 @@
                             <template x-for="municipality in municipalities" :key="municipality">
                                 <button @click="changeMunicipality(municipality)" class="block w-full text-left px-4 py-2 hover:bg-gray-50" x-text="municipality"></button>
                             </template>
+                        </div>
+                    </div>
+                    <!-- Language Selector -->
+                    <div x-data="{ open: false }" class="relative">
+                        <button @click="open = !open" class="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path></svg>
+                            <span class="text-sm font-medium" x-text="selectedLanguageName"></span>
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-50" style="display: none;">
+                            <button @click="changeLanguage('en', 'English'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'en'}">English</button>
+                            <button @click="changeLanguage('tl', 'Tagalog'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'tl'}">Tagalog</button>
+                            <button @click="changeLanguage('ilo', 'Ilocano'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'ilo'}">Ilocano</button>
+                            <button @click="changeLanguage('kan', 'Kankanaey'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'kan'}">Kankanaey</button>
+                            <button @click="changeLanguage('ibl', 'Ibaloi'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'ibl'}">Ibaloi</button>
                         </div>
                     </div>
                     <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold">
@@ -200,8 +212,10 @@
                                     <p class="text-xs font-semibold text-gray-700 mb-2">Rainfall Forecast Analysis</p>
                                     <div x-show="rainfallInterpretation.loading" class="text-xs text-gray-500 italic">Analyzing rainfall patterns...</div>
                                     <div x-show="!rainfallInterpretation.loading && rainfallInterpretation.text" 
-                                         class="text-xs text-gray-700 space-y-1"
-                                         x-html="rainfallInterpretation.text.replace(/•/g, '<br>•')"></div>
+                                         class="text-xs text-gray-700 leading-relaxed"
+                                         x-html="rainfallInterpretation.text.replace(/\\n/g, '<br>')"></div>
+                                    <div x-show="!rainfallInterpretation.loading && !rainfallInterpretation.text && !rainfallInterpretation.error"
+                                         class="text-xs text-gray-500 italic">Loading interpretation...</div>
                                     <p x-show="!rainfallInterpretation.loading && rainfallInterpretation.error" 
                                        class="text-xs text-red-600" 
                                        x-text="rainfallInterpretation.error"></p>
@@ -247,13 +261,15 @@
     <script>
         function weatherDashboard() {
             return {
+                selectedLanguage: localStorage.getItem('preferredLanguage') || 'en',
+                selectedLanguageName: localStorage.getItem('preferredLanguageName') || 'English',
+                originalTexts: {},
                 loading: true,
                 error: false,
                 errorMessage: '',
                 municipalityOpen: false,
-                selectedMunicipality: '{{ $userMunicipality ?? "Baguio City" }}',
+                selectedMunicipality: '{{ $userMunicipality ?? "Atok" }}',
                 municipalities: [
-                    'Baguio City',
                     'La Trinidad',
                     'Itogon',
                     'Sablan',
@@ -285,6 +301,7 @@
                 },
                 hourlyForecast: [],
                 dailyForecast: [],
+                rainfallWeeklyData: [40, 75, 55, 45],
                 temperatureChart: null,
                 rainfallChart: null,
                 tempInterpretation: { text: '', loading: false, error: '' },
@@ -294,6 +311,62 @@
                 async init() {
                     await this.fetchWeatherData();
                     await this.fetchRainfallSoilData();
+                    await this.fetchRainfallData();
+                    if (this.selectedLanguage !== 'en') {
+                        setTimeout(() => this.translatePage(this.selectedLanguage), 1000);
+                    }
+                },
+                
+                async changeLanguage(code, name) {
+                    this.selectedLanguage = code;
+                    this.selectedLanguageName = name;
+                    localStorage.setItem('preferredLanguage', code);
+                    localStorage.setItem('preferredLanguageName', name);
+                    
+                    if (code !== 'en') {
+                        await this.translatePage(code);
+                    } else {
+                        location.reload();
+                    }
+                },
+                
+                async translatePage(targetLang) {
+                    const elements = document.querySelectorAll('[data-translate]');
+                    const texts = Array.from(elements).map(el => {
+                        const id = el.getAttribute('data-translate-id');
+                        if (!this.originalTexts[id]) {
+                            this.originalTexts[id] = el.textContent.trim();
+                        }
+                        return this.originalTexts[id];
+                    });
+                    
+                    if (texts.length === 0) return;
+                    
+                    try {
+                        const response = await fetch('/api/translate/batch', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({
+                                texts: texts,
+                                target_language: targetLang
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.status === 'success') {
+                            elements.forEach((el, index) => {
+                                if (data.translations[index]?.translatedText) {
+                                    el.textContent = data.translations[index].translatedText;
+                                }
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Translation error:', error);
+                    }
                 },
 
                 async fetchWeatherData() {
@@ -335,8 +408,8 @@
                         
                         // Load interpretations
                         this.loadTemperatureInterpretation();
-                        this.loadRainfallInterpretation();
                         this.loadHourlyInterpretation();
+                        // Rainfall interpretation will be loaded after fetchRainfallData completes
 
                         this.loading = false;
                     } catch (err) {
@@ -344,6 +417,23 @@
                         this.error = true;
                         this.errorMessage = err.message;
                         this.loading = false;
+                    }
+                },
+
+                async fetchRainfallData() {
+                    try {
+                        const response = await fetch(`{{ url('/api/climate/weekly-rainfall') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.weekly && data.weekly.length === 4) {
+                                this.rainfallWeeklyData = data.weekly;
+                                this.updateCharts();
+                                // Reload interpretation with new data
+                                await this.loadRainfallInterpretation();
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error fetching rainfall data:', error);
                     }
                 },
 
@@ -381,6 +471,7 @@
                     this.municipalityOpen = false;
                     await this.fetchWeatherData();
                     await this.fetchRainfallSoilData();
+                    await this.fetchRainfallData();
                 },
 
                 async loadTemperatureInterpretation() {
@@ -411,23 +502,50 @@
                 },
 
                 async loadRainfallInterpretation() {
+                    // Set loading state
                     this.rainfallInterpretation = { text: '', loading: true, error: '' };
+                    
+                    // Generate fallback from current data immediately
+                    const maxRainfall = Math.max(...this.rainfallWeeklyData);
+                    const minRainfall = Math.min(...this.rainfallWeeklyData);
+                    const totalRainfall = this.rainfallWeeklyData.reduce((a, b) => a + b, 0);
+                    const maxWeek = this.rainfallWeeklyData.indexOf(maxRainfall) + 1;
+                    const minWeek = this.rainfallWeeklyData.indexOf(minRainfall) + 1;
+                    
+                    const fallbackText = `• Week ${maxWeek} shows highest rainfall at ${maxRainfall}mm, ideal for crop growth\n• Total monthly rainfall of ${totalRainfall}mm is ${totalRainfall > 200 ? 'adequate' : 'moderate'} for highland vegetables\n• Plan irrigation for Week ${minWeek} with lower rainfall at ${minRainfall}mm`;
+                    
                     try {
-                        const response = await fetch('{{ url("/api/weather/interpretation/rainfall") }}?municipality=' + encodeURIComponent(this.selectedMunicipality));
+                        // Prepare rainfall data in the same format as the chart
+                        const rainfallData = this.rainfallWeeklyData.map((rainfall, index) => ({
+                            week: `Week ${index + 1}`,
+                            rainfall: rainfall
+                        }));
+                        
+                        // Send actual chart data to API
+                        const response = await fetch('{{ url("/api/weather/interpretation/rainfall") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                            },
+                            body: JSON.stringify({
+                                municipality: this.selectedMunicipality,
+                                rainfallData: rainfallData
+                            })
+                        });
+                        
                         const data = await response.json();
                         
-                        if (data.status === 'success') {
+                        if (data.status === 'success' && data.interpretation && data.interpretation.trim()) {
                             this.rainfallInterpretation = { text: data.interpretation, loading: false, error: '' };
                         } else {
-                            // Provide fallback interpretation
-                            const fallback = '• Week 2 shows highest rainfall at 75mm, ideal for crop growth\n• Total monthly rainfall of 215mm is adequate for highland vegetables\n• Plan irrigation for Week 1 and Week 4 with lower rainfall';
-                            this.rainfallInterpretation = { text: fallback, loading: false, error: '' };
+                            // Use calculated fallback
+                            this.rainfallInterpretation = { text: fallbackText, loading: false, error: '' };
                         }
                     } catch (error) {
                         console.error('Error loading rainfall interpretation:', error);
-                        // Provide fallback interpretation on error
-                        const fallback = '• Rainfall patterns are being monitored for optimal farming decisions\n• Expected precipitation supports crop water requirements\n• Adjust planting schedule based on rainfall distribution';
-                        this.rainfallInterpretation = { text: fallback, loading: false, error: '' };
+                        // Use calculated fallback on error
+                        this.rainfallInterpretation = { text: fallbackText, loading: false, error: '' };
                     }
                 },
 
@@ -528,8 +646,8 @@
                         this.rainfallChart.destroy();
                     }
 
-                    // Simulate weekly rainfall data
-                    const rainfallData = [40, 75, 55, 45];
+                    // Use dynamic rainfall data for the selected municipality
+                    const rainfallData = this.rainfallWeeklyData;
 
                     this.rainfallChart = new Chart(ctx, {
                         type: 'bar',

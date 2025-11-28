@@ -126,14 +126,6 @@
                         </div>
                     </div>
                     <div class="flex items-center space-x-4">
-                        <div class="relative">
-                            <input type="text" placeholder="Search..." 
-                                   x-model="searchQuery"
-                                   class="w-64 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                            <svg class="absolute right-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                            </svg>
-                        </div>
                         <select class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
                             <option>English</option>
                         </select>
@@ -145,7 +137,6 @@
                                 <span class="absolute -top-1 -right-1 bg-white text-red-500 text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold" x-text="activeAlerts.length"></span>
                             </button>
                         </div>
-                        <button class="text-sm text-gray-700 hover:text-gray-900">Logout</button>
                     </div>
                 </div>
             </header>
@@ -168,18 +159,64 @@
                     </div>
                 </div>
 
-                <!-- Active Alerts Card -->
-                <div class="mb-6">
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold text-gray-800">Active Alerts</h3>
-                            <div class="flex items-center space-x-2">
-                                <div class="w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
-                                    <svg class="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"/>
-                                    </svg>
-                                </div>
-                                <span class="text-2xl font-bold text-gray-800" x-text="activeAlerts.length"></span>
+                <!-- Statistics Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <!-- Active Alerts (Watch Status Only) -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600 mb-1">Watch Status Areas</p>
+                                <p class="text-2xl font-bold text-gray-800" x-text="municipalities.filter(m => m.status === 'Watch').length"></p>
+                            </div>
+                            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                <svg class="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Municipalities Monitored -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600 mb-1">Municipalities</p>
+                                <p class="text-2xl font-bold text-gray-800" x-text="municipalities.length"></p>
+                            </div>
+                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Favorable Conditions -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600 mb-1">Favorable</p>
+                                <p class="text-2xl font-bold text-gray-800" x-text="municipalities.filter(m => m.status === 'Favorable').length"></p>
+                            </div>
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Under Watch -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600 mb-1">Under Watch</p>
+                                <p class="text-2xl font-bold text-gray-800" x-text="municipalities.filter(m => m.status === 'Watch').length"></p>
+                            </div>
+                            <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                                <svg class="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
+                                </svg>
                             </div>
                         </div>
                     </div>
@@ -189,17 +226,60 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Climate & Weather Alerts -->
                     <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-                        <div class="px-6 py-4 border-b border-gray-200">
+                        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                             <h3 class="text-lg font-semibold text-gray-800">Climate & Weather</h3>
+                            <div class="relative">
+                                <select x-model="selectedMunicipality" @change="filterClimateData()" 
+                                        class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        :class="{
+                                            'bg-blue-50 border-blue-300': getMunicipalityStatus(selectedMunicipality) === 'Favorable',
+                                            'bg-green-50 border-green-300': getMunicipalityStatus(selectedMunicipality) === 'Normal',
+                                            'bg-yellow-50 border-yellow-300': getMunicipalityStatus(selectedMunicipality) === 'Watch'
+                                        }">
+                                    <template x-for="muni in municipalities" :key="muni.name">
+                                        <option :value="muni.name" 
+                                                :class="{
+                                                    'bg-blue-50': muni.status === 'Favorable',
+                                                    'bg-green-50': muni.status === 'Normal',
+                                                    'bg-yellow-50': muni.status === 'Watch'
+                                                }"
+                                                x-text="getStatusIcon(muni.status) + ' ' + muni.name + ' (' + muni.status + ')'">
+                                        </option>
+                                    </template>
+                                </select>
+                            </div>
                         </div>
                         <div class="p-6">
                             <!-- Climate Hazard Alerts -->
                             <div class="mb-6">
                                 <h4 class="text-sm font-semibold text-gray-700 mb-3">Climate Hazard Alerts</h4>
-                                <p class="text-xs text-gray-500 mb-4">Active weather warnings and advisories from PAGASA</p>
+                                <p class="text-xs text-gray-500 mb-4">
+                                    <span x-show="getMunicipalityStatus(selectedMunicipality) === 'Watch'" class="text-yellow-600 font-semibold">⚠️ Watch Status - </span>
+                                    <span x-text="`Weather alerts for ${selectedMunicipality}`"></span>
+                                </p>
                                 
                                 <div class="space-y-3">
-                                    <template x-for="alert in climateAlerts" :key="alert.id">
+                                    <!-- Show alerts only for Watch status -->
+                                    <template x-if="getMunicipalityStatus(selectedMunicipality) !== 'Watch'">
+                                        <div class="text-center py-8 bg-green-50 rounded-lg border border-green-200">
+                                            <svg class="w-12 h-12 mx-auto mb-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                            <p class="text-sm font-semibold text-green-800" x-text="getMunicipalityStatus(selectedMunicipality) === 'Favorable' ? 'Favorable Conditions' : 'Normal Conditions'"></p>
+                                            <p class="text-xs text-green-700 mt-1">No active weather alerts for this area</p>
+                                        </div>
+                                    </template>
+                                    
+                                    <template x-if="getMunicipalityStatus(selectedMunicipality) === 'Watch' && filteredAlerts.length === 0">
+                                        <div class="text-center py-8 bg-yellow-50 rounded-lg border border-yellow-200">
+                                            <svg class="w-12 h-12 mx-auto mb-3 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"/>
+                                            </svg>
+                                            <p class="text-sm font-semibold text-yellow-800">Watch Status - Extreme Conditions</p>
+                                            <p class="text-xs text-yellow-700 mt-1">Monitoring for potential weather hazards</p>
+                                        </div>
+                                    </template>
+                                    <template x-for="alert in filteredAlerts" :key="alert.id">
                                         <div class="alert-card border-l-4 rounded-lg p-4" 
                                              :class="{
                                                  'bg-red-50 border-red-500': alert.severity === 'high',
@@ -258,18 +338,47 @@
                             <!-- 7-Day Rainfall Forecast -->
                             <div class="mt-8">
                                 <h4 class="text-sm font-semibold text-gray-700 mb-4">7-Day Rainfall Forecast</h4>
-                                <div class="space-y-2">
-                                    <template x-for="day in rainfallForecast" :key="day.day">
+                                
+                                <!-- Loading state -->
+                                <template x-if="loading && rainfallForecast.length === 0">
+                                    <div class="text-center py-8">
+                                        <svg class="animate-spin h-8 w-8 mx-auto text-blue-500" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <p class="text-sm text-gray-600 mt-2">Loading forecast...</p>
+                                    </div>
+                                </template>
+                                
+                                <!-- No data state -->
+                                <template x-if="!loading && rainfallForecast.length === 0">
+                                    <div class="text-center py-8 bg-gray-50 rounded-lg">
+                                        <svg class="w-12 h-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/>
+                                        </svg>
+                                        <p class="text-sm text-gray-600">No forecast data available</p>
+                                    </div>
+                                </template>
+                                
+                                <!-- Forecast data -->
+                                <div class="space-y-2" x-show="rainfallForecast.length > 0">
+                                    <template x-for="(day, index) in rainfallForecast" :key="day.day + index">
                                         <div class="flex items-center justify-between py-2">
-                                            <span class="text-sm text-gray-700 w-24" x-text="day.day"></span>
+                                            <span class="text-sm font-medium text-gray-700 w-24" x-text="day.day"></span>
                                             <div class="flex-1 mx-4">
-                                                <div class="bg-gray-200 rounded-full h-2 overflow-hidden">
-                                                    <div class="bg-blue-500 h-full rounded-full transition-all duration-500" 
-                                                         :style="`width: ${(day.rainfall / 50) * 100}%`"></div>
+                                                <div class="bg-gray-200 rounded-full h-4 overflow-hidden shadow-inner">
+                                                    <div class="h-full rounded-full transition-all duration-500" 
+                                                         :class="{
+                                                             'bg-blue-300': day.rainfall < 1,
+                                                             'bg-blue-400': day.rainfall >= 1 && day.rainfall < 3,
+                                                             'bg-blue-500': day.rainfall >= 3 && day.rainfall < 5,
+                                                             'bg-blue-600': day.rainfall >= 5
+                                                         }"
+                                                         :style="`width: ${Math.max(5, Math.min((day.rainfall / getMaxRainfall()) * 100, 100))}%`"></div>
                                                 </div>
                                             </div>
-                                            <div class="text-right w-20">
-                                                <div class="text-sm font-semibold text-gray-800" x-text="day.rainfall + ' mm'"></div>
+                                            <div class="text-right w-24">
+                                                <div class="text-sm font-bold text-gray-800" x-text="day.rainfall + ' mm'"></div>
                                                 <div class="text-xs text-gray-500" x-text="day.percentage"></div>
                                             </div>
                                         </div>
@@ -287,22 +396,88 @@
                         <div class="p-6">
                             <div class="space-y-3">
                                 <template x-for="municipality in municipalities" :key="municipality.name">
-                                    <div class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <div class="flex items-center space-x-3">
-                                            <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"/>
-                                            </svg>
-                                            <span class="font-medium text-gray-800" x-text="municipality.name"></span>
+                                    <div class="p-3 rounded-lg hover:bg-gray-50 transition-colors border border-gray-100">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <div class="flex items-center space-x-3">
+                                                <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"/>
+                                                </svg>
+                                                <span class="font-medium text-gray-800" x-text="municipality.name"></span>
+                                            </div>
+                                            <span class="px-3 py-1 text-xs font-semibold rounded-full"
+                                                  :class="{
+                                                      'bg-green-100 text-green-800': municipality.status === 'Normal',
+                                                      'bg-yellow-100 text-yellow-800': municipality.status === 'Watch',
+                                                      'bg-blue-100 text-blue-800': municipality.status === 'Favorable'
+                                                  }"
+                                                  x-text="municipality.status"></span>
                                         </div>
-                                        <span class="px-3 py-1 text-xs font-semibold rounded-full"
-                                              :class="{
-                                                  'bg-green-100 text-green-800': municipality.status === 'Normal',
-                                                  'bg-yellow-100 text-yellow-800': municipality.status === 'Watch',
-                                                  'bg-blue-100 text-blue-800': municipality.status === 'Favorable'
-                                              }"
-                                              x-text="municipality.status"></span>
+                                        <template x-if="municipality.rainfall">
+                                            <div class="flex items-center space-x-4 text-xs text-gray-600 ml-8">
+                                                <div class="flex items-center space-x-1">
+                                                    <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z"/>
+                                                    </svg>
+                                                    <span x-text="municipality.rainfall + 'mm'"></span>
+                                                </div>
+                                                <div class="flex items-center space-x-1">
+                                                    <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/>
+                                                    </svg>
+                                                    <span x-text="municipality.temperature + '°C'"></span>
+                                                </div>
+                                                <div class="flex items-center space-x-1">
+                                                    <svg class="w-4 h-4 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M10 3.5a1.5 1.5 0 013 0V4a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-.5a1.5 1.5 0 000 3h.5a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-.5a1.5 1.5 0 00-3 0v.5a1 1 0 01-1 1H6a1 1 0 01-1-1v-3a1 1 0 00-1-1h-.5a1.5 1.5 0 010-3H4a1 1 0 001-1V6a1 1 0 011-1h3a1 1 0 001-1v-.5z"/>
+                                                    </svg>
+                                                    <span x-text="municipality.humidity + '%'"></span>
+                                                </div>
+                                            </div>
+                                        </template>
                                     </div>
                                 </template>
+                            </div>
+                            
+                            <!-- Legend -->
+                            <div class="mt-6 pt-4 border-t border-gray-200">
+                                <h4 class="text-xs font-semibold text-gray-700 mb-3">Legend</h4>
+                                <div class="grid grid-cols-1 gap-2 text-xs">
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z"/>
+                                        </svg>
+                                        <span class="text-gray-600">Rainfall (mm)</span>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/>
+                                        </svg>
+                                        <span class="text-gray-600">Temperature (°C)</span>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M10 3.5a1.5 1.5 0 013 0V4a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-.5a1.5 1.5 0 000 3h.5a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-.5a1.5 1.5 0 00-3 0v.5a1 1 0 01-1 1H6a1 1 0 01-1-1v-3a1 1 0 00-1-1h-.5a1.5 1.5 0 010-3H4a1 1 0 001-1V6a1 1 0 011-1h3a1 1 0 001-1v-.5z"/>
+                                        </svg>
+                                        <span class="text-gray-600">Humidity (%)</span>
+                                    </div>
+                                    <div class="mt-2 pt-2 border-t border-gray-100">
+                                        <div class="text-xs font-semibold text-gray-700 mb-2">Status Indicators:</div>
+                                        <div class="flex flex-col space-y-1">
+                                            <div class="flex items-center space-x-2">
+                                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Favorable</span>
+                                                <span class="text-gray-600">Optimal growing conditions</span>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">Normal</span>
+                                                <span class="text-gray-600">Standard conditions</span>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Watch</span>
+                                                <span class="text-gray-600">Extreme conditions detected</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -316,13 +491,21 @@
             return {
                 loading: false,
                 searchQuery: '',
+                selectedMunicipality: '',
                 activeAlerts: [],
                 climateAlerts: [],
+                allClimateAlerts: [],
+                filteredAlerts: [],
                 rainfallForecast: [],
                 municipalities: [],
 
                 async init() {
                     await this.loadData();
+                    // Set first municipality as default
+                    if (this.municipalities.length > 0 && !this.selectedMunicipality) {
+                        this.selectedMunicipality = this.municipalities[0].name;
+                        await this.filterClimateData();
+                    }
                     // Auto-refresh every 5 minutes
                     setInterval(() => this.loadData(), 300000);
                 },
@@ -349,23 +532,51 @@
                             headers: { 'Accept': 'application/json' }
                         });
                         const data = await response.json();
-                        this.climateAlerts = data.alerts || [];
+                        this.allClimateAlerts = data.alerts || [];
+                        this.climateAlerts = this.allClimateAlerts;
+                        this.filteredAlerts = this.climateAlerts;
                         this.activeAlerts = this.climateAlerts.filter(a => a.severity === 'high' || a.severity === 'medium');
                     } catch (error) {
                         console.error('Error loading alerts:', error);
                     }
                 },
 
-                async loadRainfallForecast() {
+                async loadRainfallForecast(municipality = null) {
+                    this.loading = true;
                     try {
-                        const response = await fetch('{{ route("admin.api.monitoring.rainfall") }}', {
+                        const url = municipality && municipality !== 'all' 
+                            ? `{{ route("admin.api.monitoring.rainfall") }}?municipality=${encodeURIComponent(municipality)}`
+                            : '{{ route("admin.api.monitoring.rainfall") }}';
+                        
+                        console.log('🔄 Loading rainfall forecast for:', municipality);
+                        console.log('📡 Fetching from URL:', url);
+                        
+                        const response = await fetch(url, {
                             credentials: 'same-origin',
                             headers: { 'Accept': 'application/json' }
                         });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        
                         const data = await response.json();
-                        this.rainfallForecast = data.forecast || [];
+                        console.log('📦 Rainfall API response:', data);
+                        
+                        if (data.forecast && Array.isArray(data.forecast) && data.forecast.length > 0) {
+                            this.rainfallForecast = data.forecast;
+                            console.log('✅ Rainfall forecast loaded:', this.rainfallForecast.length, 'days');
+                            console.log('📊 Sample data:', this.rainfallForecast[0]);
+                        } else {
+                            console.warn('⚠️ No forecast data in response or empty array');
+                            this.rainfallForecast = [];
+                        }
                     } catch (error) {
-                        console.error('Error loading rainfall forecast:', error);
+                        console.error('❌ Error loading rainfall forecast:', error);
+                        this.rainfallForecast = [];
+                    } finally {
+                        this.loading = false;
+                        console.log('🏁 Loading complete. Forecast items:', this.rainfallForecast.length);
                     }
                 },
 
@@ -384,6 +595,49 @@
 
                 async refreshData() {
                     await this.loadData();
+                },
+
+                async filterClimateData() {
+                    this.loading = true;
+                    try {
+                        // Only show alerts if municipality has Watch status
+                        const municipalityStatus = this.getMunicipalityStatus(this.selectedMunicipality);
+                        
+                        if (municipalityStatus === 'Watch') {
+                            this.filteredAlerts = this.allClimateAlerts.filter(alert => 
+                                alert.locations && alert.locations.includes(this.selectedMunicipality)
+                            );
+                        } else {
+                            this.filteredAlerts = [];
+                        }
+                        
+                        // Load rainfall forecast for selected municipality
+                        await this.loadRainfallForecast(this.selectedMunicipality);
+                    } catch (error) {
+                        console.error('Error filtering climate data:', error);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                getMaxRainfall() {
+                    if (this.rainfallForecast.length === 0) return 50;
+                    const max = Math.max(...this.rainfallForecast.map(d => d.rainfall));
+                    return max > 0 ? max : 50;
+                },
+
+                getMunicipalityStatus(name) {
+                    const muni = this.municipalities.find(m => m.name === name);
+                    return muni ? muni.status : 'Normal';
+                },
+
+                getStatusIcon(status) {
+                    const icons = {
+                        'Favorable': '🌟',
+                        'Normal': '✓',
+                        'Watch': '⚠️'
+                    };
+                    return icons[status] || '📍';
                 }
             }
         }

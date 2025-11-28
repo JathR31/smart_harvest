@@ -488,21 +488,24 @@ Route::get('/api/weather/interpretation/temperature', function (Request $request
     }
 });
 
-Route::get('/api/weather/interpretation/rainfall', function (Request $request) {
+Route::post('/api/weather/interpretation/rainfall', function (Request $request) {
     if (!Auth::check()) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
     
-    $municipality = $request->query('municipality', Auth::user()->location ?? 'Baguio City');
+    $municipality = $request->input('municipality', Auth::user()->location ?? 'Atok');
+    $rainfallData = $request->input('rainfallData', []);
     
     try {
-        // Get rainfall data (simulated weekly data)
-        $rainfallData = [
-            ['week' => 'Week 1', 'rainfall' => 40],
-            ['week' => 'Week 2', 'rainfall' => 75],
-            ['week' => 'Week 3', 'rainfall' => 55],
-            ['week' => 'Week 4', 'rainfall' => 45]
-        ];
+        // If no data provided, generate default
+        if (empty($rainfallData)) {
+            $rainfallData = [
+                ['week' => 'Week 1', 'rainfall' => 40],
+                ['week' => 'Week 2', 'rainfall' => 75],
+                ['week' => 'Week 3', 'rainfall' => 55],
+                ['week' => 'Week 4', 'rainfall' => 45]
+            ];
+        }
         
         $aiService = new \App\Services\GroqService();
         $interpretation = $aiService->interpretRainfallForecast($rainfallData, $municipality);
@@ -535,7 +538,14 @@ Route::get('/api/weather/interpretation/hourly', function (Request $request) {
         
         // Get coordinates for municipality
         $coordinates = [
-            'Baguio City' => ['lat' => 16.4023, 'lon' => 120.5960],
+            'Atok' => ['lat' => 16.5833, 'lon' => 120.7000],
+            'Bakun' => ['lat' => 16.7833, 'lon' => 120.6667],
+            'Bokod' => ['lat' => 16.5167, 'lon' => 120.8333],
+            'Buguias' => ['lat' => 16.7333, 'lon' => 120.8167],
+            'Kabayan' => ['lat' => 16.6167, 'lon' => 120.8500],
+            'Kapangan' => ['lat' => 16.5667, 'lon' => 120.6000],
+            'Kibungan' => ['lat' => 16.7000, 'lon' => 120.6333],
+            'Mankayan' => ['lat' => 16.8667, 'lon' => 120.7833],
             'La Trinidad' => ['lat' => 16.4561, 'lon' => 120.5895],
             'Itogon' => ['lat' => 16.3667, 'lon' => 120.6833],
             'Sablan' => ['lat' => 16.4833, 'lon' => 120.5500],
@@ -543,7 +553,7 @@ Route::get('/api/weather/interpretation/hourly', function (Request $request) {
             'Tublay' => ['lat' => 16.5167, 'lon' => 120.6167],
         ];
         
-        $coords = $coordinates[$municipality] ?? $coordinates['Baguio City'];
+        $coords = $coordinates[$municipality] ?? $coordinates['Atok'];
         
         // Fetch weather data from OpenWeather
         $url = "https://api.openweathermap.org/data/3.0/onecall?lat={$coords['lat']}&lon={$coords['lon']}&exclude=minutely,daily,alerts&units=metric&appid={$apiKey}";
@@ -748,7 +758,7 @@ Route::get('/api/climate/current', function (Request $request) {
 Route::get('/api/municipalities', function () {
     return response()->json([
         'municipalities' => [
-            'Atok', 'Baguio City', 'Bakun', 'Bokod', 'Buguias', 'Itogon', 
+            'Atok', 'Bakun', 'Bokod', 'Buguias', 'Itogon', 
             'Kabayan', 'Kapangan', 'Kibungan', 'La Trinidad', 'Mankayan', 
             'Sablan', 'Tuba', 'Tublay'
         ]
@@ -786,4 +796,82 @@ Route::get('/api/ml/forecast', function (Request $request) {
             'details' => $mlForecast
         ], 500);
     }
+});
+
+// ========== TRANSLATION API ENDPOINTS (PUBLIC) ==========
+
+// Translate text (No authentication required for homepage)
+Route::post('/api/translate', function (Request $request) {
+    $text = $request->input('text');
+    $targetLanguage = $request->input('target_language', 'tl');
+    $sourceLanguage = $request->input('source_language', 'en');
+    
+    if (empty($text)) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Text is required'
+        ], 400);
+    }
+    
+    $translationService = new \App\Services\TranslationService();
+    $result = $translationService->translate($text, $targetLanguage, $sourceLanguage);
+    
+    return response()->json($result);
+});
+
+// Batch translation endpoint (No authentication required for homepage)
+Route::post('/api/translate/batch', function (Request $request) {
+    
+    $texts = $request->input('texts', []);
+    $targetLanguage = $request->input('target_language', 'tl');
+    
+    if (empty($texts) || !is_array($texts)) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Texts array is required'
+        ], 400);
+    }
+    
+    $translationService = new \App\Services\TranslationService();
+    $results = $translationService->batchTranslate($texts, $targetLanguage);
+    
+    return response()->json([
+        'status' => 'success',
+        'translations' => $results
+    ]);
+});
+
+// Get supported languages
+Route::get('/api/translate/languages', function (Request $request) {
+    $translationService = new \App\Services\TranslationService();
+    $languages = $translationService->getSupportedLanguages();
+    
+    return response()->json([
+        'status' => 'success',
+        'languages' => $languages
+    ]);
+});
+
+// Detect language
+Route::post('/api/translate/detect', function (Request $request) {
+    if (!Auth::check()) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    $text = $request->input('text');
+    
+    if (empty($text)) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Text is required'
+        ], 400);
+    }
+    
+    $translationService = new \App\Services\TranslationService();
+    $result = $translationService->detectLanguage($text);
+    
+    return response()->json([
+        'status' => 'success',
+        'detection' => $result
+    ]);
 });

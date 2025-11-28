@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Yield Analysis - SmartHarvest</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -109,6 +110,21 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
+                    <!-- Language Selector -->
+                    <div x-data="{ open: false }" class="relative">
+                        <button @click="open = !open" class="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path></svg>
+                            <span class="text-sm font-medium" x-text="selectedLanguageName"></span>
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-50" style="display: none;">
+                            <button @click="changeLanguage('en', 'English'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'en'}">English</button>
+                            <button @click="changeLanguage('tl', 'Tagalog'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'tl'}">Tagalog</button>
+                            <button @click="changeLanguage('ilo', 'Ilocano'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'ilo'}">Ilocano</button>
+                            <button @click="changeLanguage('kan', 'Kankanaey'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'kan'}">Kankanaey</button>
+                            <button @click="changeLanguage('ibl', 'Ibaloi'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'ibl'}">Ibaloi</button>
+                        </div>
+                    </div>
                     <div class="relative">
                         <input type="text" placeholder="Search..." class="pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
                         <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -157,16 +173,7 @@
                     <p class="text-xs text-gray-500 mt-2"><span x-text="selectedMunicipality"></span> region</p>
                 </div>
 
-                <!-- Average Predicted Yield -->
-                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow-lg p-6 border-l-4 border-blue-500">
-                    <div class="flex items-center justify-between mb-2">
-                        <p class="text-sm text-gray-600 font-medium">Avg Predicted Yield <span x-text="selectedYear"></span></p>
-                        <span class="px-2 py-1 bg-blue-500 text-white text-xs font-bold rounded-full">Forecast</span>
-                    </div>
-                    <p class="text-3xl font-bold text-blue-700 mb-1" x-text="cropPerformance.length > 0 ? (cropPerformance.reduce((sum, c) => sum + c.predicted, 0) / cropPerformance.length).toFixed(1) : '0.0'"></p>
-                    <p class="text-sm text-gray-700 font-medium">MT/ha forecast</p>
-                    <p class="text-xs text-gray-500 mt-2"><span x-text="selectedMunicipality"></span> region</p>
-                </div>
+                
 
                 <!-- Total Predicted Production -->
                 <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg shadow-lg p-6 border-l-4 border-purple-500">
@@ -336,10 +343,13 @@
     <script>
         function yieldAnalysis() {
             return {
+                selectedLanguage: localStorage.getItem('preferredLanguage') || 'en',
+                selectedLanguageName: localStorage.getItem('preferredLanguageName') || 'English',
+                originalTexts: {},
                 selectedMunicipality: '{{ $userMunicipality ?? "La Trinidad" }}',
                 selectedYear: 2025,
                 municipalities: [
-                    'Atok', 'Baguio City', 'Bakun', 'Bokod', 'Buguias', 'Itogon', 
+                    'Atok', 'Bakun', 'Bokod', 'Buguias', 'Itogon', 
                     'Kabayan', 'Kapangan', 'Kibungan', 'La Trinidad', 'Mankayan', 
                     'Sablan', 'Tuba', 'Tublay'
                 ],
@@ -365,6 +375,61 @@
 
                 init() {
                     this.loadYieldData();
+                    if (this.selectedLanguage !== 'en') {
+                        setTimeout(() => this.translatePage(this.selectedLanguage), 1000);
+                    }
+                },
+                
+                async changeLanguage(code, name) {
+                    this.selectedLanguage = code;
+                    this.selectedLanguageName = name;
+                    localStorage.setItem('preferredLanguage', code);
+                    localStorage.setItem('preferredLanguageName', name);
+                    
+                    if (code !== 'en') {
+                        await this.translatePage(code);
+                    } else {
+                        location.reload();
+                    }
+                },
+                
+                async translatePage(targetLang) {
+                    const elements = document.querySelectorAll('[data-translate]');
+                    const texts = Array.from(elements).map(el => {
+                        const id = el.getAttribute('data-translate-id');
+                        if (!this.originalTexts[id]) {
+                            this.originalTexts[id] = el.textContent.trim();
+                        }
+                        return this.originalTexts[id];
+                    });
+                    
+                    if (texts.length === 0) return;
+                    
+                    try {
+                        const response = await fetch('/api/translate/batch', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]').content
+                            },
+                            body: JSON.stringify({
+                                texts: texts,
+                                target_language: targetLang
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.status === 'success') {
+                            elements.forEach((el, index) => {
+                                if (data.translations[index]?.translatedText) {
+                                    el.textContent = data.translations[index].translatedText;
+                                }
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Translation error:', error);
+                    }
                 },
 
                 selectMunicipality(municipality) {

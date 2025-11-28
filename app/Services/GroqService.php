@@ -327,6 +327,20 @@ Each bullet ONE sentence, max 15 words, using EXACT numbers from data.";
             
             $interpretation = "Best harvest in {$peakMonth}. Plant in {$plantMonth}.";
         }
+        // Rainfall forecast analysis
+        elseif (isset($data[0]['week']) && isset($data[0]['rainfall'])) {
+            $rainfalls = array_column($data, 'rainfall');
+            $weeks = array_column($data, 'week');
+            $maxRainfall = max($rainfalls);
+            $minRainfall = min($rainfalls);
+            $totalRainfall = array_sum($rainfalls);
+            $maxWeek = $weeks[array_search($maxRainfall, $rainfalls)];
+            $minWeek = $weeks[array_search($minRainfall, $rainfalls)];
+            
+            $adequacy = $totalRainfall > 200 ? 'adequate' : 'moderate';
+            
+            $interpretation = "• {$maxWeek} shows highest rainfall at {$maxRainfall}mm, ideal for crop growth\n• Total monthly rainfall of {$totalRainfall}mm is {$adequacy} for highland vegetables\n• Plan irrigation for {$minWeek} with lower rainfall at {$minRainfall}mm";
+        }
         else {
             $interpretation = 'Insufficient data for comprehensive analysis. Continue monitoring crop performance and maintain cultivation records.';
         }
@@ -380,7 +394,18 @@ Each bullet ONE sentence, max 15 words, using EXACT numbers from data.";
     public function interpretTemperatureForecast($tempData, $municipality)
     {
         $prompt = $this->buildTemperatureForecastPrompt($tempData, $municipality);
-        return $this->generateInterpretation($prompt);
+        $result = $this->generateInterpretation($prompt);
+        
+        // If generateInterpretation returns a string, wrap it properly
+        if (is_string($result)) {
+            return [
+                'status' => 'success',
+                'interpretation' => $result,
+                'model' => 'AI Analysis'
+            ];
+        }
+        
+        return $result;
     }
 
     /**
@@ -389,7 +414,18 @@ Each bullet ONE sentence, max 15 words, using EXACT numbers from data.";
     public function interpretRainfallForecast($rainfallData, $municipality)
     {
         $prompt = $this->buildRainfallForecastPrompt($rainfallData, $municipality);
-        return $this->generateInterpretation($prompt);
+        $result = $this->generateInterpretation($prompt);
+        
+        // If generateInterpretation returns a string, wrap it properly
+        if (is_string($result)) {
+            return [
+                'status' => 'success',
+                'interpretation' => $result,
+                'model' => 'AI Analysis'
+            ];
+        }
+        
+        return $result;
     }
 
     /**
@@ -436,7 +472,18 @@ Each bullet ONE sentence, max 20 words, using EXACT numbers from data. Focus on 
     public function interpretHourlyForecast($hourlyData, $municipality)
     {
         $prompt = $this->buildHourlyForecastPrompt($hourlyData, $municipality);
-        return $this->generateInterpretation($prompt);
+        $result = $this->generateInterpretation($prompt);
+        
+        // If generateInterpretation returns a string, wrap it properly
+        if (is_string($result)) {
+            return [
+                'status' => 'success',
+                'interpretation' => $result,
+                'model' => 'AI Analysis'
+            ];
+        }
+        
+        return $result;
     }
 
     /**

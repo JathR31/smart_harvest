@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Translation Test</title>
+    <meta name="csrf-token" content="test">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="p-8 bg-gray-50">
+    <div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow">
+        <h1 class="text-2xl font-bold mb-4">Translation API Test</h1>
+        
+        <div class="mb-4">
+            <label class="block font-semibold mb-2">Select Language:</label>
+            <select id="language" class="border px-4 py-2 rounded">
+                <option value="en">English</option>
+                <option value="tl">Tagalog</option>
+                <option value="ilo">Ilocano</option>
+                <option value="kan">Kankanaey</option>
+                <option value="ibl">Ibaloi</option>
+            </select>
+            <button onclick="translate()" class="ml-2 bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">
+                Translate
+            </button>
+        </div>
+        
+        <div class="mb-4">
+            <h2 class="font-semibold mb-2">Original Text:</h2>
+            <p id="original" class="p-4 bg-gray-100 rounded">Hello, how are you? Welcome to SmartHarvest.</p>
+        </div>
+        
+        <div class="mb-4">
+            <h2 class="font-semibold mb-2">Translated Text:</h2>
+            <p id="translated" class="p-4 bg-green-50 rounded min-h-[60px]">Click translate button...</p>
+        </div>
+        
+        <div>
+            <h2 class="font-semibold mb-2">API Response:</h2>
+            <pre id="response" class="p-4 bg-gray-100 rounded text-xs overflow-auto max-h-96"></pre>
+        </div>
+    </div>
+    
+    <script>
+        async function translate() {
+            const originalText = document.getElementById('original').textContent;
+            const targetLang = document.getElementById('language').value;
+            const translatedEl = document.getElementById('translated');
+            const responseEl = document.getElementById('response');
+            
+            translatedEl.textContent = 'Translating...';
+            responseEl.textContent = 'Waiting for response...';
+            
+            console.log('Translating:', originalText, 'to', targetLang);
+            
+            try {
+                const response = await fetch('/dashboard/SmartHarvest/public/api/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: originalText,
+                        target_language: targetLang,
+                        source_language: 'en'
+                    })
+                });
+                
+                const data = await response.json();
+                console.log('Response:', data);
+                
+                responseEl.textContent = JSON.stringify(data, null, 2);
+                
+                if (data.status === 'success' && data.translatedText) {
+                    translatedEl.textContent = data.translatedText;
+                    translatedEl.classList.add('font-semibold', 'text-green-700');
+                } else {
+                    translatedEl.textContent = 'Translation failed: ' + (data.message || 'Unknown error');
+                    translatedEl.classList.add('text-red-600');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                translatedEl.textContent = 'Error: ' + error.message;
+                responseEl.textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

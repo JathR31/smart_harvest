@@ -3,10 +3,153 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>SmartHarvest</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        // Pure JavaScript Translation - No Alpine.js needed
+        const TranslationManager = {
+            selectedLanguage: localStorage.getItem('preferredLanguage') || 'en',
+            selectedLanguageName: localStorage.getItem('preferredLanguageName') || 'English',
+            originalTexts: {},
+            
+            async changeLanguage(code, name) {
+                console.log('🌐 Changing language to:', code, name);
+                this.selectedLanguage = code;
+                this.selectedLanguageName = name;
+                localStorage.setItem('preferredLanguage', code);
+                localStorage.setItem('preferredLanguageName', name);
+                
+                // Update dropdown display
+                const dropdownBtn = document.getElementById('languageDropdownBtn');
+                if (dropdownBtn) {
+                    dropdownBtn.textContent = name;
+                }
+                
+                if (code !== 'en') {
+                    await this.translatePage(code);
+                } else {
+                    location.reload();
+                }
+            },
+            
+            async translatePage(targetLang) {
+                console.log('🔄 Starting translation to:', targetLang);
+                
+                const elements = document.querySelectorAll('[data-translate]');
+                console.log('📝 Found elements to translate:', elements.length);
+                
+                const texts = Array.from(elements).map(el => {
+                    const id = el.getAttribute('data-translate-id');
+                    if (!this.originalTexts[id]) {
+                        this.originalTexts[id] = el.textContent.trim();
+                    }
+                    return this.originalTexts[id];
+                });
+                
+                console.log('📤 Texts to translate:', texts);
+                
+                if (texts.length === 0) {
+                    console.warn('⚠️ No translatable elements found!');
+                    return;
+                }
+                
+                try {
+                    const url = '/dashboard/SmartHarvest/public/api/translate/batch';
+                    console.log('🌐 API URL:', url);
+                    
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            texts: texts,
+                            target_language: targetLang
+                        })
+                    });
+                    
+                    console.log('📥 Response status:', response.status);
+                    
+                    const data = await response.json();
+                    console.log('📦 Response data:', data);
+                    
+                    if (data.status === 'success') {
+                        console.log('✅ Translation successful! Applying translations...');
+                        elements.forEach((el, index) => {
+                            if (data.translations[index]?.translatedText) {
+                                const original = el.textContent.trim();
+                                const translated = data.translations[index].translatedText;
+                                console.log(`${index + 1}. "${original}" → "${translated}"`);
+                                el.textContent = translated;
+                            }
+                        });
+                        console.log('🎉 Translation complete!');
+                    } else {
+                        console.error('❌ Translation failed:', data.message || 'Unknown error');
+                    }
+                } catch (error) {
+                    console.error('💥 Translation error:', error);
+                }
+            }
+        };
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ Translation system loaded');
+            
+            // Setup language dropdown toggle
+            const dropdownBtn = document.getElementById('languageDropdownBtn');
+            const dropdownMenu = document.getElementById('languageDropdownMenu');
+            
+            if (dropdownBtn && dropdownMenu) {
+                dropdownBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    dropdownMenu.classList.toggle('hidden');
+                });
+                
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                        dropdownMenu.classList.add('hidden');
+                    }
+                });
+                
+                // Close dropdown when language is selected
+                dropdownMenu.querySelectorAll('button').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        dropdownMenu.classList.add('hidden');
+                    });
+                });
+            }
+            
+            // Setup user dropdown toggle (if user is logged in)
+            const userDropdownBtn = document.getElementById('userDropdownBtn');
+            const userDropdownMenu = document.getElementById('userDropdownMenu');
+            
+            if (userDropdownBtn && userDropdownMenu) {
+                userDropdownBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    userDropdownMenu.classList.toggle('hidden');
+                });
+                
+                // Close user dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!userDropdownBtn.contains(e.target) && !userDropdownMenu.contains(e.target)) {
+                        userDropdownMenu.classList.add('hidden');
+                    }
+                });
+            }
+            
+            // Update button text to show current language
+            if (dropdownBtn) {
+                const currentLang = TranslationManager.selectedLanguageName;
+                dropdownBtn.innerHTML = currentLang + '<svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>';
+            }
+        });
+    </script>
     <style>
         /* Custom style to overlay the background image with a slight dark filter */
         .hero-background {
@@ -39,17 +182,17 @@
             </div>
             
             <nav class="flex items-center space-x-4">
-                <div x-data="{ open: false }" class="relative">
-                    <button @click="open = !open" class="flex items-center px-3 py-1 bg-white text-gray-700 rounded-sm border-none shadow-sm text-sm hover:bg-gray-100 transition duration-150">
+                <div class="relative">
+                    <button id="languageDropdownBtn" class="flex items-center px-3 py-1 bg-white text-gray-700 rounded-sm border-none shadow-sm text-sm hover:bg-gray-100 transition duration-150">
                         English
                         <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </button>
-                    <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 py-2 w-40 bg-white rounded-md shadow-xl custom-dropdown-menu text-gray-800">
-                        <a href="#" class="block px-4 py-2 hover:bg-gray-100 font-bold text-green-700">English</a>
-                        <a href="#" class="block px-4 py-2 hover:bg-gray-100">Tagalog</a>
-                        <a href="#" class="block px-4 py-2 hover:bg-gray-100">Ilocano</a>
-                        <a href="#" class="block px-4 py-2 hover:bg-gray-100">Kankanaey</a>
-                        <a href="#" class="block px-4 py-2 hover:bg-gray-100">Ibaloi</a>
+                    <div id="languageDropdownMenu" class="hidden absolute right-0 mt-2 py-2 w-40 bg-white rounded-md shadow-xl custom-dropdown-menu text-gray-800">
+                        <button onclick="TranslationManager.changeLanguage('en', 'English')" class="block w-full text-left px-4 py-2 hover:bg-gray-100">English</button>
+                        <button onclick="TranslationManager.changeLanguage('tl', 'Tagalog')" class="block w-full text-left px-4 py-2 hover:bg-gray-100">Tagalog</button>
+                        <button onclick="TranslationManager.changeLanguage('ilo', 'Ilocano')" class="block w-full text-left px-4 py-2 hover:bg-gray-100">Ilocano</button>
+                        <button onclick="TranslationManager.changeLanguage('kan', 'Kankanaey')" class="block w-full text-left px-4 py-2 hover:bg-gray-100">Kankanaey</button>
+                        <button onclick="TranslationManager.changeLanguage('ibl', 'Ibaloi')" class="block w-full text-left px-4 py-2 hover:bg-gray-100">Ibaloi</button>
                     </div>
                 </div>
 
@@ -57,11 +200,11 @@
                     <div class="flex items-center space-x-4">
                         <span class="text-sm">Welcome, {{ Auth::user()->name }}</span>
                         <a href="{{ route('dashboard') }}" class="px-4 py-2 bg-white text-green-600 rounded hover:bg-gray-100 transition duration-150 font-bold">DASHBOARD</a>
-                        <div x-data="{ open: false }" class="relative">
-                            <button @click="open = !open" class="w-10 h-10 bg-white text-green-600 rounded-full flex items-center justify-center font-bold hover:bg-gray-100 transition duration-150">
+                        <div class="relative">
+                            <button id="userDropdownBtn" class="w-10 h-10 bg-white text-green-600 rounded-full flex items-center justify-center font-bold hover:bg-gray-100 transition duration-150">
                                 {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
                             </button>
-                            <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 py-2 w-48 bg-white rounded-md shadow-xl text-gray-800">
+                            <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 py-2 w-48 bg-white rounded-md shadow-xl text-gray-800">
                                 <a href="{{ route('settings') }}" class="block px-4 py-2 hover:bg-gray-100">Profile Settings</a>
                                 <a href="{{ route('dashboard') }}" class="block px-4 py-2 hover:bg-gray-100">Dashboard</a>
                                 <hr class="my-2">
@@ -79,10 +222,10 @@
         </header>
 
         <main class="relative z-10 flex flex-col items-center justify-center flex-grow text-center text-white">
-            <h1 class="text-5xl md:text-6xl font-bold mb-4 drop-shadow-lg">
+            <h1 class="text-5xl md:text-6xl font-bold mb-4 drop-shadow-lg" data-translate data-translate-id="hero-title">
                 Optimize Your Planting with Data
             </h1>
-            <p class="max-w-xl text-lg mb-8 font-normal drop-shadow-md">
+            <p class="max-w-xl text-lg mb-8 font-normal drop-shadow-md" data-translate data-translate-id="hero-subtitle">
                 SmartHarvest uses historical yield and climate patterns to help farmers make informed planting decisions for maximum productivity.
             </p>
             @auth
@@ -99,7 +242,7 @@
 
     <section class="py-16 px-4">
         <div class="max-w-6xl mx-auto text-center">
-            <h2 class="text-3xl font-semibold mb-10 text-green-700">Features</h2>
+            <h2 class="text-3xl font-semibold mb-10 text-green-700" data-translate data-translate-id="features-title">Features</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 @php
                     $features = [
@@ -109,13 +252,13 @@
                     ];
                 @endphp
                 
-                @foreach ($features as $feature)
+                @foreach ($features as $key => $feature)
                 <div class="p-6 bg-white rounded-xl shadow-lg border border-gray-100">
                     <div class="mx-auto mb-4 w-12 h-12 flex items-center justify-center bg-green-100 rounded-lg text-green-500">
                         <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
                     </div>
-                    <h3 class="text-xl font-medium text-green-700 mb-2">{{ $feature['title'] }}</h3>
-                    <p class="text-sm text-gray-500">{{ $feature['description'] }}</p>
+                    <h3 class="text-xl font-medium text-green-700 mb-2" data-translate data-translate-id="feature-{{ $key }}-title">{{ $feature['title'] }}</h3>
+                    <p class="text-sm text-gray-500" data-translate data-translate-id="feature-{{ $key }}-desc">{{ $feature['description'] }}</p>
                 </div>
                 @endforeach
             </div>
@@ -127,8 +270,8 @@
             <div class="mx-auto mb-4 w-12 h-12 flex items-center justify-center bg-green-100 rounded-full text-green-500 border border-green-500">
                 <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14v2h2v-2h-2zm-2 12h4v-2h-4v2zm0-4h4v-2h-4v2z"/></svg>
             </div>
-            <h3 class="text-lg font-medium text-green-700 mb-4">Our Mission</h3>
-            <p class="text-base text-gray-600">
+            <h3 class="text-lg font-medium text-green-700 mb-4" data-translate data-translate-id="mission-title">Our Mission</h3>
+            <p class="text-base text-gray-600" data-translate data-translate-id="mission-text">
                 To empower farmers with data-driven insights and predictive analytics that optimize crop yields, reduce risks, and promote sustainable agricultural practices.
             </p>
         </div>
@@ -137,9 +280,9 @@
     <section class="py-16 px-4 bg-gray-50">
         <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-12">
             <div class="lg:col-span-2">
-                <h2 class="text-3xl font-semibold mb-6 text-green-700">About SmartHarvest</h2>
-                <h3 class="text-xl font-medium text-green-700 mb-4">Who We Are</h3>
-                <p class="mb-4 text-gray-600">
+                <h2 class="text-3xl font-semibold mb-6 text-green-700" data-translate data-translate-id="about-title">About SmartHarvest</h2>
+                <h3 class="text-xl font-medium text-green-700 mb-4" data-translate data-translate-id="about-subtitle">Who We Are</h3>
+                <p class="mb-4 text-gray-600" data-translate data-translate-id="about-p1">
                     SmartHarvest is a dedicated web-based Decision Support System (DSS) designed to empower farmers across the municipalities of Benguet. Our core mission is to promote sustainable farming methods and drastically improve farm decision-making in the face of persistent economic challenges.
                 </p>
                 <p class="mb-4 text-gray-600">
@@ -401,7 +544,5 @@
             
         </div>
     </footer>
-
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </body>
 </html>
