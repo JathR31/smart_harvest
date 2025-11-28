@@ -336,7 +336,7 @@
         </div>
     </section>
 
-    <section class="py-16 px-4 bg-custom-light" x-data="weatherInsights()">
+    <section class="py-16 px-4 bg-custom-light">
         <div class="max-w-6xl mx-auto text-center">
             <div class="mx-auto mb-4 w-12 h-12 flex items-center justify-center text-green-500">
                 <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-3.72 0-6.83 2.82-7.18 6.41C2.85 10.73 2 11.96 2 13.5c0 2.21 1.79 4 4 4h13c2.76 0 5-2.24 5-5 0-2.64-2.07-4.83-4.65-4.96z"/></svg>
@@ -348,27 +348,26 @@
             <div class="max-w-md mx-auto mb-10">
                 <div class="relative">
                     <label class="block text-sm font-medium text-gray-700 mb-2 text-left">Select Municipality</label>
-                    <select x-model="selectedMunicipality" @change="fetchWeatherData()" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-gray-700">
+                    <select id="municipalitySelect" onchange="fetchWeatherData()" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-gray-700">
                         <option value="">-- Choose Municipality --</option>
-                        <option value="Baguio City">Baguio City</option>
-                        <option value="La Trinidad">La Trinidad</option>
-                        <option value="Itogon">Itogon</option>
-                        <option value="Sablan">Sablan</option>
-                        <option value="Tuba">Tuba</option>
-                        <option value="Tublay">Tublay</option>
                         <option value="Atok">Atok</option>
                         <option value="Bakun">Bakun</option>
                         <option value="Bokod">Bokod</option>
                         <option value="Buguias">Buguias</option>
+                        <option value="Itogon">Itogon</option>
                         <option value="Kabayan">Kabayan</option>
                         <option value="Kapangan">Kapangan</option>
                         <option value="Kibungan">Kibungan</option>
+                        <option value="La Trinidad">La Trinidad</option>
                         <option value="Mankayan">Mankayan</option>
+                        <option value="Sablan">Sablan</option>
+                        <option value="Tuba">Tuba</option>
+                        <option value="Tublay">Tublay</option>
                     </select>
                 </div>
             </div>
 
-            <div x-show="weatherData" class="space-y-10">
+            <div class="space-y-10">
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                     <div class="p-6 bg-white rounded-xl shadow-md border border-gray-100 text-left">
                         <div class="flex justify-between items-center mb-2">
@@ -376,7 +375,7 @@
                             <span class="text-xs text-red-500 font-semibold">Live</span>
                         </div>
                         <p class="text-sm text-gray-500 mb-1">Temperature</p>
-                        <p class="text-xl font-semibold" x-text="weatherData ? weatherData.temperature + '°C' : '--'"></p>
+                        <p class="text-xl font-semibold" id="tempValue">-- °C</p>
                     </div>
 
                     <div class="p-6 bg-white rounded-xl shadow-md border border-gray-100 text-left">
@@ -385,7 +384,7 @@
                             <span class="text-xs text-red-500 font-semibold">Live</span>
                         </div>
                         <p class="text-sm text-gray-500 mb-1">Humidity</p>
-                        <p class="text-xl font-semibold" x-text="weatherData ? weatherData.humidity + '%' : '--'"></p>
+                        <p class="text-xl font-semibold" id="humidityValue">-- %</p>
                     </div>
 
                     <div class="p-6 bg-white rounded-xl shadow-md border border-gray-100 text-left">
@@ -394,7 +393,7 @@
                             <span class="text-xs text-red-500 font-semibold">Live</span>
                         </div>
                         <p class="text-sm text-gray-500 mb-1">Wind Speed</p>
-                        <p class="text-xl font-semibold" x-text="weatherData ? weatherData.windSpeed + ' km/h' : '--'"></p>
+                        <p class="text-xl font-semibold" id="windSpeedValue">-- m/s</p>
                     </div>
 
                     <div class="p-6 bg-white rounded-xl shadow-md border border-gray-100 text-left">
@@ -403,7 +402,7 @@
                             <span class="text-xs text-red-500 font-semibold">Live</span>
                         </div>
                         <p class="text-sm text-gray-500 mb-1">Rainfall (24h)</p>
-                        <p class="text-xl font-semibold" x-text="weatherData ? weatherData.rainfall + ' mm' : '--'"></p>
+                        <p class="text-xl font-semibold" id="rainfallValue">-- mm</p>
                     </div>
                 </div>
 
@@ -413,7 +412,7 @@
                             <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-3.72 0-6.83 2.82-7.18 6.41C2.85 10.73 2 11.96 2 13.5c0 2.21 1.79 4 4 4h13c2.76 0 5-2.24 5-5 0-2.64-2.07-4.83-4.65-4.96z"/></svg>
                         </div>
                         <h4 class="text-lg font-medium text-green-700 mb-1">Current Conditions</h4>
-                        <p class="text-2xl font-semibold mb-4" x-text="weatherData ? weatherData.description : 'Select a municipality'"></p>
+                        <p class="text-2xl font-semibold mb-4" id="weatherDescription">Select a municipality</p>
                         <p class="text-xs text-gray-500 mb-6">Weather data updates every 5 seconds. Our system integrates real-time weather information with historical patterns to provide accurate planting recommendations.</p>
                         @auth
                             <a href="{{ route('forecast') }}" class="px-8 py-3 bg-green-600 text-white rounded-full hover:bg-green-500 transition duration-300 font-semibold">
@@ -428,59 +427,56 @@
                 </div>
             </div>
 
-            <div x-show="!weatherData" class="text-gray-500 py-8">
+            <div id="emptyState" class="text-gray-500 py-8" style="display: none;">
                 <p>Please select a municipality to view weather data</p>
             </div>
         </div>
 
         <script>
-            function weatherInsights() {
-                return {
-                    @auth
-                        selectedMunicipality: '{{ Auth::user()->location ?? "" }}',
-                    @else
-                        selectedMunicipality: '',
-                    @endauth
-                    weatherData: null,
+            // Weather functionality
+            async function fetchWeatherData() {
+                const select = document.getElementById('municipalitySelect');
+                const municipality = select.value;
+                
+                console.log('🌤️ Fetching weather for:', municipality);
+                
+                if (!municipality) {
+                    console.log('No municipality selected');
+                    return;
+                }
+
+                try {
+                    const url = `{{ url('/api/weather') }}?municipality=${encodeURIComponent(municipality)}`;
+                    console.log('📡 Fetching from:', url);
                     
-                    init() {
-                        @auth
-                            if (this.selectedMunicipality) {
-                                this.fetchWeatherData();
-                            }
-                        @endauth
-                    },
-
-                    async fetchWeatherData() {
-                        if (!this.selectedMunicipality) {
-                            this.weatherData = null;
-                            return;
-                        }
-
-                        try {
-                            const response = await fetch(`{{ url('/api/weather') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
-                            const data = await response.json();
-                            
-                            // The API returns data in a nested 'current' object
-                            if (data.current) {
-                                this.weatherData = {
-                                    temperature: Math.round(data.current.temp),
-                                    humidity: data.current.humidity,
-                                    windSpeed: data.current.wind_speed ? Math.round(data.current.wind_speed * 3.6) : 0, // Convert m/s to km/h
-                                    rainfall: data.current.rain || 0,
-                                    description: data.current.weather && data.current.weather[0] ? 
-                                        data.current.weather[0].description.charAt(0).toUpperCase() + 
-                                        data.current.weather[0].description.slice(1) : 'Unknown'
-                                };
-                            } else {
-                                console.error('Unexpected API response format:', data);
-                                this.weatherData = null;
-                            }
-                        } catch (error) {
-                            console.error('Error fetching weather data:', error);
-                            this.weatherData = null;
-                        }
+                    const response = await fetch(url);
+                    console.log('📥 Response status:', response.status);
+                    
+                    const data = await response.json();
+                    console.log('📦 Full API Response:', data);
+                    
+                    if (data.current) {
+                        const temp = data.current.temp ? Math.round(data.current.temp) : 0;
+                        const humidity = data.current.humidity || 0;
+                        const windSpeed = data.current.wind_speed ? data.current.wind_speed.toFixed(1) : 0;
+                        const rainfall = data.current.rain || 0;
+                        const description = data.current.weather && data.current.weather[0] ? 
+                            data.current.weather[0].description.charAt(0).toUpperCase() + 
+                            data.current.weather[0].description.slice(1) : 'Unknown';
+                        
+                        // Update DOM elements
+                        document.getElementById('tempValue').textContent = temp + '°C';
+                        document.getElementById('humidityValue').textContent = humidity + '%';
+                        document.getElementById('windSpeedValue').textContent = windSpeed + ' m/s';
+                        document.getElementById('rainfallValue').textContent = rainfall + ' mm';
+                        document.getElementById('weatherDescription').textContent = description;
+                        
+                        console.log('✅ Weather data updated:', { temp, humidity, windSpeed, rainfall, description });
+                    } else {
+                        console.error('❌ Unexpected API response format:', data);
                     }
+                } catch (error) {
+                    console.error('❌ Error fetching weather data:', error);
                 }
             }
         </script>
