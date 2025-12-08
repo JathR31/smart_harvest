@@ -1,0 +1,90 @@
+# Render Blueprint for SmartHarvest
+services:
+  # Web Service (Laravel Application)
+  - type: web
+    name: smartharvest-web
+    runtime: docker
+    repo: https://github.com/JathR31/smart_harvest
+    branch: main
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: APP_NAME
+        value: SmartHarvest
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_URL
+        sync: false
+      - key: APP_KEY
+        generateValue: true
+      - key: LOG_CHANNEL
+        value: stack
+      - key: LOG_LEVEL
+        value: error
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        fromDatabase:
+          name: smartharvest-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: smartharvest-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: smartharvest-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: smartharvest-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: smartharvest-db
+          property: password
+      - key: SESSION_DRIVER
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: MAIL_MAILER
+        value: smtp
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_ENCRYPTION
+        value: tls
+      - key: MAIL_FROM_ADDRESS
+        sync: false
+      - key: MAIL_FROM_NAME
+        value: SmartHarvest
+      - key: SEMAPHORE_API_KEY
+        sync: false
+      - key: OPENWEATHER_API_KEY
+        value: 735d56dd7a0f98a8ac7638cbd8911242
+      - key: ML_API_URL
+        sync: false
+    buildCommand: |
+      php artisan config:cache
+      php artisan route:cache
+      php artisan view:cache
+    startCommand: /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+    healthCheckPath: /
+    autoDeploy: true
+
+  # Database (MySQL)
+  - type: database
+    name: smartharvest-db
+    databaseName: smartharvest
+    user: smartharvest_user
+    plan: starter
+    region: singapore
+    ipAllowList: []

@@ -33,6 +33,12 @@ class User extends Authenticatable implements MustVerifyEmail
         'role',
         'status',
         'phone',
+        'phone_number',
+        'phone_verified_at',
+        'otp_code',
+        'otp_expires_at',
+        'otp_attempts',
+        'verification_method',
         'location',
         'farm_name',
         'farm_size',
@@ -61,9 +67,34 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
+            'phone_verified_at' => 'datetime',
+            'otp_expires_at' => 'datetime',
             'password' => 'hashed',
             'password_set_at' => 'datetime',
             'last_login' => 'datetime',
         ];
+    }
+    
+    /**
+     * Check if the user's phone number is verified.
+     *
+     * @return bool
+     */
+    public function hasVerifiedPhone()
+    {
+        return !is_null($this->phone_verified_at);
+    }
+    
+    /**
+     * Check if the user is fully verified (email or phone based on method).
+     *
+     * @return bool
+     */
+    public function isFullyVerified()
+    {
+        if ($this->verification_method === 'sms') {
+            return $this->hasVerifiedPhone();
+        }
+        return $this->hasVerifiedEmail();
     }
 }

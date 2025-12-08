@@ -2821,24 +2821,194 @@ Route::post('/register', function (Request $request) {
         'full_name' => 'required|string|max:255',
         'email' => 'required|email|unique:users,email|max:255',
         'municipality' => 'required|string',
+        'phone_number' => 'nullable|string|regex:/^[9][0-9]{9}$/',
+        'verification_method' => 'required|in:email,sms',
     ]);
 
+    // If SMS verification is chosen, phone number is required
+    if ($validated['verification_method'] === 'sms') {
+        if (empty($validated['phone_number'])) {
+            return back()->withErrors(['phone_number' => 'Phone number is required for SMS verification.'])->withInput();
+        }
+        
+        // Format phone number to +639XXXXXXXXX
+        $fullPhone = '+63' . $validated['phone_number'];
+        
+        // Check if phone number is already registered
+        $existingPhone = \App\Models\User::where('phone_number', $fullPhone)->first();
+        if ($existingPhone) {
+            return back()->withErrors(['phone_number' => 'This phone number is already registered.'])->withInput();
+        }
+    }
+
     // Create user with temporary random password
-    $user = \App\Models\User::create([
+    $userData = [
         'name' => $validated['full_name'],
         'email' => $validated['email'],
         'location' => $validated['municipality'],
         'role' => 'Farmer',
         'status' => 'active',
         'password' => Hash::make(\Illuminate\Support\Str::random(32)), // Temporary password
-    ]);
-
-    // Send email verification notification
-    $user->sendEmailVerificationNotification();
+        'verification_method' => $validated['verification_method'],
+    ];
+    
+    // Add phone number if provided
+    if (!empty($validated['phone_number'])) {
+        $userData['phone_number'] = '+63' . $validated['phone_number'];
+    }
+    
+    $user = \App\Models\User::create($userData);
     
     Auth::login($user);
     $request->session()->regenerate();
 
-    return redirect()->route('verification.notice')
-        ->with('message', 'Please check your email to verify your account. You will set your password after verification.');
+    // Send verification based on chosen method
+    if ($validated['verification_method'] === 'sms') {
+        // Generate and send OTP
+        $otpCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $user->otp_code = $otpCode;
+        $user->otp_expires_at = now()->addMinutes(10);
+        $user->otp_attempts = 0;
+        $user->save();
+        
+        $smsService = new \App\Services\SMSService();
+        $result = $smsService->sendOTP($user->phone_number, $otpCode);
+        
+        if ($result['success']) {
+            return redirect()->route('otp.verify.show')
+                ->with('message', $result['message']);
+        } else {
+            // Fallback to email if SMS fails
+            $user->verification_method = 'email';
+            $user->save();
+            $user->sendEmailVerificationNotification();
+            
+            return redirect()->route('verification.notice')
+                ->with('error', 'SMS service unavailable. We sent an email verification instead.');
+        }
+    } else {
+        // Send email verification notification
+        $user->sendEmailVerificationNotification();
+        
+        return redirect()->route('verification.notice')
+            ->with('message', 'Please check your email to verify your account. You will set your password after verification.');
+    }
 })->name('register.attempt');
+
+// OTP Verification Routes
+Route::get('/verify-otp', function () {
+    if (!Auth::check()) {
+        return redirect()->route('login');
+    }
+    
+    $user = Auth::user();
+    
+    // Check if already verified
+    if ($user->hasVerifiedPhone()) {
+        return redirect()->route($user->role === 'Admin' ? 'admin.dashboard' : 'dashboard');
+    }
+    
+    // Check if OTP exists and not expired
+    if (!$user->otp_code || now()->isAfter($user->otp_expires_at)) {
+        return redirect()->route('register')->withErrors(['error' => 'OTP expired. Please register again.']);
+    }
+    
+    // Mask phone number for display
+    $smsService = new \App\Services\SMSService();
+    $maskedPhone = $smsService->isValidPhoneNumber($user->phone_number) 
+        ? preg_replace('/(\+63)(\d{1})(\d{2})(\d{3})(\d{4})/', '$1$2XX XXX X$5', $user->phone_number)
+        : $user->phone_number;
+    
+    return view('verify-otp', ['masked_phone' => $maskedPhone]);
+})->middleware('auth')->name('otp.verify.show');
+
+Route::post('/verify-otp', function (Request $request) {
+    if (!Auth::check()) {
+        return redirect()->route('login');
+    }
+    
+    $validated = $request->validate([
+        'otp_code' => 'required|string|size:6',
+    ]);
+    
+    $user = Auth::user();
+    
+    // Check if OTP expired
+    if (!$user->otp_expires_at || now()->isAfter($user->otp_expires_at)) {
+        return back()->withErrors(['error' => 'OTP has expired. Please request a new code.']);
+    }
+    
+    // Check attempts
+    if ($user->otp_attempts >= 5) {
+        return back()->withErrors(['error' => 'Too many failed attempts. Please request a new code.']);
+    }
+    
+    // Verify OTP
+    if ($validated['otp_code'] === $user->otp_code) {
+        // Mark phone as verified
+        $user->phone_verified_at = now();
+        $user->otp_code = null;
+        $user->otp_expires_at = null;
+        $user->otp_attempts = 0;
+        $user->save();
+        
+        // Redirect to password setup
+        return redirect()->route('password.setup')
+            ->with('success', 'Phone verified successfully! Please set your password.');
+    } else {
+        // Increment attempts
+        $user->otp_attempts += 1;
+        $user->save();
+        
+        $remainingAttempts = 5 - $user->otp_attempts;
+        return back()->withErrors(['error' => "Invalid OTP code. {$remainingAttempts} attempts remaining."]);
+    }
+})->middleware('auth')->name('otp.verify');
+
+Route::post('/resend-otp', function (Request $request) {
+    if (!Auth::check()) {
+        return response()->json(['success' => false, 'message' => 'Not authenticated'], 401);
+    }
+    
+    $user = Auth::user();
+    
+    // Generate new OTP
+    $otpCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+    $user->otp_code = $otpCode;
+    $user->otp_expires_at = now()->addMinutes(10);
+    $user->otp_attempts = 0;
+    $user->save();
+    
+    // Send SMS
+    $smsService = new \App\Services\SMSService();
+    $result = $smsService->sendOTP($user->phone_number, $otpCode);
+    
+    if ($result['success']) {
+        return response()->json([
+            'success' => true,
+            'message' => 'New OTP sent successfully!'
+        ]);
+    } else {
+        return response()->json([
+            'success' => false,
+            'message' => $result['message']
+        ], 500);
+    }
+})->middleware(['auth', 'throttle:3,1'])->name('otp.resend');
+
+Route::get('/switch-to-email-verification', function () {
+    if (!Auth::check()) {
+        return redirect()->route('login');
+    }
+    
+    $user = Auth::user();
+    $user->verification_method = 'email';
+    $user->otp_code = null;
+    $user->otp_expires_at = null;
+    $user->save();
+    
+    $user->sendEmailVerificationNotification();
+    
+    return redirect()->route('verification.notice')
+        ->with('message', 'Switched to email verification. Please check your email.');
+})->middleware('auth')->name('otp.switch-to-email');

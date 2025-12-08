@@ -1,0 +1,90 @@
+# Free Tier Configuration for Render
+
+services:
+  # Web Service (Free Tier)
+  - type: web
+    name: smartharvest
+    runtime: docker
+    repo: https://github.com/JathR31/smart_harvest
+    branch: main
+    dockerfilePath: ./Dockerfile
+    plan: free  # FREE TIER - Spins down after 15min inactivity
+    region: singapore
+    
+    # Health check endpoint
+    healthCheckPath: /
+    
+    envVars:
+      # Application
+      - key: APP_NAME
+        value: SmartHarvest
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_URL
+        sync: false
+      - key: APP_KEY
+        sync: false
+      
+      # Database - PostgreSQL (Free Tier)
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: 5432
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      
+      # Session/Cache/Queue (use database)
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_DRIVER
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      
+      # Mail (Gmail recommended for free tier)
+      - key: MAIL_MAILER
+        value: smtp
+      - key: MAIL_HOST
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: 587
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_ENCRYPTION
+        value: tls
+      - key: MAIL_FROM_ADDRESS
+        value: noreply@smartharvest.com
+      - key: MAIL_FROM_NAME
+        value: SmartHarvest
+      
+      # SMS (Semaphore)
+      - key: SEMAPHORE_API_KEY
+        sync: false
+      
+      # Weather API (OpenWeather free tier)
+      - key: OPENWEATHER_API_KEY
+        sync: false
+      
+      # ML API (if deployed)
+      - key: ML_API_URL
+        sync: false
+      
+      # Logging
+      - key: LOG_CHANNEL
+        value: stack
+      - key: LOG_LEVEL
+        value: error
+
+# Note: Free tier PostgreSQL must be created separately
+# Create at: https://dashboard.render.com/ → New + → PostgreSQL → Free
+# Then copy credentials to environment variables above

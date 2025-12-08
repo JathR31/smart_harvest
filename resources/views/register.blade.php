@@ -101,6 +101,21 @@
                     </div>
                 </div>
 
+                <!-- Phone Number (Optional) -->
+                <div>
+                    <label for="phone_number" class="block text-sm font-medium text-gray-700 mb-2">
+                        Mobile Number <span class="text-xs text-gray-500">(Optional for SMS verification)</span>
+                    </label>
+                    <div class="relative">
+                        <div class="absolute input-icon flex items-center text-gray-600 text-sm font-medium">+63</div>
+                        <input id="phone_number" type="text" name="phone_number" 
+                               class="w-full p-3 pl-14 border border-gray-200 rounded-xl bg-gray-50 focus:ring-green-500 focus:border-green-500 transition duration-150"
+                               placeholder="9XX XXX XXXX" maxlength="10" pattern="[9][0-9]{9}" value="{{ old('phone_number') }}">
+                        <svg class="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1 pl-1">Philippine mobile number starting with 9</p>
+                </div>
+
                 <!-- Municipality / City -->
                 <div class="md:col-span-2">
                     <label for="municipality" class="block text-sm font-medium text-gray-700 mb-2">Municipality / City</label>
@@ -129,6 +144,31 @@
                     <p class="text-xs text-gray-500 mt-1 pl-1">Select your farm location in the Benguet Province</p>
                 </div>
 
+            </div>
+            
+            <!-- Verification Method -->
+            <div class="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <label class="block text-sm font-medium text-gray-700 mb-3">Preferred Verification Method</label>
+                <div class="space-y-2">
+                    <label class="flex items-center p-3 bg-white border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition duration-150">
+                        <input type="radio" name="verification_method" value="email" checked class="h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500">
+                        <div class="ml-3 flex-1">
+                            <span class="text-sm font-medium text-gray-900">Email Verification</span>
+                            <p class="text-xs text-gray-500">We'll send a verification link to your email</p>
+                        </div>
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    </label>
+                    
+                    <label class="flex items-center p-3 bg-white border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition duration-150">
+                        <input type="radio" name="verification_method" value="sms" id="sms_radio" class="h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500">
+                        <div class="ml-3 flex-1">
+                            <span class="text-sm font-medium text-gray-900">SMS Verification</span>
+                            <p class="text-xs text-gray-500">We'll send an OTP code to your mobile number</p>
+                        </div>
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                    </label>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">💡 Choose SMS if you have limited email access</p>
             </div>
             
             <!-- Terms Checkbox -->
@@ -185,5 +225,63 @@
         </div>
     </div>
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        // Phone number and SMS verification validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const smsRadio = document.getElementById('sms_radio');
+            const phoneInput = document.getElementById('phone_number');
+            const form = document.querySelector('form');
+            
+            // Make phone required when SMS is selected
+            smsRadio.addEventListener('change', function() {
+                if (this.checked) {
+                    phoneInput.required = true;
+                    phoneInput.parentElement.parentElement.querySelector('label').innerHTML = 
+                        'Mobile Number <span class="text-red-500">*</span>';
+                }
+            });
+            
+            // Remove required when email is selected
+            document.querySelectorAll('input[name="verification_method"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'email') {
+                        phoneInput.required = false;
+                        phoneInput.parentElement.parentElement.querySelector('label').innerHTML = 
+                            'Mobile Number <span class="text-xs text-gray-500">(Optional for SMS verification)</span>';
+                    }
+                });
+            });
+            
+            // Validate phone number format
+            phoneInput.addEventListener('input', function(e) {
+                // Remove non-numeric characters
+                let value = e.target.value.replace(/\D/g, '');
+                
+                // Ensure it starts with 9
+                if (value.length > 0 && value[0] !== '9') {
+                    value = '9' + value.substring(1);
+                }
+                
+                // Limit to 10 digits
+                value = value.substring(0, 10);
+                e.target.value = value;
+            });
+            
+            // Form submission validation
+            form.addEventListener('submit', function(e) {
+                const verificationMethod = document.querySelector('input[name="verification_method"]:checked').value;
+                const phoneValue = phoneInput.value;
+                
+                if (verificationMethod === 'sms') {
+                    if (!phoneValue || phoneValue.length !== 10 || phoneValue[0] !== '9') {
+                        e.preventDefault();
+                        alert('Please enter a valid Philippine mobile number (9XX XXX XXXX) for SMS verification.');
+                        phoneInput.focus();
+                        return false;
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>

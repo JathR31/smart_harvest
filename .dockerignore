@@ -1,0 +1,67 @@
+# Dependencies
+/node_modules
+/vendor
+
+# Environment files
+.env
+.env.backup
+.env.production
+
+# IDE files
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!README.md
+
+# Tests
+/tests
+/phpunit.xml
+/.phpunit.cache
+
+# Build artifacts
+/public/hot
+/public/storage
+/storage/*.key
+
+# Logs
+/storage/logs/*
+!/storage/logs/.gitkeep
+npm-debug.log
+yarn-error.log
+
+# Cache
+/bootstrap/cache/*
+!/bootstrap/cache/.gitkeep
+/.phpunit.result.cache
+/node_modules/.cache
+
+# Datasets (optional - include if needed)
+*.csv
+*.ipynb
+__pycache__/
+
+# Documentation files
+DEFENSE_PRESENTATION_SCRIPT.md
+ML_*.md
+PLANTING_*.md
+REGISTRATION_*.md
+ROLES_*.md
+SMS_OTP_*.md
+UPDATES_SUMMARY.md
+EMAIL_*.md
+IMPLEMENTATION_CHECKLIST.md
+API_DOCUMENTATION.md
