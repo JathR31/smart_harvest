@@ -5,7 +5,11 @@ echo "Starting SmartHarvest deployment..."
 
 # Wait for database to be ready
 echo "Waiting for database connection..."
-php artisan wait-for-db
+until php artisan db:show 2>/dev/null || php artisan migrate:status 2>/dev/null; do
+  echo "Database not ready, waiting 2 seconds..."
+  sleep 2
+done
+echo "Database connection successful!"
 
 # Run migrations
 echo "Running database migrations..."
