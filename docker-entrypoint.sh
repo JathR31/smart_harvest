@@ -25,12 +25,14 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# Set proper permissions
-echo "Setting permissions..."
-chown -R www-data:www-data /var/www/html/storage
-chown -R www-data:www-data /var/www/html/bootstrap/cache
-chmod -R 775 /var/www/html/storage
-chmod -R 775 /var/www/html/bootstrap/cache
+# Set proper permissions (only if needed)
+echo "Verifying permissions..."
+if [ -d "/var/www/html/storage" ]; then
+    chmod -R 775 /var/www/html/storage 2>/dev/null || true
+fi
+if [ -d "/var/www/html/bootstrap/cache" ]; then
+    chmod -R 775 /var/www/html/bootstrap/cache 2>/dev/null || true
+fi
 
 echo "Deployment setup complete!"
 
