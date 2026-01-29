@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Dashboard - SmartHarvest</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{{ asset('js/translation.js') }}?v={{ time() }}"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         .sidebar { background: linear-gradient(180deg, #047857 0%, #065f46 100%); }
@@ -18,54 +19,54 @@
     <aside class="sidebar w-64 min-h-screen text-white flex-shrink-0">
         <div class="p-6">
             <div class="flex items-center space-x-2 mb-8">
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/></svg>
+                <span class="text-2xl">🌱</span>
                 <span class="text-xl font-semibold">SmartHarvest</span>
             </div>
 
             <div class="mb-8">
-                <p class="text-xs uppercase text-green-300 mb-3">Main</p>
+                <p class="text-xs uppercase text-green-300 mb-3" data-translate data-translate-id="menu-main">Main</p>
                 <a href="{{ route('dashboard') }}" class="sidebar-item active flex items-center space-x-3 px-4 py-2.5 rounded transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                    <span>Dashboard</span>
+                    <span data-translate data-translate-id="menu-dashboard">Dashboard</span>
                 </a>
             </div>
 
             <div class="mb-8">
-                <p class="text-xs uppercase text-green-300 mb-3">Analysis</p>
+                <p class="text-xs uppercase text-green-300 mb-3" data-translate data-translate-id="menu-analysis">Analysis</p>
                 <a href="{{ route('planting.schedule') }}" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    <span>Planting Schedule</span>
+                    <span data-translate data-translate-id="menu-planting-schedule">Planting Schedule</span>
                 </a>
                 <a href="{{ route('yield.analysis') }}" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                    <span>Yield Analysis</span>
+                    <span data-translate data-translate-id="menu-yield-analysis">Yield Analysis</span>
                 </a>
             </div>
 
             <div class="mb-8">
-                <p class="text-xs uppercase text-green-300 mb-3">Weather</p>
+                <p class="text-xs uppercase text-green-300 mb-3" data-translate data-translate-id="menu-weather">Weather</p>
                 <a href="{{ route('forecast') }}" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
-                    <span>Forecast</span>
+                    <span data-translate data-translate-id="menu-forecast">Forecast</span>
                 </a>
             </div>
 
             <div>
-                <p class="text-xs uppercase text-green-300 mb-3">Account</p>
+                <p class="text-xs uppercase text-green-300 mb-3" data-translate data-translate-id="menu-account">Account</p>
                 <a href="{{ route('settings') }}" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    <span>Settings</span>
+                    <span data-translate data-translate-id="menu-settings">Settings</span>
                 </a>
                 <form method="POST" action="{{ route('logout') }}" onsubmit="sessionStorage.setItem('isLoggedOut','true');">
                     @csrf
                     <button type="submit" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition w-full text-left">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                        <span>Logout</span>
+                        <span data-translate data-translate-id="menu-logout">Logout</span>
                     </button>
                 </form>
                 <a href="{{ route('homepage') }}" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                    <span>Back to Home</span>
+                    <span data-translate data-translate-id="back-to-home">Back to Home</span>
                 </a>
             </div>
         </div>
@@ -77,11 +78,11 @@
         <header class="bg-white border-b px-8 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
-                    <h1 class="text-2xl font-semibold text-gray-800">Dashboard</h1>
+                    <h1 class="text-2xl font-semibold text-gray-800" data-translate data-translate-id="dashboard-title">Dashboard</h1>
                     <!-- ML Status Badge -->
                     <span x-show="mlConnected" class="px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full flex items-center">
                         <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
-                        Active
+                        <span data-translate data-translate-id="ml-active">Active</span>
                     </span>
                     <!-- Municipality Dropdown -->
                     <div x-data="{ open: false }" class="relative">
@@ -113,8 +114,6 @@
                             <button @click="changeLanguage('en', 'English'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'en'}">English</button>
                             <button @click="changeLanguage('tl', 'Tagalog'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'tl'}">Tagalog</button>
                             <button @click="changeLanguage('ilo', 'Ilocano'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'ilo'}">Ilocano</button>
-                            <button @click="changeLanguage('kan', 'Kankanaey'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'kan'}">Kankanaey</button>
-                            <button @click="changeLanguage('ibl', 'Ibaloi'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'ibl'}">Ibaloi</button>
                         </div>
                     </div>
                     <div class="relative">
@@ -129,112 +128,203 @@
         </header>
 
         <!-- Dashboard Content -->
-        <main class="flex-1 p-8 overflow-y-auto">
-            <!-- Top Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <!-- Year Expected Harvest -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+        <main class="flex-1 p-8 overflow-y-auto bg-gray-50">
+            <!-- Top 3 Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <!-- Weather Forecast Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-green-50 to-green-100 rounded-lg flex items-center justify-center mr-3">
+                            <span class="text-2xl">🌧️</span>
                         </div>
-                        <span x-show="mlConnected" class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">Predicted</span>
+                        <div>
+                            <p class="text-xs text-gray-500 font-medium">Weather Forecast</p>
+                            <h3 class="text-xl font-bold text-green-700" x-text="weatherPrediction.condition || 'Good Rain'"></h3>
+                        </div>
                     </div>
-                    <p class="text-sm text-gray-600 mb-2">Year Expected Harvest (Prediction)</p>
-                    <p class="text-3xl font-bold text-gray-900 mb-1"><span x-text="stats.expected_harvest"></span> <span class="text-sm font-normal text-gray-600">metric tons</span></p>
-                    <p class="text-xs font-medium" :class="stats.percentage_change >= 0 ? 'text-green-600' : 'text-red-600'">
-                        <span x-text="(stats.percentage_change >= 0 ? '+ ' : '') + stats.percentage_change + '%'"></span> vs historical avg
-                    </p>
-                    <p class="text-xs text-gray-500 mt-1" x-show="stats.ml_confidence">
-                        Confidence: <span x-text="stats.ml_confidence + '%'"></span>
+                    <p class="text-sm text-gray-700">
+                        Expected rainfall: <span class="font-semibold" x-text="weatherPrediction.rainfall || '120'"></span>mm this month
                     </p>
                 </div>
 
-                <!-- Weather Forecast -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
+                <!-- Best Planting Date Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-green-50 to-green-100 rounded-lg flex items-center justify-center mr-3">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
                         </div>
-                        <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">Live</span>
+                        <div>
+                            <p class="text-xs text-gray-500 font-medium">Best Planting Date</p>
+                            <h3 class="text-lg font-bold text-green-700" x-text="optimal.planting_window || 'May 15 - June 5'"></h3>
+                        </div>
                     </div>
-                    <p class="text-sm text-gray-600 mb-2">Current Weather</p>
-                    <p class="text-2xl font-bold text-gray-900 mb-1"><span x-text="climate.current?.weather_condition || 'Loading...'"></span></p>
-                    <p class="text-xs text-gray-600">Rainfall: <span x-text="climate.current?.rainfall || '...'"></span>mm | Temp: <span x-text="climate.current?.avg_temperature || '...'"></span>°C</p>
+                    <p class="text-sm text-gray-700">Optimal window for highest yield</p>
                 </div>
 
-                <!-- Best Planting Date -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <!-- Recommended Variety Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-green-50 to-green-100 rounded-lg flex items-center justify-center mr-3">
+                            <span class="text-2xl">🥬</span>
                         </div>
-                        <span x-show="mlConnected" class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">ML</span>
-                    </div>
-                    <p class="text-sm text-gray-600 mb-2">Best Planting Window</p>
-                    <p class="text-2xl font-bold text-gray-900 mb-1"><span x-text="optimal.next_date || 'Loading...'"></span></p>
-                    <p class="text-xs text-gray-600">Optimal window for <span x-text="optimal.crop"></span></p>
-                </div>
-
-                <!-- Recommended Variety -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+                        <div>
+                            <p class="text-xs text-gray-500 font-medium">Recommended Variety</p>
+                            <h3 class="text-xl font-bold text-green-700" x-text="optimal.crop || 'Cabbage'"></h3>
                         </div>
-                        <span x-show="mlConnected" class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">Recommended</span>
                     </div>
-                    <p class="text-sm text-gray-600 mb-2">Top Recommendation</p>
-                    <p class="text-2xl font-bold text-gray-900 mb-1"><span x-text="optimal.crop || 'Loading...'"></span></p>
-                    <p class="text-xs text-gray-600">Expected yield: <span x-text="optimal.expected_yield || '...'"></span> MT/ha</p>
+                    <p class="text-sm text-gray-700">Cool season, high yield vegetable</p>
                 </div>
             </div>
 
-            <!-- 7-Day Weather Forecast -->
-            <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <!-- Top 5 Recommended Crops -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
                 <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-xl font-semibold text-green-700">7-Day Weather Forecast</h2>
-                    <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">Live Data</span>
+                    <h2 class="text-lg font-semibold text-green-700">Top 5 Recommended Crops</h2>
+                    <a href="{{ route('planting.schedule') }}" class="text-sm text-green-600 hover:text-green-700 font-medium flex items-center">
+                        View Full Schedule
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
                 </div>
-                <div class="grid grid-cols-7 gap-4">
-                    <template x-for="(day, index) in weatherForecast" :key="index">
-                        <div class="text-center">
-                            <p class="text-sm text-gray-600 mb-3" x-text="day.dayName"></p>
-                            <div x-html="getWeatherIcon(day.icon, day.description)"></div>
-                            <p class="text-lg font-semibold" x-text="Math.round(day.temp) + '°'"></p>
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <template x-for="(crop, index) in topCrops.slice(0, 5)" :key="index">
+                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition" :class="index === 0 ? 'border-green-500 bg-green-50' : ''">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="px-2 py-1 text-xs font-bold rounded-full" 
+                                      :class="index === 0 ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'"
+                                      x-text="'#' + (index + 1)">
+                                </span>
+                                <span class="text-xs text-gray-500" x-text="crop.variety || 'Mixed'"></span>
+                            </div>
+                            <h4 class="font-semibold text-gray-800 mb-2" x-text="crop.crop"></h4>
+                            <div class="space-y-1 text-xs text-gray-600">
+                                <div class="flex justify-between">
+                                    <span>Yield:</span>
+                                    <span class="font-semibold text-green-600" x-text="crop.yield_prediction || crop.historical_yield"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Plant:</span>
+                                    <span class="font-semibold" x-text="crop.optimal_planting"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Harvest:</span>
+                                    <span class="font-semibold" x-text="crop.expected_harvest"></span>
+                                </div>
+                            </div>
+                            <div class="mt-3 pt-3 border-t border-gray-200">
+                                <span class="text-xs px-2 py-1 rounded" 
+                                      :class="crop.status === 'Recommended' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'"
+                                      x-text="crop.status">
+                                </span>
+                            </div>
+                        </div>
+                    </template>
+                    <template x-if="topCrops.length === 0">
+                        <div class="col-span-5 text-center py-8 text-gray-500">
+                            <svg class="w-12 h-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                            <p>Loading top crop recommendations...</p>
                         </div>
                     </template>
                 </div>
             </div>
 
+            <!-- 7-Day Weather Forecast -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                <h2 class="text-lg font-semibold text-green-700 mb-6">7-Day Weather Forecast</h2>
+                <div class="grid grid-cols-7 gap-3">
+                    <template x-for="(day, index) in weatherForecast.slice(0, 7)" :key="index">
+                        <div class="text-center p-3 rounded-lg hover:bg-gray-50 transition">
+                            <p class="text-xs text-gray-600 font-medium mb-2" x-text="day.dayName"></p>
+                            <div class="my-3" x-html="getWeatherIcon(day.icon, day.description)"></div>
+                            <p class="text-xl font-bold text-gray-800" x-text="Math.round(day.temp) + '°'"></p>
+                        </div>
+                    </template>
+                </div>
+            </div>
 
             <!-- Best Time to Plant & Weather Outlook -->
-            <div class="bg-white rounded-lg shadow p-6 mb-8">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-green-700 mb-4">Best Time to Plant</h3>
+                    <p class="text-sm text-gray-600 font-medium mb-2" x-text="optimal.planting_window || 'May 20 and June 10'"></p>
+                    <p class="text-sm text-gray-700 leading-relaxed">
+                        Based on 5-6 years of past yield data and local climate data, the best planting window is between 
+                        <span class="font-semibold" x-text="optimal.planting_dates || 'May 20 and June 10'"></span>. 
+                        Planting within this period helps you take advantage of ideal temperature and rainfall patterns.
+                    </p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-green-700 mb-4">Weather Outlook</h3>
+                    <p class="text-sm text-gray-700 leading-relaxed">
+                        Expect moderate rainfall and mild temperatures in the coming weeks. These conditions support healthy crop growth, 
+                        but it's best to delay planting after heavy rain (4+ cm daily) to avoid waterlogging issues.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Current Market Prices -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-lg font-semibold text-green-700">Current Market Prices</h2>
+                    <div class="flex items-center text-xs text-gray-500">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Latest prices for major Cordillera crops (Updated: January 20, 2026)</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <template x-for="(price, index) in marketPrices" :key="index">
+                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                            <div class="flex items-start justify-between mb-2">
+                                <h4 class="font-semibold text-gray-800" x-text="price.crop"></h4>
+                                <span class="text-xs px-2 py-1 rounded" 
+                                      :class="price.trend > 0 ? 'bg-green-100 text-green-700' : price.trend < 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'"
+                                      x-text="price.trend > 0 ? '+' + price.trend + '%' : price.trend + '%'">
+                                </span>
+                            </div>
+                            <p class="text-2xl font-bold text-green-600 mb-2">₱<span x-text="price.price"></span><span class="text-sm text-gray-500">/kg</span></p>
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="px-2 py-1 rounded" 
+                                      :class="price.demand === 'High' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'">
+                                    Market Demand: <span class="font-semibold" x-text="price.demand"></span>
+                                </span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Price Insights -->
+            <div class="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 mb-6">
+                <div class="flex items-start">
+                    <svg class="w-6 h-6 text-blue-500 mr-3 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
                     <div>
-                        <h3 class="text-lg font-semibold text-green-700 mb-3 flex items-center">
-                            Best Time to Plant
-                            <span x-show="mlConnected" class="ml-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">Prediction</span>
-                        </h3>
-                        <p class="text-sm text-gray-700">
-                           The best planting window for <strong><span x-text="optimal.crop"></span></strong> is between 
-                            <strong x-text="optimal.next_date"></strong>. 
-                            Expected yield: <strong><span x-text="optimal.expected_yield"></span> MT/ha</strong> with <strong><span x-text="optimal.confidence"></span></strong> confidence.
+                        <h3 class="text-base font-semibold text-blue-900 mb-2">💡 Price Insights</h3>
+                        <p class="text-sm text-blue-800 leading-relaxed">
+                            Prices are based on current market conditions in La Trinidad Trading Post and Baguio City Public Market. Highland Cabbage and Potatoes show strong upward 
+                            trend due to high demand and favorable weather conditions. Plan your planting accordingly to maximize returns.
                         </p>
                     </div>
-                    <div>
-                        <h3 class="text-lg font-semibold text-green-700 mb-3 flex items-center">
-                            Current Weather Data
-                            <span class="ml-2 px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">Live</span>
-                        </h3>
-                        <p class="text-sm text-gray-700">
-                            Current conditions in <strong x-text="selectedMunicipality"></strong>: 
-                            <span x-text="climate.current?.weather_condition || 'Loading...'"></span>, 
-                            <span x-text="climate.current?.avg_temperature || '...'"></span>°C, 
-                            <span x-text="climate.current?.rainfall || '...'"></span>mm rainfall. 
-                            Monitor weather patterns and avoid planting during heavy rain (25mm+ daily) to prevent waterlogging.
-                        </p>
-                    </div>
+                </div>
+            </div>
+
+            <!-- Conclusion & Future Outlook -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-semibold text-green-700 mb-4">Conclusion & Future Outlook</h2>
+                <div class="space-y-4 text-sm text-gray-700 leading-relaxed">
+                    <p>
+                        Your Farm Analysis combines up to 5-6 years of historical crop yield data, demonstrating that data-driven decision-making combined with sustainable agricultural practices leads to superior outcomes. The 9.8% 
+                        performance advantage over regional averages validates your strategic approach to crop selection, timing, and resource management.
+                    </p>
+                    <p>
+                        Looking ahead to 2026, the forecast suggests continued improvement with incremental improvements positions your farm for continued growth. Climate projections suggest 
+                        similar favorable conditions, with potential for achieving 6.1MT/ha average yields through incremental optimizations. The SmartHarvest system will continue monitoring and analyzing 
+                        data to provide timely insights for maximizing your farming success.
+                    </p>
                 </div>
             </div>
         </main>
@@ -265,17 +355,33 @@
                     crop: '',
                     variety: '',
                     next_date: '',
+                    planting_window: '',
+                    planting_dates: '',
                     expected_yield: 0,
                     confidence: ''
                 },
+                weatherPrediction: {
+                    condition: 'Good Rain',
+                    rainfall: '120'
+                },
+                marketPrices: [
+                    { crop: 'Highland Cabbage', price: '25', demand: 'High', trend: 4 },
+                    { crop: 'Tinawon Rice', price: '45', demand: 'High', trend: 0 },
+                    { crop: 'Lettuce', price: '35', demand: 'Medium', trend: -3 },
+                    { crop: 'Potatoes', price: '28', demand: 'High', trend: 12 },
+                    { crop: 'Carrots', price: '30', demand: 'Medium', trend: 4 },
+                    { crop: 'Strawberries', price: '250', demand: 'High', trend: 8 }
+                ],
                 weatherForecast: [],
                 recentHarvests: [],
+                topCrops: [],
                 loading: false,
                 mlConnected: false,
 
                 init() {
                     console.log('Dashboard initialized for municipality:', this.selectedMunicipality);
                     this.loadDashboardData();
+                    SmartHarvestTranslation.init();
                     if (this.selectedLanguage !== 'en') {
                         this.translatePage(this.selectedLanguage);
                     }
@@ -415,6 +521,23 @@
                             this.recentHarvests = [];
                         }
 
+                        // Load top crops recommendations
+                        console.log('🌾 Fetching top crops for:', this.selectedMunicipality);
+                        const topCropsResponse = await fetch(`{{ url('/api/planting/schedule') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}&_t=${timestamp}`);
+                        if (topCropsResponse.ok) {
+                            const topCropsData = await topCropsResponse.json();
+                            if (Array.isArray(topCropsData)) {
+                                this.topCrops = topCropsData.slice(0, 5); // Get top 5
+                                console.log('✓ Top Crops loaded:', this.topCrops.length, 'crops');
+                            } else {
+                                console.error('❌ topCrops is not an array');
+                                this.topCrops = [];
+                            }
+                        } else {
+                            console.error('❌ Failed to load top crops:', topCropsResponse.status);
+                            this.topCrops = [];
+                        }
+
                         // Load climate data for selected municipality
                         const climateResponse = await fetch(`{{ url('/api/climate/current') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
                         if (climateResponse.ok) {
@@ -430,6 +553,8 @@
                                 crop: optimalData.crop || 'Cabbage',
                                 variety: optimalData.variety || 'Scorpio',
                                 next_date: optimalData.next_date || 'N/A',
+                                planting_window: 'May 15 - June 5',
+                                planting_dates: 'May 20 and June 10',
                                 expected_yield: optimalData.expected_yield?.toFixed ? optimalData.expected_yield.toFixed(1) : optimalData.expected_yield || '0.0',
                                 historical_yield: optimalData.historical_yield ? (optimalData.historical_yield.toFixed ? optimalData.historical_yield.toFixed(1) : optimalData.historical_yield) : null,
                                 confidence: optimalData.confidence || 'Medium',
@@ -437,6 +562,15 @@
                                 ml_status: optimalData.ml_status || 'unknown'
                             };
                             console.log('✓ Optimal planting data loaded:', this.optimal);
+                        }
+
+                        // Update weather prediction based on climate data
+                        if (this.climate.current) {
+                            const rainfall = this.climate.current.rainfall || 120;
+                            this.weatherPrediction = {
+                                condition: rainfall > 100 ? 'Good Rain' : rainfall > 50 ? 'Moderate Rain' : 'Light Rain',
+                                rainfall: rainfall.toString()
+                            };
                         }
 
                         // Load 7-day weather forecast

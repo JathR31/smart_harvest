@@ -19,7 +19,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-50" x-data="rolesPermissionsApp()" x-init="loadRoles()">
+<body class="bg-gray-50" x-data="rolesPermissionsApp()" x-init="init()">
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
         <aside class="w-64 bg-gradient-to-b from-blue-800 to-blue-900 text-white flex-shrink-0 overflow-y-auto">
@@ -32,7 +32,7 @@
                     </div>
                     <div>
                         <h1 class="text-lg font-bold">SmartHarvest</h1>
-                        <p class="text-xs text-blue-200">Admin</p>
+                        <p class="text-xs text-blue-200">Superadmin</p>
                     </div>
                 </div>
             </div>
@@ -137,7 +137,7 @@
                 </div>
 
                 <!-- Roles Grid -->
-                <div x-show="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div x-show="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <template x-for="role in roles" :key="role.name">
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
                             <div class="flex items-center justify-between mb-4">
@@ -167,6 +167,200 @@
                             </button>
                         </div>
                     </template>
+                </div>
+
+                <!-- Permissions Overview Section -->
+                <div x-show="!loading" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Permissions Overview</h3>
+                    <p class="text-sm text-gray-500 mb-6">Select a role above to view and modify its permissions</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <!-- Profile Management -->
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3">Profile Management</h4>
+                            <ul class="space-y-2 text-sm text-gray-600">
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>View own farm profile</li>
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>Edit own farm profile</li>
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>View other farmers' profiles</li>
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>Edit other farmers' profiles</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Reporting -->
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3">Reporting</h4>
+                            <ul class="space-y-2 text-sm text-gray-600">
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>Submit crop planting report</li>
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>Submit harvest yield data</li>
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>Report pest/disease outbreak</li>
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>View all system reports</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Services -->
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3">Services</h4>
+                            <ul class="space-y-2 text-sm text-gray-600">
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>Apply for subsidies or loans</li>
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>View status of applications</li>
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>Approve subsidy applications</li>
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>Manage all services</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Data Access -->
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3">Data Access</h4>
+                            <ul class="space-y-2 text-sm text-gray-600">
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>View market price dashboard</li>
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>View weather alerts</li>
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>Access system-wide aggregated data</li>
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>Export data reports</li>
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>Manage data datasets</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- User Management -->
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3">User Management</h4>
+                            <ul class="space-y-2 text-sm text-gray-600">
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>Access the "Users" page</li>
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>Access the "Roles & Permissions" page</li>
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>Create new users</li>
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>Delete users</li>
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>Assign roles to users</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- System Administration -->
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3">System Administration</h4>
+                            <ul class="space-y-2 text-sm text-gray-600">
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>Modify system settings</li>
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>View system logs</li>
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>Manage system notifications</li>
+                                <li class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>Backup and restore data</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- About Roles & Permissions -->
+                <div x-show="!loading" class="bg-blue-50 rounded-xl border border-blue-200 p-6 mb-8">
+                    <div class="flex items-start">
+                        <div class="bg-blue-100 p-2 rounded-lg mr-4">
+                            <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-blue-800 mb-2">About Roles & Permissions</h4>
+                            <ul class="space-y-1 text-sm text-blue-700">
+                                <li>• Roles define groups of permissions that can be assigned to users. Each role determines what actions users can perform in the system.</li>
+                                <li>• Users inherit all permissions from their assigned role</li>
+                                <li>• Changes to role permissions affect all users with that role</li>
+                                <li>• Admin role has full system access by default</li>
+                                <li>• Be careful when modifying permissions for roles with many users</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Role Assignment Section -->
+                <div x-show="!loading" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800">User Role Assignment</h3>
+                            <p class="text-sm text-gray-500">Change user roles between Farmer, Admin, DA-CAR Officer, etc.</p>
+                        </div>
+                        <button @click="loadUsers()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
+                    
+                    <!-- Search -->
+                    <div class="mb-4">
+                        <div class="relative">
+                            <input type="text" x-model="userSearch" @input="filterUsersList()" 
+                                   placeholder="Search users by name or email..." 
+                                   class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Users Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">User</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Email</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Current Role</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Change Role</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <template x-for="user in filteredUsersList" :key="user.id">
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-4 py-3">
+                                            <div class="flex items-center">
+                                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold" 
+                                                     :class="{
+                                                        'bg-green-500': user.role === 'Farmer',
+                                                        'bg-blue-500': user.role === 'Field Agent',
+                                                        'bg-purple-500': user.role === 'Admin',
+                                                        'bg-orange-500': user.role === 'Researcher'
+                                                     }">
+                                                    <span x-text="user.name.charAt(0).toUpperCase()"></span>
+                                                </div>
+                                                <span class="ml-3 text-sm font-medium text-gray-900" x-text="user.name"></span>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-600" x-text="user.email"></td>
+                                        <td class="px-4 py-3">
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full" 
+                                                  :class="{
+                                                    'bg-green-100 text-green-800': user.role === 'Farmer',
+                                                    'bg-blue-100 text-blue-800': user.role === 'Field Agent',
+                                                    'bg-purple-100 text-purple-800': user.role === 'Admin',
+                                                    'bg-orange-100 text-orange-800': user.role === 'Researcher'
+                                                  }" 
+                                                  x-text="user.role"></span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <select x-model="user.newRole" 
+                                                    class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                                                <option value="Farmer">Farmer</option>
+                                                <option value="DA Admin">DA Admin</option>
+                                            </select>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <button @click="updateUserRole(user)" 
+                                                    :disabled="user.role === user.newRole || user.saving"
+                                                    class="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center">
+                                                <svg x-show="user.saving" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                <span x-text="user.saving ? 'Saving...' : 'Update'"></span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <tr x-show="filteredUsersList.length === 0">
+                                    <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                                        <p>No users found</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <!-- Permission Modal -->
@@ -250,9 +444,15 @@
                 selectedRole: '',
                 permissionsByCategory: {},
                 saving: false,
+                
+                // User role assignment
+                usersList: [],
+                filteredUsersList: [],
+                userSearch: '',
 
                 async init() {
                     await this.loadRoles();
+                    await this.loadUsers();
                 },
 
                 async loadRoles() {
@@ -274,6 +474,76 @@
                     } catch (error) {
                         console.error('Error loading roles:', error);
                         this.loading = false;
+                    }
+                },
+                
+                async loadUsers() {
+                    try {
+                        const response = await fetch('{{ route("admin.api.users") }}', {
+                            credentials: 'same-origin',
+                            headers: {
+                                'Accept': 'application/json'
+                            }
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error('Failed to load users');
+                        }
+                        
+                        const data = await response.json();
+                        this.usersList = data.users.map(user => ({
+                            ...user,
+                            newRole: user.role,
+                            saving: false
+                        }));
+                        this.filteredUsersList = [...this.usersList];
+                    } catch (error) {
+                        console.error('Error loading users:', error);
+                    }
+                },
+                
+                filterUsersList() {
+                    const search = this.userSearch.toLowerCase();
+                    this.filteredUsersList = this.usersList.filter(user => 
+                        user.name.toLowerCase().includes(search) || 
+                        user.email.toLowerCase().includes(search)
+                    );
+                },
+                
+                async updateUserRole(user) {
+                    if (user.role === user.newRole) return;
+                    
+                    user.saving = true;
+                    
+                    try {
+                        const response = await fetch(`{{ url('/admin/api/users') }}/${user.id}`, {
+                            method: 'PUT',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({ role: user.newRole })
+                        });
+
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            user.role = user.newRole;
+                            // Reload roles to update user counts
+                            await this.loadRoles();
+                            alert('User role updated successfully!');
+                        } else {
+                            alert('Error updating role: ' + (data.message || data.error || 'Unknown error'));
+                            user.newRole = user.role; // Reset selection
+                        }
+                    } catch (error) {
+                        console.error('Error updating user role:', error);
+                        alert('Error updating user role');
+                        user.newRole = user.role; // Reset selection
+                    } finally {
+                        user.saving = false;
                     }
                 },
 

@@ -20,10 +20,12 @@
 
     <div class="login-card w-full max-w-sm p-8 bg-white rounded-2xl">
         <div class="text-center">
-            <!-- SmartHarvest Logo/Icon Placeholder -->
-            <div class="inline-block p-2 mb-3 rounded-full bg-green-50">
-                <!-- Using a leaf icon placeholder -->
-                <svg class="w-8 h-8 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <!-- SmartHarvest Admin Logo with Seedling -->
+            <div class="inline-block p-3 mb-3 rounded-full bg-gradient-to-br from-green-50 to-blue-50">
+                <div class="flex items-center space-x-1">
+                    <span class="text-2xl">🌱</span>
+                    <svg class="w-6 h-6 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                </div>
             </div>
             <h1 class="text-2xl font-semibold text-green-700 mb-1">SmartHarvest Admin</h1>
             <p class="text-gray-500 mb-8 text-sm">Sign in to access the admin dashboard</p>
@@ -83,6 +85,13 @@
         <div class="text-center mt-6">
             <a href="{{ url('/') }}" class="text-sm text-gray-500 hover:text-green-600 transition duration-150">
                 &mdash; Back to main site
+            </a>
+        </div>
+
+        <!-- Superadmin Login Link -->
+        <div class="text-center mt-4">
+            <a href="{{ route('superadmin.login') }}" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition duration-150">
+                🛡️ Super Admin Login
             </a>
         </div>
 

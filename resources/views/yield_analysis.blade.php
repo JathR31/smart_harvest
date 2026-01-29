@@ -19,7 +19,7 @@
     <aside class="sidebar w-64 min-h-screen text-white flex-shrink-0">
         <div class="p-6">
             <div class="flex items-center space-x-2 mb-8">
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/></svg>
+                <span class="text-2xl">🌱</span>
                 <span class="text-xl font-semibold">SmartHarvest</span>
             </div>
 
@@ -149,6 +149,23 @@
 
             <!-- Main Content -->
             <div x-show="!loading">
+                <!-- Info Banner -->
+                <div class="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+                    <div class="flex items-start space-x-3">
+                        <svg class="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div>
+                            <h3 class="text-sm font-semibold text-blue-900 mb-1">Yield Analysis Overview</h3>
+                            <p class="text-xs text-blue-800">
+                                • <strong>Top 5 Crops:</strong> Analysis focuses on the top 5 highest-yielding crops for <span x-text="selectedMunicipality"></span><br>
+                                • <strong>Monthly Predictions:</strong> Forecasts start from year 2025 onwards (select 2025-2030)<br>
+                                • <strong>ML-Powered:</strong> Predictions generated using machine learning models with confidence scores
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Top Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <!-- Best Performing Crop (ML Prediction) -->
@@ -189,54 +206,14 @@
 
             <!-- Charts Row 1 -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <!-- Yield Comparison Chart -->
-                <div class="bg-white rounded-lg shadow-lg p-6 border-t-4 border-green-500">
-                    <div class="flex items-center justify-between mb-2">
-                        <div>
-                            <h2 class="text-lg font-semibold text-green-700">Historical vs Predictions</h2>
-                            <p class="text-sm text-gray-600 mt-1">6-year trend analysis (2020-2025)</p>
-                        </div>
-                        <span class="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full">Model</span>
-                    </div>
-                    <div class="h-64 mt-4">
-                        <canvas id="yieldComparisonChart"></canvas>
-                    </div>
-                    <div class="mt-4 flex items-center justify-center space-x-6 text-sm">
-                        <div class="flex items-center">
-                            <div class="w-4 h-4 bg-green-500 rounded-full mr-2"></div>
-                            <span class="text-gray-600">Historical Data</span>
-                        </div>
-                        <div class="flex items-center">
-                            <div class="w-4 h-4 bg-blue-500 rounded-full mr-2"></div>
-                            <span class="text-gray-600">Predictions</span>
-                        </div>
-                    </div>
-                    <!-- Graph Interpretation -->
-                    <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <div class="flex items-start space-x-2">
-                            <svg class="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
-                            <div class="flex-1">
-                                <p class="text-xs font-semibold text-gray-700 mb-2">Graph Interpretation</p>
-                                <div x-show="comparisonInterpretation.loading" class="text-xs text-gray-500 italic">Analyzing trends...</div>
-                                <div x-show="!comparisonInterpretation.loading && comparisonInterpretation.text" 
-                                     class="text-xs text-gray-700 space-y-1"
-                                     x-html="comparisonInterpretation.text.replace(/•/g, '<br>•')"></div>
-                                <p x-show="!comparisonInterpretation.loading && comparisonInterpretation.error" 
-                                   class="text-xs text-red-600" 
-                                   x-text="comparisonInterpretation.error"></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Crop Performance Chart -->
                 <div class="bg-white rounded-lg shadow-lg p-6 border-t-4 border-blue-500">
                     <div class="flex items-center justify-between mb-2">
                         <div>
-                            <h2 class="text-lg font-semibold text-blue-700">Predicted Crop Performance</h2>
-                            <p class="text-sm text-gray-600 mt-1">Predicted yield per hectare - <span x-text="selectedMunicipality"></span></p>
+                            <h2 class="text-lg font-semibold text-blue-700">Top 5 Crop Performance</h2>
+                            <p class="text-sm text-gray-600 mt-1">Top 5 crops by predicted yield per hectare - <span x-text="selectedMunicipality"></span></p>
                         </div>
-                        <span class="px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full">Predictions</span>
+                        <span class="px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full">Top 5</span>
                     </div>
                     <div class="h-64 mt-4">
                         <canvas id="cropPerformanceChart"></canvas>
@@ -275,10 +252,10 @@
                 <div class="bg-white rounded-lg shadow-lg p-6 border-t-4 border-purple-500">
                     <div class="flex items-center justify-between mb-2">
                         <div>
-                            <h2 class="text-lg font-semibold text-purple-700">Seasonal Predictions</h2>
-                            <p class="text-sm text-gray-600 mt-1">Monthly yield forecast for <span x-text="selectedYear"></span></p>
+                            <h2 class="text-lg font-semibold text-purple-700">Monthly Predictions (2025 onwards)</h2>
+                            <p class="text-sm text-gray-600 mt-1">Monthly yield forecast starting from 2025 - <span x-text="selectedYear"></span></p>
                         </div>
-                        <span class="px-3 py-1 bg-purple-500 text-white text-xs font-bold rounded-full">Forecast</span>
+                        <span class="px-3 py-1 bg-purple-500 text-white text-xs font-bold rounded-full">2025+</span>
                     </div>
                     <div class="h-64 mt-4">
                         <canvas id="monthlyYieldChart"></canvas>
@@ -350,26 +327,22 @@
                 selectedYear: 2025,
                 municipalities: [
                     'Atok', 'Bakun', 'Bokod', 'Buguias', 'Itogon', 
-                    'Kabayan', 'Kapangan', 'Kibungan', 'La Trinidad', 'Mankayan', 
-                    'Sablan', 'Tuba', 'Tublay'
+                    'Kabayan', 'Kapangan', 'Kibungan', 'La Trinidad', 'Mankayan', 'Sablan', 'Tuba', 'Tublay'
                 ],
-                years: [2025, 2024, 2023, 2022, 2021, 2020],
+                years: [2025, 2026, 2027, 2028, 2029, 2030],
                 stats: {
                     avg_yield: '0.0',
                     best_crop: null,
                     total_production: '0',
                     total_area: '0'
                 },
-                comparisonData: [],
                 cropPerformance: [],
                 monthlyData: [],
                 forecastData: [],
                 loading: false,
                 mlConnected: false,
-                yieldChart: null,
                 cropChart: null,
                 monthlyChart: null,
-                comparisonInterpretation: { text: '', loading: false, error: '' },
                 cropInterpretation: { text: '', loading: false, error: '' },
                 monthlyInterpretation: { text: '', loading: false, error: '' },
 
@@ -461,11 +434,6 @@
                             // Update stats
                             this.stats = data.stats;
                             
-                            // Update comparison data
-                            this.comparisonData = data.comparison || [];
-                            this.updateYieldChart();
-                            this.loadComparisonInterpretation();
-                            
                             // Update crop performance
                             this.cropPerformance = data.crops || [];
                             this.updateCropChart();
@@ -499,108 +467,6 @@
                     } finally {
                         this.loading = false;
                     }
-                },
-
-                updateYieldChart() {
-                    const ctx = document.getElementById('yieldComparisonChart');
-                    if (!ctx) return;
-
-                    if (this.yieldChart) {
-                        this.yieldChart.destroy();
-                    }
-
-                    const labels = this.comparisonData.map(d => d.year);
-                    const actualData = this.comparisonData.map(d => parseFloat(d.actual));
-                    const predictedData = this.comparisonData.map(d => parseFloat(d.predicted));
-
-                    this.yieldChart = new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'Historical Data',
-                                data: actualData,
-                                borderColor: 'rgb(34, 197, 94)',
-                                backgroundColor: 'rgba(34, 197, 94, 0.2)',
-                                tension: 0.4,
-                                fill: true,
-                                pointRadius: 6,
-                                pointHoverRadius: 8,
-                                pointBackgroundColor: 'rgb(34, 197, 94)',
-                                pointBorderColor: '#fff',
-                                pointBorderWidth: 2,
-                                borderWidth: 3
-                            }, {
-                                label: 'Predictions',
-                                data: predictedData,
-                                borderColor: 'rgb(59, 130, 246)',
-                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                                tension: 0.4,
-                                fill: false,
-                                borderDash: [8, 4],
-                                pointRadius: 6,
-                                pointHoverRadius: 8,
-                                pointBackgroundColor: 'rgb(59, 130, 246)',
-                                pointBorderColor: '#fff',
-                                pointBorderWidth: 2,
-                                borderWidth: 3
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    display: false
-                                },
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(context) {
-                                            const index = context.dataIndex;
-                                            const value = context.parsed.y;
-                                            const confidence = this.comparisonData[index]?.confidence || 0;
-                                            const label = context.dataset.label;
-                                            return [
-                                                `${label}: ${value.toFixed(2)} MT/ha`,
-                                                `Confidence: ${confidence}%`
-                                            ];
-                                        }.bind(this)
-                                    },
-                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                    padding: 12,
-                                    titleFont: { size: 14, weight: 'bold' },
-                                    bodyFont: { size: 13 }
-                                }
-                            },
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    title: {
-                                        display: true,
-                                        text: 'Yield (MT/ha)',
-                                        font: { size: 12, weight: 'bold' }
-                                    },
-                                    grid: {
-                                        color: 'rgba(0, 0, 0, 0.05)'
-                                    }
-                                },
-                                x: {
-                                    title: {
-                                        display: true,
-                                        text: 'Year',
-                                        font: { size: 12, weight: 'bold' }
-                                    },
-                                    grid: {
-                                        display: false
-                                    }
-                                }
-                            },
-                            interaction: {
-                                mode: 'index',
-                                intersect: false
-                            }
-                        }
-                    });
                 },
 
                 updateCropChart() {
@@ -787,23 +653,6 @@
                             }
                         }
                     });
-                },
-
-                async loadComparisonInterpretation() {
-                    this.comparisonInterpretation = { text: '', loading: true, error: '' };
-                    try {
-                        const response = await fetch(`{{ url('/api/yield/interpretation/comparison') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}&year=${this.selectedYear}`);
-                        const data = await response.json();
-                        
-                        if (data.status === 'success') {
-                            this.comparisonInterpretation = { text: data.interpretation, loading: false, error: '' };
-                        } else {
-                            this.comparisonInterpretation = { text: '', loading: false, error: data.message || 'Failed to load interpretation' };
-                        }
-                    } catch (error) {
-                        console.error('Error loading comparison interpretation:', error);
-                        this.comparisonInterpretation = { text: '', loading: false, error: 'Connection error' };
-                    }
                 },
 
                 async loadCropInterpretation() {

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Language Dropdown Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/translation.js?v=1234"></script>
+</head>
+<body class="bg-gray-100 p-8">
+
+<h1 class="text-2xl font-bold mb-8">Language Dropdown Test</h1>
+
+<div class="bg-white p-4 rounded shadow">
+    <!-- Language Dropdown Test -->
+    <div class="relative">
+        <button id="languageDropdownBtn" class="flex items-center px-3 py-1 bg-white text-gray-700 rounded-sm border border-gray-300 shadow-sm text-sm hover:bg-gray-100 transition duration-150">
+            English
+            <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+        </button>
+        <div id="languageDropdownMenu" class="hidden absolute right-0 mt-2 py-2 w-40 bg-white rounded-md shadow-xl border text-gray-800 z-50">
+            <button onclick="changeLanguageTest('en', 'English')" class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition">English</button>
+            <button onclick="changeLanguageTest('tl', 'Tagalog')" class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition">Tagalog</button>
+            <button onclick="changeLanguageTest('ilo', 'Ilocano')" class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition">Ilocano</button>
+        </div>
+    </div>
+</div>
+
+<!-- Test Content -->
+<div class="mt-8 bg-white p-4 rounded shadow">
+    <h2 data-translate data-translate-id="test-title" class="text-lg font-bold mb-4">Welcome to SmartHarvest</h2>
+    <p data-translate data-translate-id="test-subtitle" class="mb-2">Features</p>
+    <p data-translate data-translate-id="test-content" class="mb-2">Get Started Today</p>
+    <p data-translate data-translate-id="test-weather" class="mb-2">Weather Monitoring</p>
+</div>
+
+<div class="mt-4 bg-blue-50 p-4 rounded">
+    <h3 class="font-bold">Debug Info:</h3>
+    <div id="debug-info" class="text-sm"></div>
+</div>
+
+<script>
+// Debug function
+function log(message) {
+    const debug = document.getElementById('debug-info');
+    debug.innerHTML += new Date().toLocaleTimeString() + ': ' + message + '<br>';
+    console.log(message);
+}
+
+// Test language change function
+function changeLanguageTest(code, name) {
+    log('Language change requested: ' + name + ' (' + code + ')');
+    
+    // Update button text
+    const btn = document.getElementById('languageDropdownBtn');
+    if (btn) {
+        const svgIcon = '<svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>';
+        btn.innerHTML = name + svgIcon;
+        log('Button text updated to: ' + name);
+    }
+    
+    // Close dropdown
+    const menu = document.getElementById('languageDropdownMenu');
+    if (menu) {
+        menu.classList.add('hidden');
+        log('Dropdown closed');
+    }
+    
+    // Call translation if available
+    if (typeof SmartHarvestTranslation !== 'undefined') {
+        log('Calling SmartHarvestTranslation.changeLanguage');
+        SmartHarvestTranslation.changeLanguage(code, name);
+    } else {
+        log('SmartHarvestTranslation not available');
+        // Manual translation test
+        if (code !== 'en') {
+            translateElementsManually(code);
+        } else {
+            restoreOriginalText();
+        }
+    }
+}
+
+// Manual translation for testing
+function translateElementsManually(targetLang) {
+    const translations = {
+        'tl': {
+            'Welcome to SmartHarvest': 'Maligayang pagdating sa SmartHarvest',
+            'Features': 'Mga Tampok',
+            'Get Started Today': 'Magsimula Ngayon',
+            'Weather Monitoring': 'Pagsusubaybay sa Panahon'
+        },
+        'ilo': {
+            'Welcome to SmartHarvest': 'Naragsak nga isasangbay iti SmartHarvest',
+            'Features': 'Dagiti Tampok',
+            'Get Started Today': 'Mangrugi ita',
+            'Weather Monitoring': 'Panagbantay iti Paniempo'
+        }
+    };
+    
+    const elements = document.querySelectorAll('[data-translate]');
+    elements.forEach(el => {
+        const originalText = el.textContent.trim();
+        if (translations[targetLang] && translations[targetLang][originalText]) {
+            el.textContent = translations[targetLang][originalText];
+            log('Translated: ' + originalText + ' → ' + translations[targetLang][originalText]);
+        }
+    });
+}
+
+function restoreOriginalText() {
+    const originals = {
+        'test-title': 'Welcome to SmartHarvest',
+        'test-subtitle': 'Features',
+        'test-content': 'Get Started Today',
+        'test-weather': 'Weather Monitoring'
+    };
+    
+    Object.keys(originals).forEach(id => {
+        const el = document.querySelector('[data-translate-id="' + id + '"]');
+        if (el) {
+            el.textContent = originals[id];
+        }
+    });
+    log('Restored original English text');
+}
+
+// Initialize dropdown functionality
+document.addEventListener('DOMContentLoaded', function() {
+    log('DOM loaded, initializing dropdown');
+    
+    const dropdownBtn = document.getElementById('languageDropdownBtn');
+    const dropdownMenu = document.getElementById('languageDropdownMenu');
+    
+    if (dropdownBtn && dropdownMenu) {
+        log('Found dropdown elements, setting up event listeners');
+        
+        dropdownBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dropdownMenu.classList.toggle('hidden');
+            log('Dropdown toggled, hidden class: ' + dropdownMenu.classList.contains('hidden'));
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                if (!dropdownMenu.classList.contains('hidden')) {
+                    dropdownMenu.classList.add('hidden');
+                    log('Dropdown closed by outside click');
+                }
+            }
+        });
+        
+        log('Dropdown initialized successfully');
+    } else {
+        log('ERROR: Could not find dropdown elements!');
+        log('dropdownBtn: ' + (dropdownBtn ? 'found' : 'NOT FOUND'));
+        log('dropdownMenu: ' + (dropdownMenu ? 'found' : 'NOT FOUND'));
+    }
+    
+    // Initialize translation system if available
+    if (typeof SmartHarvestTranslation !== 'undefined') {
+        log('Initializing SmartHarvestTranslation');
+        SmartHarvestTranslation.init();
+    } else {
+        log('SmartHarvestTranslation not available');
+    }
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>SmartHarvest - Working Dropdown</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .dropdown-menu {
+            min-width: 160px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+<header class="bg-green-600 text-white p-4">
+    <div class="flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+            <span class="text-2xl">🌱</span>
+            <span class="text-xl font-semibold">SmartHarvest</span>
+        </div>
+        
+        <div class="relative">
+            <button id="languageDropdownBtn" onclick="toggleDropdown()" class="flex items-center px-3 py-1 bg-white text-gray-700 rounded-sm shadow-sm text-sm hover:bg-gray-100 transition cursor-pointer">
+                English
+                <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
+            <div id="languageDropdownMenu" class="hidden absolute right-0 mt-2 py-2 w-40 bg-white rounded-md shadow-xl dropdown-menu text-gray-800 z-50">
+                <button onclick="selectLanguage('en', 'English')" class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition">
+                    🇺🇸 English
+                </button>
+                <button onclick="selectLanguage('tl', 'Tagalog')" class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition">
+                    🇵🇭 Tagalog
+                </button>
+                <button onclick="selectLanguage('ilo', 'Ilocano')" class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition">
+                    🇵🇭 Ilocano
+                </button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main class="p-8">
+    <h1 data-translate data-translate-id="hero-title" class="text-4xl font-bold mb-4">Welcome to SmartHarvest</h1>
+    <p data-translate data-translate-id="hero-subtitle" class="text-lg mb-6">Smart Agriculture Solutions</p>
+    <div class="space-y-4">
+        <h2 data-translate data-translate-id="features-title" class="text-2xl font-semibold">Features</h2>
+        <p data-translate data-translate-id="cta-button" class="text-blue-600">Get Started Today</p>
+    </div>
+</main>
+
+<div id="status" class="fixed bottom-4 right-4 bg-blue-50 p-4 rounded shadow max-w-sm">
+    <strong>Status:</strong><br>
+    <div id="log"></div>
+</div>
+
+<script>
+function log(message) {
+    document.getElementById('log').innerHTML += new Date().toLocaleTimeString() + ': ' + message + '<br>';
+    console.log(message);
+}
+
+function toggleDropdown() {
+    const menu = document.getElementById('languageDropdownMenu');
+    if (menu) {
+        menu.classList.toggle('hidden');
+        log('Dropdown toggled, hidden: ' + menu.classList.contains('hidden'));
+    } else {
+        log('ERROR: Menu not found!');
+    }
+}
+
+function selectLanguage(code, name) {
+    log('Language selected: ' + name + ' (' + code + ')');
+    
+    // Update button text
+    const btn = document.getElementById('languageDropdownBtn');
+    if (btn) {
+        btn.innerHTML = name + ' <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>';
+        log('Button text updated to: ' + name);
+    }
+    
+    // Close dropdown
+    const menu = document.getElementById('languageDropdownMenu');
+    if (menu) {
+        menu.classList.add('hidden');
+        log('Dropdown closed');
+    }
+    
+    // Translate page
+    translatePage(code);
+}
+
+function translatePage(targetLang) {
+    if (targetLang === 'en') {
+        restoreOriginal();
+        return;
+    }
+    
+    const translations = {
+        'tl': {
+            'Welcome to SmartHarvest': 'Maligayang pagdating sa SmartHarvest',
+            'Smart Agriculture Solutions': 'Mga Matalinong Solusyon sa Agrikultura',
+            'Features': 'Mga Tampok',
+            'Get Started Today': 'Magsimula Ngayon'
+        },
+        'ilo': {
+            'Welcome to SmartHarvest': 'Naragsak nga isasangbay iti SmartHarvest',
+            'Smart Agriculture Solutions': 'Nasirib nga Solusion iti Agrikultura', 
+            'Features': 'Dagiti Tampok',
+            'Get Started Today': 'Mangrugi ita'
+        }
+    };
+
+    let translated = 0;
+    document.querySelectorAll('[data-translate]').forEach(el => {
+        const text = el.textContent.trim();
+        if (translations[targetLang] && translations[targetLang][text]) {
+            el.textContent = translations[targetLang][text];
+            translated++;
+        }
+    });
+    
+    log('Translated ' + translated + ' elements to ' + targetLang);
+}
+
+function restoreOriginal() {
+    const originals = {
+        'hero-title': 'Welcome to SmartHarvest',
+        'hero-subtitle': 'Smart Agriculture Solutions',
+        'features-title': 'Features',
+        'cta-button': 'Get Started Today'
+    };
+    
+    Object.keys(originals).forEach(id => {
+        const el = document.querySelector('[data-translate-id="' + id + '"]');
+        if (el) {
+            el.textContent = originals[id];
+        }
+    });
+    log('Restored original English text');
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    log('Page loaded - dropdown ready');
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        const btn = document.getElementById('languageDropdownBtn');
+        const menu = document.getElementById('languageDropdownMenu');
+        
+        if (btn && menu && !btn.contains(e.target) && !menu.contains(e.target)) {
+            menu.classList.add('hidden');
+        }
+    });
+});
+</script>
+
+</body>
+</html>

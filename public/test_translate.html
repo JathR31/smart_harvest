@@ -52,7 +52,8 @@
             console.log('Translating:', originalText, 'to', targetLang);
             
             try {
-                const response = await fetch('/dashboard/SmartHarvest/public/api/translate', {
+                // Use relative path - will work with any base URL
+                const response = await fetch('/api/translate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

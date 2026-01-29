@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMS Setup - SmartHarvest</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen py-12 px-4">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="bg-white rounded-lg shadow-md p-8 mb-6">
+                <div class="flex items-center space-x-4 mb-4">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">SMS/OTP Setup Guide</h1>
+                        <p class="text-gray-600">Configure Semaphore SMS for farmer verification</p>
+                    </div>
+                </div>
+                
+                <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p class="text-sm text-blue-800">
+                        <strong>Status:</strong> SMS service is implemented and ready to use. You just need to add your Semaphore API key to activate it.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Step 1 -->
+            <div class="bg-white rounded-lg shadow-md p-8 mb-6">
+                <div class="flex items-start space-x-4">
+                    <div class="flex-shrink-0 w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">
+                        1
+                    </div>
+                    <div class="flex-1">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">Get Semaphore API Key</h2>
+                        
+                        <div class="space-y-4">
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <h3 class="font-semibold text-gray-900 mb-2">Sign Up</h3>
+                                <p class="text-gray-700 mb-3">Visit Semaphore website and create an account:</p>
+                                <a href="https://semaphore.co/" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                    </svg>
+                                    Go to Semaphore.co
+                                </a>
+                            </div>
+
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <h3 class="font-semibold text-gray-900 mb-2">Get API Key</h3>
+                                <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                                    <li>Login to your Semaphore dashboard</li>
+                                    <li>Navigate to <strong>API</strong> section</li>
+                                    <li>Copy your API Key (starts with letters/numbers)</li>
+                                    <li>Keep it secure - don't share publicly</li>
+                                </ol>
+                            </div>
+
+                            <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <h3 class="font-semibold text-yellow-900 mb-2">💰 Pricing Info</h3>
+                                <ul class="space-y-1 text-yellow-800 text-sm">
+                                    <li>• <strong>Free Trial:</strong> 100 SMS credits (Free)</li>
+                                    <li>• <strong>Cost per SMS:</strong> ₱0.50 - ₱1.00</li>
+                                    <li>• <strong>For 1000 farmers:</strong> ~₱750-₱1,500</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="bg-white rounded-lg shadow-md p-8 mb-6">
+                <div class="flex items-start space-x-4">
+                    <div class="flex-shrink-0 w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">
+                        2
+                    </div>
+                    <div class="flex-1">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">Configure SmartHarvest</h2>
+                        
+                        <div class="space-y-4">
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <h3 class="font-semibold text-gray-900 mb-2">Update .env File</h3>
+                                <p class="text-gray-700 mb-3">Open your <code class="bg-gray-200 px-2 py-1 rounded">.env</code> file and add:</p>
+                                <div class="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto">
+                                    <div class="mb-2 text-gray-500"># Semaphore SMS API Configuration</div>
+                                    <div>SEMAPHORE_API_KEY=<span class="text-yellow-400">your_api_key_here</span></div>
+                                </div>
+                                <p class="text-sm text-gray-600 mt-2">Replace <code class="bg-gray-200 px-2 py-1 rounded">your_api_key_here</code> with your actual API key from Semaphore</p>
+                            </div>
+
+                            <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <h3 class="font-semibold text-blue-900 mb-2">📍 File Location</h3>
+                                <p class="text-blue-800 text-sm font-mono">c:\xampp\htdocs\dashboard\smart_harvest\.env</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="bg-white rounded-lg shadow-md p-8 mb-6">
+                <div class="flex items-start space-x-4">
+                    <div class="flex-shrink-0 w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">
+                        3
+                    </div>
+                    <div class="flex-1">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">Test SMS Service</h2>
+                        
+                        <div class="space-y-4">
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <h3 class="font-semibold text-gray-900 mb-2">Run Test Script</h3>
+                                <p class="text-gray-700 mb-3">Open PowerShell/Command Prompt and run:</p>
+                                <div class="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm">
+                                    cd c:\xampp\htdocs\dashboard\smart_harvest<br>
+                                    php test_sms.php
+                                </div>
+                            </div>
+
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <h3 class="font-semibold text-gray-900 mb-2">Expected Output</h3>
+                                <div class="bg-gray-900 text-white p-4 rounded-lg font-mono text-xs space-y-1">
+                                    <div class="text-green-400">=====================================</div>
+                                    <div>SMS/OTP Service Test</div>
+                                    <div class="text-green-400">=====================================</div>
+                                    <div class="text-green-400">✓ API Key configured</div>
+                                    <div>Enter test phone number (format: 09XXXXXXXXX): <span class="text-yellow-400">09171234567</span></div>
+                                    <div>Generated OTP: <span class="text-yellow-400">123456</span></div>
+                                    <div>Sending SMS...</div>
+                                    <div class="text-green-400">Success: YES ✓</div>
+                                    <div>Message: OTP code sent successfully</div>
+                                    <div class="text-green-400">✓ SMS sent successfully!</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- How It Works -->
+            <div class="bg-white rounded-lg shadow-md p-8 mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">How SMS Verification Works</h2>
+                
+                <div class="space-y-4">
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold">1</div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Farmer Registers</h3>
+                            <p class="text-gray-600 text-sm">Farmer fills registration form and selects "SMS Verification"</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold">2</div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900">System Generates OTP</h3>
+                            <p class="text-gray-600 text-sm">6-digit code generated, expires in 10 minutes</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold">3</div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900">SMS Sent via Semaphore</h3>
+                            <p class="text-gray-600 text-sm">OTP code sent to farmer's mobile number</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold">4</div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Farmer Enters OTP</h3>
+                            <p class="text-gray-600 text-sm">Farmer types the 6-digit code on verification page</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold">5</div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Account Verified</h3>
+                            <p class="text-gray-600 text-sm">Farmer sets password and can access dashboard</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features -->
+            <div class="bg-white rounded-lg shadow-md p-8 mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Security Features</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 bg-green-50 rounded-lg">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                            <h3 class="font-semibold text-green-900">10-Minute Expiration</h3>
+                        </div>
+                        <p class="text-sm text-green-800">OTP codes expire after 10 minutes for security</p>
+                    </div>
+
+                    <div class="p-4 bg-green-50 rounded-lg">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                            </svg>
+                            <h3 class="font-semibold text-green-900">Rate Limiting</h3>
+                        </div>
+                        <p class="text-sm text-green-800">Max 3 resend attempts per minute</p>
+                    </div>
+
+                    <div class="p-4 bg-green-50 rounded-lg">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                            <h3 class="font-semibold text-green-900">Attempt Tracking</h3>
+                        </div>
+                        <p class="text-sm text-green-800">Max 5 verification attempts per OTP</p>
+                    </div>
+
+                    <div class="p-4 bg-green-50 rounded-lg">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                            <h3 class="font-semibold text-green-900">Email Fallback</h3>
+                        </div>
+                        <p class="text-sm text-green-800">Automatically switches to email if SMS fails</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Troubleshooting -->
+            <div class="bg-white rounded-lg shadow-md p-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Troubleshooting</h2>
+                
+                <div class="space-y-4">
+                    <details class="bg-gray-50 rounded-lg p-4">
+                        <summary class="font-semibold text-gray-900 cursor-pointer">❌ "SMS service not configured"</summary>
+                        <p class="mt-2 text-gray-700">Add <code class="bg-gray-200 px-2 py-1 rounded">SEMAPHORE_API_KEY</code> to your .env file</p>
+                    </details>
+
+                    <details class="bg-gray-50 rounded-lg p-4">
+                        <summary class="font-semibold text-gray-900 cursor-pointer">❌ "Invalid phone number format"</summary>
+                        <p class="mt-2 text-gray-700">Use Philippine mobile format: 09XXXXXXXXX (11 digits starting with 09)</p>
+                    </details>
+
+                    <details class="bg-gray-50 rounded-lg p-4">
+                        <summary class="font-semibold text-gray-900 cursor-pointer">❌ OTP not received</summary>
+                        <div class="mt-2 text-gray-700 space-y-2">
+                            <p>Check:</p>
+                            <ul class="list-disc list-inside ml-4">
+                                <li>Phone number is correct</li>
+                                <li>Semaphore credits available</li>
+                                <li>Network signal on phone</li>
+                                <li>Check spam/blocked messages</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details class="bg-gray-50 rounded-lg p-4">
+                        <summary class="font-semibold text-gray-900 cursor-pointer">❌ "Failed to send SMS"</summary>
+                        <div class="mt-2 text-gray-700 space-y-2">
+                            <p>Possible causes:</p>
+                            <ul class="list-disc list-inside ml-4">
+                                <li>Invalid API key</li>
+                                <li>Insufficient credits</li>
+                                <li>Network/API error</li>
+                            </ul>
+                            <p>Check logs: <code class="bg-gray-200 px-2 py-1 rounded">storage/logs/laravel.log</code></p>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="mt-8 text-center text-gray-600">
+                <p>Need more help? Check <a href="SMS_SETUP_GUIDE.md" class="text-green-600 hover:text-green-700 font-semibold">SMS_SETUP_GUIDE.md</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

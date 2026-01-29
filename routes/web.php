@@ -25,22 +25,45 @@ Route::get('/login', function () {
 
 // POST handler for unified login (farmers and admin)
 Route::post('/login', function (Request $request) {
-    $credentials = $request->validate([
-        'email' => 'required|email',
+    $request->validate([
+        'email' => 'required|string',
         'password' => 'required|string',
     ]);
     
     $remember = $request->has('remember');
+    $loginField = $request->input('email');
+    
+    // Determine if login field is email or phone number
+    $fieldType = 'email';
+    if (preg_match('/^(\+63|0)?9[0-9]{9}$/', $loginField)) {
+        $fieldType = 'phone_number';
+        // Normalize phone number to +639XXXXXXXXX format
+        $loginField = preg_replace('/^(\+63|0)?/', '+63', $loginField);
+    }
+    
+    $credentials = [
+        $fieldType => $loginField,
+        'password' => $request->input('password'),
+    ];
 
     if (Auth::attempt($credentials, $remember)) {
         $user = Auth::user();
         
-        // Check if email is verified
-        if (!$user->hasVerifiedEmail()) {
-            Auth::logout();
-            return back()->withErrors([
-                'email' => 'Please verify your email address before logging in. Check your inbox for the verification link.'
-            ])->withInput();
+        // Check if user is verified based on their verification method
+        if ($user->verification_method === 'sms') {
+            if (!$user->hasVerifiedPhone()) {
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => 'Please verify your phone number before logging in.'
+                ])->withInput();
+            }
+        } else {
+            if (!$user->hasVerifiedEmail()) {
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => 'Please verify your email address before logging in. Check your inbox for the verification link.'
+                ])->withInput();
+            }
         }
         
         $request->session()->regenerate();
@@ -49,10 +72,10 @@ Route::post('/login', function (Request $request) {
         $user->update(['last_login' => now()]);
         
         // Redirect based on user role
-        if ($user->role === 'Admin') {
+        if ($user->is_superadmin || $user->role === 'Admin' || $user->role === 'DA Admin') {
             return redirect()->route('admin.dashboard');
         } else {
-            return redirect()->intended(route('dashboard'));
+            return redirect()->route('dashboard');
         }
     }
 
@@ -154,9 +177,33 @@ Route::get('/admin', function () {
     return redirect()->route('login')->with('admin_login', true);
 })->name('admin.login');
 
+// =============================================================================
+// SUPERADMIN LOGIN ROUTES (with 2FA authenticator app verification)
+// =============================================================================
+use App\Http\Controllers\SuperadminAuthController;
+
+Route::get('/superadmin/login', [SuperadminAuthController::class, 'showLoginForm'])
+    ->name('superadmin.login');
+
+Route::post('/superadmin/verify-credentials', [SuperadminAuthController::class, 'verifyCredentials'])
+    ->name('superadmin.login.verify-credentials');
+
+Route::post('/superadmin/verify-totp', [SuperadminAuthController::class, 'verifyTotp'])
+    ->name('superadmin.login.verify-totp');
+
+Route::get('/superadmin/2fa-setup', [SuperadminAuthController::class, 'show2FASetup'])
+    ->name('superadmin.2fa.setup');
+
+Route::post('/superadmin/2fa-enable', [SuperadminAuthController::class, 'enable2FA'])
+    ->name('superadmin.2fa.enable');
+
+Route::post('/superadmin/logout', [SuperadminAuthController::class, 'logout'])
+    ->name('superadmin.logout');
+
 // Admin dashboard (role-based access)
 Route::get('/admin/dashboard', function () {
-    if (!Auth::check() || Auth::user()->role !== 'Admin') {
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
         return redirect()->route('login')->withErrors(['error' => 'Admin access required']);
     }
     
@@ -166,12 +213,30 @@ Route::get('/admin/dashboard', function () {
             ->with('message', 'Please set your password to continue.');
     }
     
-    return view('admin_dash');
+    // Check user's admin type for appropriate dashboard
+    $user = Auth::user();
+    
+    // Superadmin gets superadmin_dashboard, DA Admin and regular admin gets admin_dacar
+    if ($user->is_superadmin || $user->email === 'superadmin@smartharvest.ph') {
+        return view('admin_dash'); // Superadmin dashboard
+    }
+    
+    return view('admin_dacar'); // DA-CAR Admin dashboard (for DA Admin role)
 })->name('admin.dashboard');
+
+// DA-CAR Admin Dashboard (direct route)
+Route::get('/admin/dacar-dashboard', function () {
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
+        return redirect()->route('login')->withErrors(['error' => 'Admin access required']);
+    }
+    return view('admin_dacar');
+})->name('admin.dacar.dashboard');
 
 // Admin API - Dashboard data
 Route::get('/admin/api/dashboard', function () {
-    if (!Auth::check() || Auth::user()->role !== 'Admin') {
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
@@ -381,21 +446,64 @@ Route::get('/admin/api/dashboard', function () {
     ]);
 })->name('admin.api.dashboard');
 
+// Admin API - Yield & Planting Schedule Analysis
+Route::get('/admin/api/yield-analysis', [App\Http\Controllers\AdminController::class, 'getYieldPlantingAnalysis'])
+    ->name('admin.api.yield-analysis');
+
+// Admin API - Crop Performance by Variety
+Route::get('/admin/api/crop-performance', [App\Http\Controllers\AdminController::class, 'getCropPerformance'])
+    ->name('admin.api.crop-performance');
+
+// Admin API - System Overview
+Route::get('/admin/api/system-overview', [App\Http\Controllers\AdminController::class, 'getSystemOverview'])
+    ->name('admin.api.system-overview');
+
+// Admin API - Market Prices (DA-CAR Dashboard)
+Route::get('/admin/api/market-prices', [App\Http\Controllers\AdminController::class, 'getMarketPrices'])
+    ->name('admin.api.market-prices');
+
+// Admin API - Data Validation Alerts (DA-CAR Dashboard)
+Route::get('/admin/api/validation-alerts', [App\Http\Controllers\AdminController::class, 'getValidationAlerts'])
+    ->name('admin.api.validation-alerts');
+
+// Admin API - Climate Hazard Alerts (Provincial Monitoring)
+Route::get('/admin/api/climate-alerts', [App\Http\Controllers\AdminController::class, 'getClimateAlerts'])
+    ->name('admin.api.climate-alerts');
+
+// Admin API - 7-Day Rainfall Forecast (Provincial Monitoring)
+Route::get('/admin/api/rainfall-forecast', [App\Http\Controllers\AdminController::class, 'getRainfallForecast'])
+    ->name('admin.api.rainfall-forecast');
+
+// Admin API - Provincial Climate Status (Provincial Monitoring)
+Route::get('/admin/api/provincial-climate', [App\Http\Controllers\AdminController::class, 'getProvincialClimateStatus'])
+    ->name('admin.api.provincial-climate');
+
 // Admin Users Management Page
 Route::get('/admin/users', function () {
-    if (!Auth::check() || Auth::user()->role !== 'Admin') {
-        return redirect()->route('admin.login');
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
+        return redirect()->route('login');
     }
     return view('users');
 })->name('admin.users');
 
 // Admin Datasets Page
 Route::get('/admin/datasets', function () {
-    if (!Auth::check() || Auth::user()->role !== 'Admin') {
-        return redirect()->route('admin.login');
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
+        return redirect()->route('login');
     }
     return view('datasets');
 })->name('admin.datasets');
+
+// Admin System Status Page
+Route::get('/admin/system-status', function () {
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
+        return redirect()->route('login');
+    }
+    return view('system_status');
+})->name('admin.system-status');
 
 // Admin Data Import Page (TEMPORARY: No auth check for testing)
 Route::get('/admin/dataimport', function () {
@@ -408,7 +516,8 @@ Route::get('/admin/dataimport', function () {
 
 // Admin Monitoring Page
 Route::get('/admin/monitoring', function () {
-    if (!Auth::check() || Auth::user()->role !== 'Admin') {
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
         return redirect()->route('login');
     }
     return view('monitoring');
@@ -416,7 +525,8 @@ Route::get('/admin/monitoring', function () {
 
 // Admin API - Monitoring Climate Alerts
 Route::get('/admin/api/monitoring/alerts', function () {
-    if (!Auth::check() || Auth::user()->role !== 'Admin') {
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
@@ -484,7 +594,8 @@ Route::get('/admin/api/monitoring/alerts', function () {
 
 // Admin API - 7-Day Rainfall Forecast using OpenWeather API
 Route::get('/admin/api/monitoring/rainfall', function (Request $request) {
-    if (!Auth::check() || Auth::user()->role !== 'Admin') {
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
@@ -616,7 +727,8 @@ Route::get('/admin/api/monitoring/rainfall', function (Request $request) {
 
 // Admin API - Municipality Climate Status
 Route::get('/admin/api/monitoring/municipalities', function () {
-    if (!Auth::check() || Auth::user()->role !== 'Admin') {
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
@@ -693,7 +805,8 @@ Route::get('/admin/api/monitoring/municipalities', function () {
 
 // Admin Roles & Permissions Page
 Route::get('/admin/roles-permissions', function () {
-    if (!Auth::check() || Auth::user()->role !== 'Admin') {
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
         return redirect()->route('login');
     }
     return view('roles_permissions');
@@ -701,11 +814,12 @@ Route::get('/admin/roles-permissions', function () {
 
 // Admin API - Roles & Permissions Summary
 Route::get('/admin/api/roles-permissions', function () {
-    if (!Auth::check() || Auth::user()->role !== 'Admin') {
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
-    $roles = ['Admin', 'Farmer'];
+    $roles = ['DA Admin', 'Farmer'];
     $rolesData = [];
 
     foreach ($roles as $role) {
@@ -716,12 +830,12 @@ Route::get('/admin/api/roles-permissions', function () {
         $userCount = \App\Models\User::where('role', $role)->count();
 
         $descriptions = [
-            'Admin' => 'Full system access with all permissions',
+            'DA Admin' => 'DA-CAR administrative access with full system permissions',
             'Farmer' => 'Basic access for farmers to manage their own data'
         ];
 
         $colors = [
-            'Admin' => 'bg-purple-600',
+            'DA Admin' => 'bg-blue-600',
             'Farmer' => 'bg-green-600'
         ];
 
@@ -739,7 +853,8 @@ Route::get('/admin/api/roles-permissions', function () {
 
 // Admin API - Get Role Permissions
 Route::get('/admin/api/roles-permissions/{role}', function ($role) {
-    if (!Auth::check() || Auth::user()->role !== 'Admin') {
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
@@ -774,7 +889,8 @@ Route::get('/admin/api/roles-permissions/{role}', function ($role) {
 
 // Admin API - Update Role Permissions
 Route::put('/admin/api/roles-permissions/{role}', function (Request $request, $role) {
-    if (!Auth::check() || Auth::user()->role !== 'Admin') {
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
@@ -806,9 +922,92 @@ Route::put('/admin/api/roles-permissions/{role}', function (Request $request, $r
     ]);
 })->name('admin.api.roles.update');
 
+// Superadmin API - Get DA Admins
+Route::get('/superadmin/api/admins', function () {
+    if (!Auth::check() || !Auth::user()->is_superadmin) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    $admins = \App\Models\User::where('role', 'DA Admin')
+        ->orderBy('created_at', 'desc')
+        ->get()
+        ->map(function($user) {
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'created_at' => $user->created_at->format('M d, Y'),
+                'last_login' => $user->last_login ? $user->last_login->diffForHumans() : 'Never'
+            ];
+        });
+
+    return response()->json(['admins' => $admins]);
+})->name('superadmin.api.admins');
+
+// Superadmin API - Add DA Admin by Email
+Route::post('/superadmin/api/admins', function (Request $request) {
+    if (!Auth::check() || !Auth::user()->is_superadmin) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    $validated = $request->validate([
+        'email' => 'required|email'
+    ]);
+
+    $user = \App\Models\User::where('email', $validated['email'])->first();
+
+    if (!$user) {
+        return response()->json(['error' => 'User with this email not found. Please ensure the user has registered first.'], 404);
+    }
+
+    if ($user->is_superadmin) {
+        return response()->json(['error' => 'Cannot modify superadmin role.'], 400);
+    }
+
+    if ($user->role === 'DA Admin') {
+        return response()->json(['error' => 'This user is already a DA Admin.'], 400);
+    }
+
+    $user->update(['role' => 'DA Admin']);
+
+    return response()->json([
+        'message' => 'User promoted to DA Admin successfully!',
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email
+        ]
+    ]);
+})->name('superadmin.api.admins.add');
+
+// Superadmin API - Remove DA Admin
+Route::delete('/superadmin/api/admins/{id}', function ($id) {
+    if (!Auth::check() || !Auth::user()->is_superadmin) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    $user = \App\Models\User::findOrFail($id);
+
+    if ($user->is_superadmin) {
+        return response()->json(['error' => 'Cannot modify superadmin role.'], 400);
+    }
+
+    $user->update(['role' => 'Farmer']);
+
+    return response()->json([
+        'message' => 'Admin access removed. User is now a Farmer.',
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email
+        ]
+    ]);
+})->name('superadmin.api.admins.remove');
+
 // Admin API - Users Management
 Route::get('/admin/api/users', function () {
-    if (!Auth::check() || Auth::user()->role !== 'Admin') {
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
@@ -847,9 +1046,66 @@ Route::get('/admin/api/users', function () {
     ]);
 })->name('admin.api.users');
 
+// Admin API - Create User
+Route::post('/admin/api/users/create', function (Request $request) {
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|max:255|unique:users,email',
+        'password' => 'required|string|min:6',
+        'phone' => 'nullable|string|max:20',
+        'role' => 'required|in:DA Admin,Farmer',
+        'status' => 'nullable|in:Active,Pending,Suspended',
+        'location' => 'nullable|string|max:255',
+        // Farmer-specific fields
+        'farm_name' => 'nullable|string|max:255',
+        'farm_size' => 'nullable|numeric',
+        'primary_crop' => 'nullable|string|max:100',
+        // DA Admin-specific fields
+        'office' => 'nullable|string|max:255',
+        'position' => 'nullable|string|max:255',
+        'employee_id' => 'nullable|string|max:50',
+        'permissions' => 'nullable|array',
+    ]);
+
+    $userData = [
+        'name' => $validated['name'],
+        'email' => $validated['email'],
+        'password' => $validated['password'], // Will be auto-hashed by model
+        'phone' => $validated['phone'] ?? null,
+        'role' => $validated['role'],
+        'status' => $validated['status'] ?? 'Active',
+        'location' => $validated['location'] ?? null,
+    ];
+
+    // Add role-specific fields
+    if ($validated['role'] === 'Farmer') {
+        $userData['farm_name'] = $validated['farm_name'] ?? null;
+        $userData['farm_size'] = $validated['farm_size'] ?? null;
+        $userData['primary_crop'] = $validated['primary_crop'] ?? null;
+    } elseif ($validated['role'] === 'DA Admin') {
+        $userData['office'] = $validated['office'] ?? null;
+        $userData['position'] = $validated['position'] ?? null;
+        $userData['employee_id'] = $validated['employee_id'] ?? null;
+        $userData['admin_permissions'] = $validated['permissions'] ?? null;
+    }
+
+    $user = \App\Models\User::create($userData);
+
+    return response()->json([
+        'message' => 'User created successfully',
+        'user' => $user
+    ], 201);
+})->name('admin.api.users.create');
+
 // Admin API - Update User
 Route::put('/admin/api/users/{id}', function (Request $request, $id) {
-    if (!Auth::check() || Auth::user()->role !== 'Admin') {
+    $authUser = Auth::user();
+    if (!Auth::check() || (!$authUser->is_superadmin && $authUser->role !== 'Admin' && $authUser->role !== 'DA Admin')) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
@@ -858,7 +1114,7 @@ Route::put('/admin/api/users/{id}', function (Request $request, $id) {
     $validated = $request->validate([
         'name' => 'sometimes|string|max:255',
         'email' => 'sometimes|email|max:255|unique:users,email,' . $id,
-        'role' => 'sometimes|in:Farmer,Field Agent,Admin,Researcher',
+        'role' => 'sometimes|in:DA Admin,Farmer',
         'status' => 'sometimes|in:Active,Pending,Suspended',
         'location' => 'nullable|string|max:255',
         'phone' => 'nullable|string|max:20',
@@ -872,7 +1128,8 @@ Route::put('/admin/api/users/{id}', function (Request $request, $id) {
 
 // Admin API - Delete User
 Route::delete('/admin/api/users/{id}', function ($id) {
-    if (!Auth::check() || Auth::user()->role !== 'Admin') {
+    $authUser = Auth::user();
+    if (!Auth::check() || (!$authUser->is_superadmin && $authUser->role !== 'Admin' && $authUser->role !== 'DA Admin')) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
@@ -976,7 +1233,8 @@ Route::post('/admin/api/import', function (Request $request) {
 
 // Admin API - Check Import Status
 Route::get('/admin/api/import-status/{fileName}', function ($fileName) {
-    if (!Auth::check() || Auth::user()->role !== 'Admin') {
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
@@ -1002,7 +1260,8 @@ Route::get('/admin/api/import-status/{fileName}', function ($fileName) {
 
 // Admin API - Get Recent Uploads
 Route::get('/admin/api/recent-uploads', function () {
-    if (!Auth::check() || Auth::user()->role !== 'Admin') {
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
@@ -2028,6 +2287,9 @@ Route::get('/api/ml/yield/analysis', function (\Illuminate\Http\Request $request
         $topCropsData = $topCropsResult['data'];
         $topCrops = $topCropsData['predicted_top5']['crops'] ?? $topCropsData['predicted_top_5'] ?? [];
         
+        // Ensure we only return top 5 crops
+        $topCrops = array_slice($topCrops, 0, 5);
+        
         if (empty($topCrops)) {
             // Check ML API health even if no data
             $healthCheck = $mlService->checkHealth();
@@ -2158,25 +2420,29 @@ Route::get('/api/ml/yield/analysis', function (\Illuminate\Http\Request $request
             ];
         }
         
-        // Monthly data - simulate from available data
+        // Monthly data - simulate from available data (starting from 2025)
         $monthlyData = [];
         $baseMonthlyYield = $avgYield;
         $monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         
-        for ($m = 1; $m <= 12; $m++) {
-            // Simulate seasonal variation for Benguet (higher yields in cool months)
-            $seasonalFactor = 1.0;
-            if ($m >= 10 || $m <= 3) { // Cool season Oct-Mar
-                $seasonalFactor = 1.15;
-            } elseif ($m >= 4 && $m <= 6) { // Dry season
-                $seasonalFactor = 0.85;
+        // Only show predictions from 2025 onwards
+        if ($year >= 2025) {
+            for ($m = 1; $m <= 12; $m++) {
+                // Simulate seasonal variation for Benguet (higher yields in cool months)
+                $seasonalFactor = 1.0;
+                if ($m >= 10 || $m <= 3) { // Cool season Oct-Mar
+                    $seasonalFactor = 1.15;
+                } elseif ($m >= 4 && $m <= 6) { // Dry season
+                    $seasonalFactor = 0.85;
+                }
+                
+                $monthlyData[] = [
+                    'month' => $m,
+                    'month_name' => $monthNames[$m - 1],
+                    'year' => $year,
+                    'avg_yield' => round($baseMonthlyYield * $seasonalFactor, 2)
+                ];
             }
-            
-            $monthlyData[] = [
-                'month' => $m,
-                'month_name' => $monthNames[$m - 1],
-                'avg_yield' => round($baseMonthlyYield * $seasonalFactor, 2)
-            ];
         }
         
         $response = [
@@ -2234,6 +2500,11 @@ Route::get('/dashboard', function () {
         return redirect()->route('login');
     }
     $user = Auth::user();
+    
+    // Redirect DA Admin/Admin to admin dashboard
+    if ($user->is_superadmin || $user->role === 'Admin' || $user->role === 'DA Admin') {
+        return redirect()->route('admin.dashboard');
+    }
     
     // Check if email is verified
     if (!$user->hasVerifiedEmail()) {
@@ -2817,13 +3088,22 @@ Route::get('/register', function () {
 
 // POST handler for user registration
 Route::post('/register', function (Request $request) {
-    $validated = $request->validate([
+    // First validate common fields
+    $validationRules = [
         'full_name' => 'required|string|max:255',
-        'email' => 'required|email|unique:users,email|max:255',
         'municipality' => 'required|string',
         'phone_number' => 'nullable|string|regex:/^[9][0-9]{9}$/',
         'verification_method' => 'required|in:email,sms',
-    ]);
+    ];
+    
+    // Make email required only for email verification, optional for SMS
+    if ($request->verification_method === 'email') {
+        $validationRules['email'] = 'required|email|unique:users,email|max:255';
+    } else {
+        $validationRules['email'] = 'nullable|email|unique:users,email|max:255';
+    }
+    
+    $validated = $request->validate($validationRules);
 
     // If SMS verification is chosen, phone number is required
     if ($validated['verification_method'] === 'sms') {
@@ -2838,6 +3118,11 @@ Route::post('/register', function (Request $request) {
         $existingPhone = \App\Models\User::where('phone_number', $fullPhone)->first();
         if ($existingPhone) {
             return back()->withErrors(['phone_number' => 'This phone number is already registered.'])->withInput();
+        }
+        
+        // Generate placeholder email if not provided or if N/A
+        if (empty($validated['email']) || strtoupper($validated['email']) === 'N/A') {
+            $validated['email'] = 'sms_' . $validated['phone_number'] . '@smartharvest.local';
         }
     }
 

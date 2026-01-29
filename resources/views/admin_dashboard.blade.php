@@ -9,7 +9,10 @@
 <body class="antialiased bg-gray-50 min-h-screen">
     <div class="max-w-4xl mx-auto p-8">
         <header class="flex items-center justify-between mb-8">
-            <h1 class="text-2xl font-semibold text-green-700">Admin Dashboard</h1>
+            <div class="flex items-center space-x-3">
+                <span class="text-3xl">🌱</span>
+                <h1 class="text-2xl font-semibold text-green-700">SmartHarvest Admin</h1>
+            </div>
             <a href="{{ url('/') }}" class="text-sm text-gray-600 hover:text-green-600">Back to site</a>
         </header>
 

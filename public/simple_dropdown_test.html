@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick Dropdown Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+
+<h1 class="text-2xl font-bold mb-8">Quick Dropdown Test</h1>
+
+<div class="bg-white p-4 rounded shadow">
+    <div class="relative">
+        <button id="testDropdownBtn" class="flex items-center px-3 py-1 bg-white text-gray-700 rounded-sm border border-gray-300 shadow-sm text-sm hover:bg-gray-100 transition duration-150 cursor-pointer">
+            Click Me
+            <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+        </button>
+        <div id="testDropdownMenu" class="hidden absolute right-0 mt-2 py-2 w-40 bg-white rounded-md shadow-xl border border-gray-200 text-gray-800 z-50">
+            <button class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition cursor-pointer" onclick="alert('Option 1 selected')">
+                🇺🇸 Option 1
+            </button>
+            <button class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition cursor-pointer" onclick="alert('Option 2 selected')">
+                🇵🇭 Option 2
+            </button>
+            <button class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition cursor-pointer" onclick="alert('Option 3 selected')">
+                🇵🇭 Option 3
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="status" class="mt-4 p-4 bg-blue-50 rounded"></div>
+
+<script>
+function updateStatus(message) {
+    document.getElementById('status').innerHTML += new Date().toLocaleTimeString() + ': ' + message + '<br>';
+    console.log(message);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateStatus('DOM loaded');
+    
+    const btn = document.getElementById('testDropdownBtn');
+    const menu = document.getElementById('testDropdownMenu');
+    
+    if (btn && menu) {
+        updateStatus('Found dropdown elements');
+        
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            menu.classList.toggle('hidden');
+            updateStatus('Dropdown toggled, hidden: ' + menu.classList.contains('hidden'));
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (!btn.contains(e.target) && !menu.contains(e.target)) {
+                if (!menu.classList.contains('hidden')) {
+                    menu.classList.add('hidden');
+                    updateStatus('Dropdown closed by outside click');
+                }
+            }
+        });
+        
+        updateStatus('Dropdown initialized');
+    } else {
+        updateStatus('ERROR: Elements not found');
+    }
+});
+</script>
+
+</body>
+</html>

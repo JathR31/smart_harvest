@@ -7,146 +7,180 @@
     <title>SmartHarvest</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{{ asset('js/translation.js') }}?v={{ time() }}"></script>
+    <style>
+        .dropdown-menu {
+            min-width: 160px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+    </style>
     <script>
-        // Pure JavaScript Translation - No Alpine.js needed
-        const TranslationManager = {
-            selectedLanguage: localStorage.getItem('preferredLanguage') || 'en',
-            selectedLanguageName: localStorage.getItem('preferredLanguageName') || 'English',
-            originalTexts: {},
+        // Simple dropdown functionality
+        function toggleDropdown() {
+            const menu = document.getElementById('languageDropdownMenu');
+            if (menu) {
+                menu.classList.toggle('hidden');
+                console.log('Dropdown toggled, hidden:', menu.classList.contains('hidden'));
+            }
+        }
+
+        function selectLanguage(code, name) {
+            console.log('🌐 Language selected:', name, code);
             
-            async changeLanguage(code, name) {
-                console.log('🌐 Changing language to:', code, name);
-                this.selectedLanguage = code;
-                this.selectedLanguageName = name;
-                localStorage.setItem('preferredLanguage', code);
-                localStorage.setItem('preferredLanguageName', name);
-                
-                // Update dropdown display
-                const dropdownBtn = document.getElementById('languageDropdownBtn');
-                if (dropdownBtn) {
-                    dropdownBtn.textContent = name;
-                }
-                
-                if (code !== 'en') {
-                    await this.translatePage(code);
-                } else {
-                    location.reload();
-                }
-            },
+            // Update button text
+            const btn = document.getElementById('languageDropdownBtn');
+            if (btn) {
+                btn.innerHTML = name + ' <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>';
+            }
             
-            async translatePage(targetLang) {
-                console.log('🔄 Starting translation to:', targetLang);
-                
+            // Close dropdown
+            const menu = document.getElementById('languageDropdownMenu');
+            if (menu) {
+                menu.classList.add('hidden');
+            }
+            
+            // Save language preference
+            localStorage.setItem('preferredLanguage', code);
+            localStorage.setItem('preferredLanguageName', name);
+            
+            // Translate page
+            if (typeof SmartHarvestTranslation !== 'undefined') {
+                console.log('✅ Using SmartHarvestTranslation system');
+                SmartHarvestTranslation.changeLanguage(code, name);
+            } else {
+                console.log('⚠️ SmartHarvestTranslation not available, using manual translation');
+                translatePageManually(code);
+            }
+        }
+
+        async function translatePageManually(targetLang) {
+            if (targetLang === 'en') {
+                restoreOriginalTexts();
+                return;
+            }
+            
+            console.log('🔄 Starting manual translation to:', targetLang);
+            
+            try {
+                // Get all translatable elements
                 const elements = document.querySelectorAll('[data-translate]');
-                console.log('📝 Found elements to translate:', elements.length);
+                console.log('📝 Found', elements.length, 'translatable elements');
                 
-                const texts = Array.from(elements).map(el => {
-                    const id = el.getAttribute('data-translate-id');
-                    if (!this.originalTexts[id]) {
-                        this.originalTexts[id] = el.textContent.trim();
-                    }
-                    return this.originalTexts[id];
-                });
-                
-                console.log('📤 Texts to translate:', texts);
-                
-                if (texts.length === 0) {
+                if (elements.length === 0) {
                     console.warn('⚠️ No translatable elements found!');
                     return;
                 }
                 
-                try {
-                    const url = '/dashboard/SmartHarvest/public/api/translate/batch';
-                    console.log('🌐 API URL:', url);
-                    
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            texts: texts,
-                            target_language: targetLang
-                        })
-                    });
-                    
-                    console.log('📥 Response status:', response.status);
-                    
-                    const data = await response.json();
-                    console.log('📦 Response data:', data);
-                    
-                    if (data.status === 'success') {
-                        console.log('✅ Translation successful! Applying translations...');
-                        elements.forEach((el, index) => {
-                            if (data.translations[index]?.translatedText) {
-                                const original = el.textContent.trim();
-                                const translated = data.translations[index].translatedText;
-                                console.log(`${index + 1}. "${original}" → "${translated}"`);
-                                el.textContent = translated;
-                            }
-                        });
-                        console.log('🎉 Translation complete!');
-                    } else {
-                        console.error('❌ Translation failed:', data.message || 'Unknown error');
+                // Save original texts and collect them for translation
+                const texts = Array.from(elements).map(el => {
+                    const id = el.getAttribute('data-translate-id');
+                    if (!window.originalTexts) window.originalTexts = {};
+                    if (!window.originalTexts[id]) {
+                        window.originalTexts[id] = el.textContent.trim();
                     }
-                } catch (error) {
-                    console.error('💥 Translation error:', error);
+                    return window.originalTexts[id];
+                });
+                
+                console.log('📤 Sending', texts.length, 'texts for translation');
+                
+                // Call translation API
+                const response = await fetch('/dashboard/smart_harvest/public/translate.php/batch', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        texts: texts,
+                        target_language: targetLang
+                    })
+                });
+                
+                console.log('📥 Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+                
+                const data = await response.json();
+                console.log('📦 Response data:', data);
+                
+                if (data.status === 'success') {
+                    // Apply translations
+                    let successCount = 0;
+                    elements.forEach((el, index) => {
+                        if (data.translations[index]?.translatedText) {
+                            const original = el.textContent.trim();
+                            const translated = data.translations[index].translatedText;
+                            
+                            if (original !== translated) {
+                                el.textContent = translated;
+                                successCount++;
+                                console.log(`✅ ${index + 1}. "${original}" → "${translated}"`);
+                            }
+                        }
+                    });
+                    console.log('🎉 Translation complete!', successCount, 'elements translated');
+                } else {
+                    throw new Error(data.message || 'Translation failed');
+                }
+                
+            } catch (error) {
+                console.error('💥 Translation error:', error);
+                alert('Translation failed: ' + error.message);
             }
-        };
+        }
+        
+        function restoreOriginalTexts() {
+            if (!window.originalTexts) return;
+            
+            const elements = document.querySelectorAll('[data-translate]');
+            elements.forEach(el => {
+                const id = el.getAttribute('data-translate-id');
+                if (window.originalTexts[id]) {
+                    el.textContent = window.originalTexts[id];
+                }
+            });
+            console.log('🔄 Restored original texts');
+        }
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ Translation system loaded');
+            console.log('📄 Page loaded, setting up translation system');
             
-            // Setup language dropdown toggle
-            const dropdownBtn = document.getElementById('languageDropdownBtn');
-            const dropdownMenu = document.getElementById('languageDropdownMenu');
+            // Initialize original texts storage
+            window.originalTexts = {};
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const id = el.getAttribute('data-translate-id');
+                window.originalTexts[id] = el.textContent.trim();
+            });
+            console.log('💾 Saved', Object.keys(window.originalTexts).length, 'original texts');
             
-            if (dropdownBtn && dropdownMenu) {
-                dropdownBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    dropdownMenu.classList.toggle('hidden');
-                });
-                
-                // Close dropdown when clicking outside
-                document.addEventListener('click', function(e) {
-                    if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
-                        dropdownMenu.classList.add('hidden');
-                    }
-                });
-                
-                // Close dropdown when language is selected
-                dropdownMenu.querySelectorAll('button').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        dropdownMenu.classList.add('hidden');
-                    });
-                });
+            // Load saved language preference
+            const savedLang = localStorage.getItem('preferredLanguage');
+            const savedName = localStorage.getItem('preferredLanguageName');
+            if (savedLang && savedName && savedLang !== 'en') {
+                console.log('🔄 Auto-translating to saved preference:', savedName, '(' + savedLang + ')');
+                setTimeout(() => translatePageManually(savedLang), 500);
             }
             
-            // Setup user dropdown toggle (if user is logged in)
-            const userDropdownBtn = document.getElementById('userDropdownBtn');
-            const userDropdownMenu = document.getElementById('userDropdownMenu');
-            
-            if (userDropdownBtn && userDropdownMenu) {
-                userDropdownBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    userDropdownMenu.classList.toggle('hidden');
-                });
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                const btn = document.getElementById('languageDropdownBtn');
+                const menu = document.getElementById('languageDropdownMenu');
                 
-                // Close user dropdown when clicking outside
-                document.addEventListener('click', function(e) {
-                    if (!userDropdownBtn.contains(e.target) && !userDropdownMenu.contains(e.target)) {
-                        userDropdownMenu.classList.add('hidden');
-                    }
-                });
-            }
+                if (btn && menu && !btn.contains(e.target) && !menu.contains(e.target)) {
+                    menu.classList.add('hidden');
+                }
+            });
             
-            // Update button text to show current language
-            if (dropdownBtn) {
-                const currentLang = TranslationManager.selectedLanguageName;
-                dropdownBtn.innerHTML = currentLang + '<svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>';
+            // Initialize SmartHarvestTranslation if available
+            if (typeof SmartHarvestTranslation !== 'undefined') {
+                console.log('🌐 SmartHarvestTranslation available, initializing...');
+                SmartHarvestTranslation.init();
+            } else {
+                console.log('⚠️ SmartHarvestTranslation not available, using manual system');
             }
         });
     </script>
@@ -177,46 +211,52 @@
 
         <header class="relative z-20 p-4 flex justify-between items-center bg-green-600 text-white flex-shrink-0">
             <div class="flex items-center space-x-2">
-                <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                <span class="text-2xl">🌱</span>
                 <span class="text-xl font-semibold">SmartHarvest</span>
             </div>
             
             <nav class="flex items-center space-x-4">
                 <div class="relative">
-                    <button id="languageDropdownBtn" class="flex items-center px-3 py-1 bg-white text-gray-700 rounded-sm border-none shadow-sm text-sm hover:bg-gray-100 transition duration-150">
+                    <button id="languageDropdownBtn" onclick="toggleDropdown()" class="flex items-center px-3 py-1 bg-white text-gray-700 rounded-sm border-none shadow-sm text-sm hover:bg-gray-100 transition duration-150 cursor-pointer">
                         English
-                        <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
                     </button>
-                    <div id="languageDropdownMenu" class="hidden absolute right-0 mt-2 py-2 w-40 bg-white rounded-md shadow-xl custom-dropdown-menu text-gray-800">
-                        <button onclick="TranslationManager.changeLanguage('en', 'English')" class="block w-full text-left px-4 py-2 hover:bg-gray-100">English</button>
-                        <button onclick="TranslationManager.changeLanguage('tl', 'Tagalog')" class="block w-full text-left px-4 py-2 hover:bg-gray-100">Tagalog</button>
-                        <button onclick="TranslationManager.changeLanguage('ilo', 'Ilocano')" class="block w-full text-left px-4 py-2 hover:bg-gray-100">Ilocano</button>
-                        <button onclick="TranslationManager.changeLanguage('kan', 'Kankanaey')" class="block w-full text-left px-4 py-2 hover:bg-gray-100">Kankanaey</button>
-                        <button onclick="TranslationManager.changeLanguage('ibl', 'Ibaloi')" class="block w-full text-left px-4 py-2 hover:bg-gray-100">Ibaloi</button>
+                    <div id="languageDropdownMenu" class="hidden absolute right-0 mt-2 py-2 w-40 bg-white rounded-md shadow-xl dropdown-menu text-gray-800 z-50">
+                        <button onclick="selectLanguage('en', 'English')" class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition">
+                            🇺🇸 English
+                        </button>
+                        <button onclick="selectLanguage('tl', 'Tagalog')" class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition">
+                            🇵🇭 Tagalog
+                        </button>
+                        <button onclick="selectLanguage('ilo', 'Ilocano')" class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition">
+                            🇵🇭 Ilocano
+                        </button>
                     </div>
                 </div>
 
                 @auth
                     <div class="flex items-center space-x-4">
-                        <span class="text-sm">Welcome, {{ Auth::user()->name }}</span>
-                        <a href="{{ route('dashboard') }}" class="px-4 py-2 bg-white text-green-600 rounded hover:bg-gray-100 transition duration-150 font-bold">DASHBOARD</a>
+                        <span class="text-sm" data-translate data-translate-id="welcome-msg">Welcome, {{ Auth::user()->name }}</span>
+                        <a href="{{ route('dashboard') }}" class="px-4 py-2 bg-white text-green-600 rounded hover:bg-gray-100 transition duration-150 font-bold" data-translate data-translate-id="header-dashboard">DASHBOARD</a>
                         <div class="relative">
                             <button id="userDropdownBtn" class="w-10 h-10 bg-white text-green-600 rounded-full flex items-center justify-center font-bold hover:bg-gray-100 transition duration-150">
                                 {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
                             </button>
                             <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 py-2 w-48 bg-white rounded-md shadow-xl text-gray-800">
-                                <a href="{{ route('settings') }}" class="block px-4 py-2 hover:bg-gray-100">Profile Settings</a>
-                                <a href="{{ route('dashboard') }}" class="block px-4 py-2 hover:bg-gray-100">Dashboard</a>
+                                <a href="{{ route('settings') }}" class="block px-4 py-2 hover:bg-gray-100" data-translate data-translate-id="profile-settings">Profile Settings</a>
+                                <a href="{{ route('dashboard') }}" class="block px-4 py-2 hover:bg-gray-100" data-translate data-translate-id="dropdown-dashboard">Dashboard</a>
                                 <hr class="my-2">
                                 <form method="POST" action="{{ route('logout') }}" onsubmit="sessionStorage.setItem('isLoggedOut','true');">
                                     @csrf
-                                    <button type="submit" class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600">Logout</button>
+                                    <button type="submit" class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600" data-translate data-translate-id="logout-btn">Logout</button>
                                 </form>
                             </div>
                         </div>
                     </div>
                 @else
-                    <a href="{{ route('login') }}" class="px-4 py-2 font-bold hover:text-green-100 transition duration-150">LOGIN</a>
+                    <a href="{{ route('login') }}" class="px-4 py-2 font-bold hover:text-green-100 transition duration-150" data-translate data-translate-id="login-btn">LOGIN</a>
                 @endauth
             </nav>
         </header>
@@ -229,11 +269,11 @@
                 SmartHarvest uses historical yield and climate patterns to help farmers make informed planting decisions for maximum productivity.
             </p>
             @auth
-                <a href="{{ route('dashboard') }}" class="px-6 py-3 text-base bg-green-500 rounded hover:bg-green-400 transition duration-300 shadow-xl font-semibold">
+                <a href="{{ route('dashboard') }}" class="px-6 py-3 text-base bg-green-500 rounded hover:bg-green-400 transition duration-300 shadow-xl font-semibold" data-translate data-translate-id="dashboard-btn">
                     Go to Dashboard
                 </a>
             @else
-                <a href="{{ route('register') }}" class="px-6 py-3 text-base bg-green-500 rounded hover:bg-green-400 transition duration-300 shadow-xl font-semibold">
+                <a href="{{ route('register') }}" class="px-6 py-3 text-base bg-green-500 rounded hover:bg-green-400 transition duration-300 shadow-xl font-semibold" data-translate data-translate-id="getstarted-btn">
                     Get Started
                 </a>
             @endauth
@@ -244,34 +284,51 @@
         <div class="max-w-6xl mx-auto text-center">
             <h2 class="text-3xl font-semibold mb-10 text-green-700" data-translate data-translate-id="features-title">Features</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                @php
-                    $features = [
-                        ['icon' => 'calendar', 'title' => 'Planting Schedule', 'description' => 'Optimize planting times for maximum yield'],
-                        ['icon' => 'cloud', 'title' => 'Weather Insights', 'description' => 'Real-time weather data and forecasts'],
-                        ['icon' => 'chart-line', 'title' => 'Yield Analysis', 'description' => 'Track and analyze crop yields over time'],
-                    ];
-                @endphp
-                
-                @foreach ($features as $key => $feature)
-                <div class="p-6 bg-white rounded-xl shadow-lg border border-gray-100">
-                    <div class="mx-auto mb-4 w-12 h-12 flex items-center justify-center bg-green-100 rounded-lg text-green-500">
-                        <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                <!-- Planting Schedule -->
+                <div class="p-6 bg-white rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition">
+                    <div class="mx-auto mb-4 w-14 h-14 flex items-center justify-center bg-gradient-to-br from-green-100 to-green-50 rounded-full">
+                        <svg class="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
                     </div>
-                    <h3 class="text-xl font-medium text-green-700 mb-2" data-translate data-translate-id="feature-{{ $key }}-title">{{ $feature['title'] }}</h3>
-                    <p class="text-sm text-gray-500" data-translate data-translate-id="feature-{{ $key }}-desc">{{ $feature['description'] }}</p>
+                    <h3 class="text-xl font-semibold text-green-700 mb-2" data-translate data-translate-id="feature-0-title">Planting Schedule</h3>
+                    <p class="text-sm text-gray-600" data-translate data-translate-id="feature-0-desc">Optimize planting times for maximum yield</p>
                 </div>
-                @endforeach
+                
+                <!-- Weather Insights -->
+                <div class="p-6 bg-white rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition">
+                    <div class="mx-auto mb-4 w-14 h-14 flex items-center justify-center bg-gradient-to-br from-green-100 to-green-50 rounded-full">
+                        <svg class="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-green-700 mb-2" data-translate data-translate-id="feature-1-title">Weather Insights</h3>
+                    <p class="text-sm text-gray-600" data-translate data-translate-id="feature-1-desc">Real-time weather data and forecasts</p>
+                </div>
+                
+                <!-- Yield Analysis -->
+                <div class="p-6 bg-white rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition">
+                    <div class="mx-auto mb-4 w-14 h-14 flex items-center justify-center bg-gradient-to-br from-green-100 to-green-50 rounded-full">
+                        <svg class="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-green-700 mb-2" data-translate data-translate-id="feature-2-title">Yield Analysis</h3>
+                    <p class="text-sm text-gray-600" data-translate data-translate-id="feature-2-desc">Track and analyze crop yields over time</p>
+                </div>
             </div>
         </div>
     </section>
 
     <section class="py-12 px-4 bg-white">
         <div class="max-w-3xl mx-auto text-center">
-            <div class="mx-auto mb-4 w-12 h-12 flex items-center justify-center bg-green-100 rounded-full text-green-500 border border-green-500">
-                <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14v2h2v-2h-2zm-2 12h4v-2h-4v2zm0-4h4v-2h-4v2z"/></svg>
+            <div class="mx-auto mb-4 w-14 h-14 flex items-center justify-center bg-gradient-to-br from-green-100 to-green-50 rounded-full border-2 border-green-500">
+                <svg class="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
             </div>
-            <h3 class="text-lg font-medium text-green-700 mb-4" data-translate data-translate-id="mission-title">Our Mission</h3>
-            <p class="text-base text-gray-600" data-translate data-translate-id="mission-text">
+            <h3 class="text-lg font-semibold text-green-700 mb-4" data-translate data-translate-id="mission-title">Our Mission</h3>
+            <p class="text-base text-gray-600 leading-relaxed" data-translate data-translate-id="mission-text">
                 To empower farmers with data-driven insights and predictive analytics that optimize crop yields, reduce risks, and promote sustainable agricultural practices.
             </p>
         </div>
@@ -285,34 +342,53 @@
                 <p class="mb-4 text-gray-600" data-translate data-translate-id="about-p1">
                     SmartHarvest is a dedicated web-based Decision Support System (DSS) designed to empower farmers across the municipalities of Benguet. Our core mission is to promote sustainable farming methods and drastically improve farm decision-making in the face of persistent economic challenges.
                 </p>
-                <p class="mb-4 text-gray-600">
+                <p class="mb-4 text-gray-600" data-translate data-translate-id="about-p2">
                     We achieve this by utilizing gathered historical data on local crop yields and climate patterns. Through rigorous analysis, SmartHarvest identifies crucial correlations and trends between historical weather events and farm outcomes.
                 </p>
-                <p class="text-gray-600">
+                <p class="text-gray-600" data-translate data-translate-id="about-p3">
                     This process allows us to generate data-driven recommendations, providing farmers with a comprehensive report on the optimal planting times to maximize yield, guidance for better resource utilization, and actionable insights to reduce climate risks to their livelihoods and the regional economy. We're here to turn data into smarter harvests.
                 </p>
             </div>
 
             <div class="space-y-6">
-                @php
-                    $stats = [
-                        ['icon' => 'users', 'value' => '5,000+', 'label' => 'Farmers Served'],
-                        ['icon' => 'trend', 'value' => '23%', 'label' => 'Average Yield Increase'],
-                        ['icon' => 'water-drop', 'value' => '15% Reduction', 'label' => 'Water Conservation'],
-                    ];
-                @endphp
-
-                @foreach ($stats as $stat)
-                <div class="p-6 bg-white rounded-xl shadow-md flex items-center space-x-4">
-                    <div class="w-10 h-10 flex items-center justify-center bg-green-100 rounded-lg text-green-500">
-                        <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14v2h2v-2h-2zm-2 12h4v-2h-4v2zm0-4h4v-2h-4v2z"/></svg>
+                <!-- Farmers Served -->
+                <div class="p-6 bg-white rounded-xl shadow-md flex items-center space-x-4 hover:shadow-lg transition">
+                    <div class="w-12 h-12 flex items-center justify-center bg-gradient-to-br from-green-100 to-green-50 rounded-full flex-shrink-0">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
                     </div>
                     <div>
-                        <p class="text-lg font-semibold">{{ $stat['value'] }}</p>
-                        <p class="text-sm text-gray-500">{{ $stat['label'] }}</p>
+                        <p class="text-xl font-bold text-green-700">5,000+</p>
+                        <p class="text-sm text-gray-600">Farmers Served</p>
                     </div>
                 </div>
-                @endforeach
+                
+                <!-- Average Yield Increase -->
+                <div class="p-6 bg-white rounded-xl shadow-md flex items-center space-x-4 hover:shadow-lg transition">
+                    <div class="w-12 h-12 flex items-center justify-center bg-gradient-to-br from-green-100 to-green-50 rounded-full flex-shrink-0">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-xl font-bold text-green-700">23%</p>
+                        <p class="text-sm text-gray-600">Average Yield Increase</p>
+                    </div>
+                </div>
+                
+                <!-- Water Conservation -->
+                <div class="p-6 bg-white rounded-xl shadow-md flex items-center space-x-4 hover:shadow-lg transition">
+                    <div class="w-12 h-12 flex items-center justify-center bg-gradient-to-br from-green-100 to-green-50 rounded-full flex-shrink-0">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-xl font-bold text-green-700">15% Reduction</p>
+                        <p class="text-sm text-gray-600">Water Conservation</p>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -327,10 +403,10 @@
                 ];
             @endphp
 
-            @foreach ($values as $value)
+            @foreach ($values as $idx => $value)
             <div class="p-8 bg-white rounded-xl shadow-lg border border-gray-100">
-                <h3 class="text-xl font-medium text-green-700 mb-4">{{ $value['title'] }}</h3>
-                <p class="text-sm text-gray-600">{{ $value['text'] }}</p>
+                <h3 class="text-xl font-medium text-green-700 mb-4" data-translate data-translate-id="value-{{ $idx }}-title">{{ $value['title'] }}</h3>
+                <p class="text-sm text-gray-600" data-translate data-translate-id="value-{{ $idx }}-text">{{ $value['text'] }}</p>
             </div>
             @endforeach
         </div>
@@ -341,13 +417,13 @@
             <div class="mx-auto mb-4 w-12 h-12 flex items-center justify-center text-green-500">
                 <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-3.72 0-6.83 2.82-7.18 6.41C2.85 10.73 2 11.96 2 13.5c0 2.21 1.79 4 4 4h13c2.76 0 5-2.24 5-5 0-2.64-2.07-4.83-4.65-4.96z"/></svg>
             </div>
-                <h3 class="text-xl font-medium text-green-700 mb-1">Live Weather Insights</h3>
-            <p class="mb-6 text-gray-600">Real-time weather monitoring for informed agricultural decisions</p>
+                <h3 class="text-xl font-medium text-green-700 mb-1" data-translate data-translate-id="weather-title">Live Weather Insights</h3>
+            <p class="mb-6 text-gray-600" data-translate data-translate-id="weather-desc">Real-time weather monitoring for informed agricultural decisions</p>
 
             <!-- Municipality Dropdown -->
             <div class="max-w-md mx-auto mb-10">
                 <div class="relative">
-                    <label class="block text-sm font-medium text-gray-700 mb-2 text-left">Select Municipality</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2 text-left" data-translate data-translate-id="municipality-label">Select Municipality</label>
                     <select id="municipalitySelect" onchange="fetchWeatherData()" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-gray-700">
                         <option value="">-- Choose Municipality --</option>
                         <option value="Atok">Atok</option>
@@ -374,7 +450,7 @@
                             <svg class="w-6 h-6 fill-current text-red-500" viewBox="0 0 24 24"><path d="M15 13V5c0-1.66-1.34-3-3-3S9 3.34 9 5v8c-1.21.91-2 2.37-2 4 0 2.76 2.24 5 5 5s5-2.24 5-5c0-1.63-.79-3.09-2-4zm-4-8c0-.55.45-1 1-1s1 .45 1 1h-1v1h1v2h-1v1h1v2h-2V5z"/></svg>
                             <span class="text-xs text-red-500 font-semibold">Live</span>
                         </div>
-                        <p class="text-sm text-gray-500 mb-1">Temperature</p>
+                        <p class="text-sm text-gray-500 mb-1" data-translate data-translate-id="temp-label">Temperature</p>
                         <p class="text-xl font-semibold" id="tempValue">-- °C</p>
                     </div>
 
@@ -383,7 +459,7 @@
                             <svg class="w-6 h-6 fill-current text-blue-500" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
                             <span class="text-xs text-red-500 font-semibold">Live</span>
                         </div>
-                        <p class="text-sm text-gray-500 mb-1">Humidity</p>
+                        <p class="text-sm text-gray-500 mb-1" data-translate data-translate-id="humidity-label">Humidity</p>
                         <p class="text-xl font-semibold" id="humidityValue">-- %</p>
                     </div>
 
@@ -392,7 +468,7 @@
                             <svg class="w-6 h-6 fill-current text-sky-500" viewBox="0 0 24 24"><path d="M14.5 17c0 1.65-1.35 3-3 3s-3-1.35-3-3h2c0 .55.45 1 1 1s1-.45 1-1-.45-1-1-1H2v-2h9.5c1.65 0 3 1.35 3 3zM19 6.5C19 4.57 17.43 3 15.5 3S12 4.57 12 6.5h2c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S16.33 8 15.5 8H2v2h13.5c1.93 0 3.5-1.57 3.5-3.5zm-.5 4.5H2v2h16.5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5v2c1.93 0 3.5-1.57 3.5-3.5S20.43 11 18.5 11z"/></svg>
                             <span class="text-xs text-red-500 font-semibold">Live</span>
                         </div>
-                        <p class="text-sm text-gray-500 mb-1">Wind Speed</p>
+                        <p class="text-sm text-gray-500 mb-1" data-translate data-translate-id="wind-label">Wind Speed</p>
                         <p class="text-xl font-semibold" id="windSpeedValue">-- m/s</p>
                     </div>
 
@@ -401,7 +477,7 @@
                             <svg class="w-6 h-6 fill-current text-indigo-500" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0L12 2.69zM12 4l-4.24 4.24c2.34 2.34 6.14 2.34 8.49 0L12 4z"/></svg>
                             <span class="text-xs text-red-500 font-semibold">Live</span>
                         </div>
-                        <p class="text-sm text-gray-500 mb-1">Rainfall (24h)</p>
+                        <p class="text-sm text-gray-500 mb-1" data-translate data-translate-id="rain-label">Rainfall (24h)</p>
                         <p class="text-xl font-semibold" id="rainfallValue">-- mm</p>
                     </div>
                 </div>
@@ -411,15 +487,15 @@
                         <div class="w-10 h-10 flex items-center justify-center text-green-500 mb-2">
                             <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-3.72 0-6.83 2.82-7.18 6.41C2.85 10.73 2 11.96 2 13.5c0 2.21 1.79 4 4 4h13c2.76 0 5-2.24 5-5 0-2.64-2.07-4.83-4.65-4.96z"/></svg>
                         </div>
-                        <h4 class="text-lg font-medium text-green-700 mb-1">Current Conditions</h4>
-                        <p class="text-2xl font-semibold mb-4" id="weatherDescription">Select a municipality</p>
-                        <p class="text-xs text-gray-500 mb-6">Weather data updates every 5 seconds. Our system integrates real-time weather information with historical patterns to provide accurate planting recommendations.</p>
+                        <h4 class="text-lg font-medium text-green-700 mb-1" data-translate data-translate-id="current-conditions">Current Conditions</h4>
+                        <p class="text-2xl font-semibold mb-4" id="weatherDescription" data-translate data-translate-id="select-municipality">Select a municipality</p>
+                        <p class="text-xs text-gray-500 mb-6" data-translate data-translate-id="weather-info">Weather data updates every 5 seconds. Our system integrates real-time weather information with historical patterns to provide accurate planting recommendations.</p>
                         @auth
-                            <a href="{{ route('forecast') }}" class="px-8 py-3 bg-green-600 text-white rounded-full hover:bg-green-500 transition duration-300 font-semibold">
+                            <a href="{{ route('forecast') }}" class="px-8 py-3 bg-green-600 text-white rounded-full hover:bg-green-500 transition duration-300 font-semibold" data-translate data-translate-id="weather-btn">
                                 View Detailed Weather Dashboard
                             </a>
                         @else
-                            <a href="{{ route('register') }}" class="px-8 py-3 bg-green-600 text-white rounded-full hover:bg-green-500 transition duration-300 font-semibold">
+                            <a href="{{ route('register') }}" class="px-8 py-3 bg-green-600 text-white rounded-full hover:bg-green-500 transition duration-300 font-semibold" data-translate data-translate-id="weather-btn">
                                 View Detailed Weather Dashboard
                             </a>
                         @endauth
@@ -484,8 +560,8 @@
 
     <section class="py-16 px-4">
         <div class="max-w-6xl mx-auto text-center">
-            <h2 class="text-3xl font-semibold mb-2 text-green-700">Meet Our Team</h2>
-            <p class="mb-12 text-gray-600">Our multidisciplinary team brings together expertise in agronomy, climate science, data analytics, and agricultural engineering.</p>
+            <h2 class="text-3xl font-semibold mb-2 text-green-700" data-translate data-translate-id="team-title">Meet Our Team</h2>
+            <p class="mb-12 text-gray-600" data-translate data-translate-id="team-desc">Our multidisciplinary team brings together expertise in agronomy, climate science, data analytics, and agricultural engineering.</p>
             
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                 @php

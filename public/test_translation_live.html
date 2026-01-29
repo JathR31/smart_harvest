@@ -79,7 +79,8 @@
             log(`📤 Texts: ${JSON.stringify(texts)}`, 'info');
             
             try {
-                const url = '/dashboard/SmartHarvest/public/api/translate/batch';
+                // Use relative path - will work with any base URL
+                const url = '/api/translate/batch';
                 log(`🌐 Calling API: ${url}`, 'info');
                 
                 const response = await fetch(url, {

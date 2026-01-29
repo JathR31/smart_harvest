@@ -25,10 +25,13 @@
     <div class="verify-card w-full max-w-md p-8 bg-white rounded-2xl">
         <!-- Logo/Header -->
         <div class="flex flex-col items-center mb-6">
-            <div class="inline-block p-3 rounded-full bg-green-50 mb-4">
-                <svg class="w-8 h-8 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                </svg>
+            <div class="inline-block p-3 rounded-full bg-gradient-to-br from-green-50 to-green-100 mb-4">
+                <div class="flex items-center space-x-1">
+                    <span class="text-2xl">🌱</span>
+                    <svg class="w-6 h-6 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
             </div>
             <h1 class="text-2xl font-bold text-gray-800">Verify Your Mobile Number</h1>
             <p class="text-sm text-gray-600 mt-2 text-center">

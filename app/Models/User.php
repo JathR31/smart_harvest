@@ -29,8 +29,13 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'name',
         'email',
+        'username',
         'password',
         'role',
+        'is_superadmin',
+        'admin_type',
+        'google2fa_secret',
+        'google2fa_enabled',
         'status',
         'phone',
         'phone_number',
@@ -42,10 +47,16 @@ class User extends Authenticatable implements MustVerifyEmail
         'location',
         'farm_name',
         'farm_size',
+        'primary_crop',
         'crop_types',
         'years_experience',
         'bio',
         'last_login',
+        // DA Admin-specific fields
+        'office',
+        'position',
+        'employee_id',
+        'admin_permissions',
     ];
 
     /**
@@ -56,6 +67,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
+        'google2fa_secret',
     ];
 
     /**
@@ -72,6 +84,9 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'password_set_at' => 'datetime',
             'last_login' => 'datetime',
+            'is_superadmin' => 'boolean',
+            'google2fa_enabled' => 'boolean',
+            'admin_permissions' => 'array',
         ];
     }
     
@@ -96,5 +111,28 @@ class User extends Authenticatable implements MustVerifyEmail
             return $this->hasVerifiedPhone();
         }
         return $this->hasVerifiedEmail();
+    }
+
+    /**
+     * Check if the user is a superadmin.
+     *
+     * @return bool
+     */
+    public function getIsSuperadminAttribute()
+    {
+        // Check if user has superadmin role or is marked as superadmin
+        return $this->role === 'Superadmin' || 
+               $this->admin_type === 'superadmin' ||
+               $this->email === 'superadmin@smartharvest.ph';
+    }
+
+    /**
+     * Check if the user is a DA-CAR admin.
+     *
+     * @return bool
+     */
+    public function getIsDacarAdminAttribute()
+    {
+        return $this->role === 'Admin' && !$this->is_superadmin;
     }
 }

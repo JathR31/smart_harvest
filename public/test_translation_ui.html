@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="test">
+    <title>Translation Test</title>
+    <script src="js/translation.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .controls { background: #f0f0f0; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 3px; }
+        button:hover { background: #45a049; }
+        .test-content { background: white; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .test-content div { margin: 10px 0; padding: 10px; background: #f9f9f9; border-left: 3px solid #4CAF50; }
+        h1 { color: #333; }
+        #status { margin-top: 10px; padding: 10px; background: #e3f2fd; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>SmartHarvest Translation Test</h1>
+    
+    <div class="controls">
+        <h3>Select Language:</h3>
+        <button onclick="SmartHarvestTranslation.changeLanguage('en', 'English')">English</button>
+        <button onclick="SmartHarvestTranslation.changeLanguage('tl', 'Tagalog')">Tagalog</button>
+        <button onclick="SmartHarvestTranslation.changeLanguage('ilo', 'Ilocano')">Ilocano</button>
+        
+        <div id="status">
+            Current Language: <strong id="currentLang">English</strong>
+        </div>
+    </div>
+    
+    <div class="test-content">
+        <h2>Test Translatable Content</h2>
+        
+        <div data-translate data-translate-id="welcome">Welcome to SmartHarvest</div>
+        <div data-translate data-translate-id="dashboard">Dashboard</div>
+        <div data-translate data-translate-id="planting">Planting Schedule</div>
+        <div data-translate data-translate-id="yield">Yield Analysis</div>
+        <div data-translate data-translate-id="weather">Weather Forecast</div>
+        <div data-translate data-translate-id="greeting">Good morning, farmer</div>
+        <div data-translate data-translate-id="logout">Logout</div>
+        <div data-translate data-translate-id="settings">Settings</div>
+    </div>
+    
+    <script>
+        // Initialize translation on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, initializing translation...');
+            SmartHarvestTranslation.init();
+            
+            // Update status display
+            setInterval(function() {
+                document.getElementById('currentLang').textContent = 
+                    SmartHarvestTranslation.state.selectedLanguageName || 'English';
+            }, 500);
+        });
+    </script>
+</body>
+</html>

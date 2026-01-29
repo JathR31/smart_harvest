@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage Translation Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .controls { background: #f5f5f5; padding: 20px; margin-bottom: 20px; }
+        .content { border: 1px solid #ddd; padding: 20px; }
+        [data-translate] { background: rgba(255, 255, 0, 0.1); padding: 2px; margin: 2px; border: 1px dotted #ccc; }
+        .status { background: #e7f3ff; padding: 10px; margin: 10px 0; border-left: 3px solid #007acc; }
+        button { margin: 5px; padding: 10px 15px; }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <h3>Homepage Translation Test</h3>
+        <button onclick="selectLanguage('en', 'English')">English</button>
+        <button onclick="selectLanguage('tl', 'Tagalog')">Tagalog</button>
+        <button onclick="selectLanguage('ilo', 'Ilocano')">Ilocano</button>
+        
+        <div class="status" id="status">Ready to translate...</div>
+    </div>
+
+    <div class="content">
+        <h1 data-translate data-translate-id="hero-title">Optimize Your Planting with Data</h1>
+        <p data-translate data-translate-id="hero-subtitle">SmartHarvest uses historical yield and climate patterns to help farmers make informed planting decisions for maximum productivity.</p>
+        <h2 data-translate data-translate-id="features-title">Features</h2>
+        <h3 data-translate data-translate-id="feature-0-title">Planting Schedule</h3>
+        <p data-translate data-translate-id="feature-0-desc">Optimize planting times for maximum yield</p>
+        <h3 data-translate data-translate-id="mission-title">Our Mission</h3>
+        <p data-translate data-translate-id="mission-text">To empower farmers with data-driven insights and predictive analytics that optimize crop yields, reduce risks, and promote sustainable agricultural practices.</p>
+        <h2 data-translate data-translate-id="about-title">About SmartHarvest</h2>
+        <h3 data-translate data-translate-id="about-subtitle">Who We Are</h3>
+        <p data-translate data-translate-id="about-p1">SmartHarvest is a dedicated web-based Decision Support System (DSS) designed to empower farmers across the municipalities of Benguet. Our core mission is to promote sustainable farming methods and drastically improve farm decision-making in the face of persistent economic challenges.</p>
+        
+        <button data-translate data-translate-id="dashboard-btn">Go to Dashboard</button>
+        <button data-translate data-translate-id="getstarted-btn">Get Started</button>
+    </div>
+
+    <script>
+        // Simple translation system for testing
+        async function selectLanguage(code, name) {
+            const status = document.getElementById('status');
+            status.innerHTML = `Translating to ${name} (${code})...`;
+            
+            if (code === 'en') {
+                restoreOriginal();
+                status.innerHTML = 'Restored to English';
+                return;
+            }
+            
+            try {
+                // Get all translatable elements
+                const elements = document.querySelectorAll('[data-translate]');
+                const texts = Array.from(elements).map(el => el.textContent.trim());
+                
+                status.innerHTML = `Found ${elements.length} elements to translate. Calling API...`;
+                
+                // Call batch translation API
+                const response = await fetch('/dashboard/smart_harvest/public/translate.php/batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        texts: texts,
+                        target_language: code
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Translation response:', data);
+                
+                if (data.status === 'success') {
+                    // Apply translations
+                    elements.forEach((el, index) => {
+                        if (data.translations[index]?.translatedText) {
+                            el.textContent = data.translations[index].translatedText;
+                        }
+                    });
+                    status.innerHTML = `Successfully translated ${elements.length} elements to ${name}!`;
+                } else {
+                    throw new Error(data.message || 'Translation failed');
+                }
+                
+            } catch (error) {
+                console.error('Translation error:', error);
+                status.innerHTML = `Translation failed: ${error.message}`;
+            }
+        }
+        
+        const originalTexts = {};
+        
+        function restoreOriginal() {
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const id = el.getAttribute('data-translate-id');
+                if (!originalTexts[id]) {
+                    originalTexts[id] = el.textContent.trim();
+                } else {
+                    el.textContent = originalTexts[id];
+                }
+            });
+        }
+        
+        // Save original texts on load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const id = el.getAttribute('data-translate-id');
+                originalTexts[id] = el.textContent.trim();
+            });
+            console.log('Original texts saved:', originalTexts);
+        });
+    </script>
+</body>
+</html>
