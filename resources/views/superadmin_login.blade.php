@@ -61,6 +61,12 @@
             </div>
         @endif
 
+        @if (session('info'))
+            <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-600 text-center">
+                {{ session('info') }}
+            </div>
+        @endif
+
         <!-- Step 1: Credentials -->
         @if (!$showTotpForm)
         <form method="POST" action="{{ route('superadmin.login.verify-credentials') }}" id="credentialsForm">
@@ -136,15 +142,27 @@
                 🔓 Verify & Login
             </button>
 
-            <div class="mt-4 text-center">
+            <div class="mt-4 text-center space-y-2">
                 <a href="{{ route('superadmin.login') }}" 
                    onclick="event.preventDefault(); document.getElementById('reset-form').submit();"
-                   class="text-sm text-gray-500 hover:text-indigo-600 transition duration-150">
+                   class="text-sm text-gray-500 hover:text-indigo-600 transition duration-150 block">
                     ← Start over
                 </a>
                 <form id="reset-form" action="{{ route('superadmin.login') }}" method="GET" style="display: none;">
                     @csrf
                 </form>
+                
+                <!-- Reset 2FA Option -->
+                <div class="pt-2 border-t border-gray-100">
+                    <p class="text-xs text-gray-400 mb-2">Lost access to authenticator app?</p>
+                    <button type="button" onclick="document.getElementById('reset-2fa-form').submit();" 
+                            class="text-xs text-red-500 hover:text-red-700 transition duration-150">
+                        🔄 Reset Two-Factor Authentication
+                    </button>
+                    <form id="reset-2fa-form" action="{{ route('superadmin.2fa.reset') }}" method="POST" style="display: none;">
+                        @csrf
+                    </form>
+                </div>
             </div>
         </form>
         @endif

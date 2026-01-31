@@ -17,6 +17,9 @@ class SuperadminAuthController extends Controller
     public function __construct()
     {
         $this->google2fa = new Google2FA();
+        // Set a window of 2 for time drift tolerance (allows 1 period before/after current time)
+        // This means codes from 30 seconds before and after will also be valid
+        $this->google2fa->setWindow(2);
     }
 
     /**
@@ -257,6 +260,10 @@ class SuperadminAuthController extends Controller
         // Log in the user
         Auth::login($user);
         $request->session()->regenerate();
+        
+        // Set flag that 2FA was verified this session
+        $request->session()->put('superadmin_2fa_verified', true);
+        $request->session()->put('superadmin_2fa_verified_at', now()->timestamp);
 
         // Update last login
         $user->last_login = now();
@@ -299,5 +306,38 @@ class SuperadminAuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('superadmin.login')->with('success', 'You have been logged out successfully.');
+    }
+    
+    /**
+     * Reset 2FA for superadmin (requires re-entering credentials).
+     */
+    public function reset2FA(Request $request)
+    {
+        if (!$request->session()->has('superadmin_credentials_verified') || !$request->session()->has('superadmin_user_id')) {
+            return redirect()->route('superadmin.login')->withErrors(['error' => 'Please verify your credentials first.']);
+        }
+
+        $userId = $request->session()->get('superadmin_user_id');
+        $user = User::find($userId);
+
+        if (!$user) {
+            return redirect()->route('superadmin.login')->withErrors(['error' => 'User not found.']);
+        }
+
+        // Reset 2FA
+        $user->google2fa_secret = null;
+        $user->google2fa_enabled = false;
+        $user->save();
+
+        // Clear session and redirect to setup
+        $request->session()->forget(['superadmin_credentials_verified']);
+        $request->session()->put('superadmin_needs_2fa_setup', true);
+
+        Log::info('Superadmin 2FA reset', [
+            'user_id' => $userId,
+            'ip' => $request->ip(),
+        ]);
+
+        return redirect()->route('superadmin.2fa.setup')->with('success', 'Two-factor authentication has been reset. Please set it up again.');
     }
 }

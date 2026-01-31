@@ -4,52 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Data Import - SmartHarvest Admin</title>
+    <title>Data Import - SmartHarvest DA Officer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
-        .sidebar { background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%); }
+        .sidebar { background: linear-gradient(180deg, #15803d 0%, #166534 100%); }
         .sidebar-item:hover { background-color: rgba(255, 255, 255, 0.1); }
         .sidebar-item.active { background-color: rgba(255, 255, 255, 0.15); border-left: 4px solid #fff; }
     </style>
 </head>
 <body class="bg-gray-50 flex" x-data="dataImportApp()">
-    <!-- Sidebar -->
+    <!-- Sidebar - Green Theme for DA Officer -->
     <aside class="sidebar w-64 min-h-screen text-white flex-shrink-0">
         <div class="p-6">
             <div class="flex items-center space-x-2 mb-8">
-                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/></svg>
+                <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+                    <span class="text-xl">🌾</span>
+                </div>
                 <div>
                     <h1 class="text-xl font-bold">SmartHarvest</h1>
-                    <p class="text-xs text-blue-200">Admin</p>
+                    <p class="text-xs text-green-200">DA Officer</p>
                 </div>
             </div>
 
             <!-- OVERVIEW Section -->
             <div class="mb-6">
-                <p class="text-xs uppercase text-blue-300 mb-2">OVERVIEW</p>
+                <p class="text-xs uppercase text-green-300 mb-2">OVERVIEW</p>
                 <a href="{{ route('admin.dashboard') }}" class="sidebar-item flex items-center space-x-3 px-4 py-2 rounded transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                    <span>Admin Dashboard</span>
-                </a>
-            </div>
-
-            <!-- USER MANAGEMENT Section -->
-            <div class="mb-6">
-                <p class="text-xs uppercase text-blue-300 mb-2">USER MANAGEMENT</p>
-                <a href="{{ route('admin.users') }}" class="sidebar-item flex items-center space-x-3 px-4 py-2 rounded transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                    <span>Users</span>
-                </a>
-                <a href="{{ route('admin.roles') }}" class="sidebar-item flex items-center space-x-3 px-4 py-2 rounded transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1721 9z"></path></svg>
-                    <span>Roles & Permissions</span>
+                    <span>Dashboard</span>
                 </a>
             </div>
 
             <!-- DATA MANAGEMENT Section -->
             <div class="mb-6">
-                <p class="text-xs uppercase text-blue-300 mb-2">DATA MANAGEMENT</p>
+                <p class="text-xs uppercase text-green-300 mb-2">DATA MANAGEMENT</p>
                 <a href="{{ route('admin.datasets') }}" class="sidebar-item flex items-center space-x-3 px-4 py-2 rounded transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
                     <span>Datasets</span>
@@ -60,25 +49,20 @@
                 </a>
             </div>
 
-            <div class="mb-4">
-                <p class="text-xs uppercase text-gray-400 mb-2 px-4">System</p>
+            <!-- SYSTEM Section -->
+            <div class="mb-6">
+                <p class="text-xs uppercase text-green-300 mb-2">SYSTEM</p>
                 <a href="{{ route('admin.monitoring') }}" class="sidebar-item flex items-center space-x-3 px-4 py-2 rounded transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                     <span>Monitoring</span>
                 </a>
-            </div>
-
-            <!-- SYSTEM Section -->
-            <div class="mb-6">
-                <p class="text-xs uppercase text-blue-300 mb-2">SYSTEM</p>
-                <a href="#" class="sidebar-item flex items-center space-x-3 px-4 py-2 rounded transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                    <span>Monitoring</span>
-                </a>
-                <a href="#" class="sidebar-item flex items-center space-x-3 px-4 py-2 rounded transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <span>Logs</span>
-                </a>
+                <form method="POST" action="{{ route('logout') }}" class="sidebar-item" onsubmit="sessionStorage.setItem('isLoggedOut','true');">
+                    @csrf
+                    <button type="submit" class="flex items-center space-x-3 px-4 py-2 rounded w-full text-left hover:bg-white/10 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                        <span>Logout</span>
+                    </button>
+                </form>
             </div>
         </div>
     </aside>
@@ -94,14 +78,14 @@
                 </div>
                 <div class="flex items-center space-x-4">
                     <div class="relative">
-                        <input type="text" placeholder="Search..." class="pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <input type="text" placeholder="Search..." class="pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
                         <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
                     <button class="relative">
                         <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                         <span class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">3</span>
                     </button>
-                    <button onclick="window.location.href='{{ route('admin.logout') }}'" class="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                    <button onclick="window.location.href='{{ route('admin.logout') }}'" class="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                         <span>Logout</span>
                     </button>
@@ -160,14 +144,14 @@
                         <div class="mb-6">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Dataset Name *</label>
                             <input type="text" x-model="datasetName" required
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                    placeholder="e.g., Crop Production Statistics 2025">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
                             <textarea x-model="description" rows="3"
-                                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                       placeholder="Provide a brief description of the dataset..."></textarea>
                         </div>
                     </div>
@@ -180,7 +164,7 @@
                             Reset
                         </button>
                         <button type="submit" :disabled="uploading || !selectedFile"
-                                class="px-8 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center space-x-2">
+                                class="px-8 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center space-x-2">
                             <svg x-show="uploading" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>

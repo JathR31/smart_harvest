@@ -96,7 +96,7 @@
                     <input id="remember_me" name="remember" type="checkbox" class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500">
                     <label for="remember_me" class="ml-2 block text-sm text-gray-900" data-translate data-translate-id="remember-me">Remember me</label>
                 </div>
-                <a href="#" class="text-sm font-medium text-green-600 hover:text-green-500 transition duration-150" data-translate data-translate-id="forgot-password">Forgot password?</a>
+                <a href="{{ route('password.request') }}" class="text-sm font-medium text-green-600 hover:text-green-500 transition duration-150" data-translate data-translate-id="forgot-password">Forgot password?</a>
             </div>
 
             <!-- Sign In Button -->

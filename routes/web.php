@@ -169,6 +169,132 @@ Route::post('/setup-password', function (Request $request) {
         ->with('message', 'Password set successfully! Welcome to SmartHarvest.');
 })->middleware(['auth', 'verified'])->name('password.setup.store');
 
+// =============================================================================
+// FORGOT PASSWORD ROUTES (Email Code Verification)
+// =============================================================================
+
+Route::get('/forgot-password', function () {
+    return view('auth.forgot-password');
+})->name('password.request');
+
+Route::post('/forgot-password', function (Request $request) {
+    $request->validate([
+        'email' => 'required|email|exists:users,email',
+    ], [
+        'email.exists' => 'No account found with that email address.',
+    ]);
+    
+    $user = \App\Models\User::where('email', $request->email)->first();
+    
+    // Generate 6-digit code
+    $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+    
+    // Store the code in the database (using otp_code field)
+    $user->otp_code = $code;
+    $user->otp_expires_at = now()->addMinutes(15);
+    $user->save();
+    
+    // Send email with the code
+    try {
+        \Illuminate\Support\Facades\Mail::send([], [], function ($message) use ($user, $code) {
+            $message->to($user->email)
+                ->subject('SmartHarvest - Password Reset Code')
+                ->html("
+                    <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
+                        <h2 style='color: #16a34a;'>Password Reset Request</h2>
+                        <p>Hello {$user->name},</p>
+                        <p>You requested to reset your password. Use the code below to proceed:</p>
+                        <div style='background: #f0fdf4; padding: 20px; text-align: center; border-radius: 10px; margin: 20px 0;'>
+                            <h1 style='color: #16a34a; font-size: 36px; letter-spacing: 5px; margin: 0;'>{$code}</h1>
+                        </div>
+                        <p style='color: #666;'>This code expires in 15 minutes.</p>
+                        <p style='color: #666;'>If you didn't request this, please ignore this email.</p>
+                        <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;'>
+                        <p style='color: #999; font-size: 12px;'>SmartHarvest - Your Agricultural Partner</p>
+                    </div>
+                ");
+        });
+    } catch (\Exception $e) {
+        return back()->with('error', 'Failed to send email. Please try again.');
+    }
+    
+    return redirect()->route('password.verify-code', ['email' => $user->email])
+        ->with('success', 'A 6-digit code has been sent to your email address.');
+})->name('password.email');
+
+Route::get('/reset-password/verify', function (Request $request) {
+    if (!$request->has('email')) {
+        return redirect()->route('password.request');
+    }
+    return view('auth.verify-reset-code', ['email' => $request->email]);
+})->name('password.verify-code');
+
+Route::post('/reset-password/verify', function (Request $request) {
+    $request->validate([
+        'email' => 'required|email|exists:users,email',
+        'code' => 'required|string|size:6',
+    ]);
+    
+    $user = \App\Models\User::where('email', $request->email)->first();
+    
+    if (!$user || $user->otp_code !== $request->code) {
+        return back()->with('error', 'Invalid verification code.');
+    }
+    
+    if ($user->otp_expires_at && now()->gt($user->otp_expires_at)) {
+        return back()->with('error', 'Verification code has expired. Please request a new one.');
+    }
+    
+    // Code is valid - redirect to reset password form
+    $token = \Illuminate\Support\Str::random(60);
+    $user->remember_token = $token;
+    $user->save();
+    
+    return redirect()->route('password.reset', ['token' => $token, 'email' => $user->email]);
+})->name('password.verify-code.store');
+
+Route::get('/reset-password/{token}', function (Request $request, $token) {
+    if (!$request->has('email')) {
+        return redirect()->route('password.request');
+    }
+    
+    $user = \App\Models\User::where('email', $request->email)
+        ->where('remember_token', $token)
+        ->first();
+    
+    if (!$user) {
+        return redirect()->route('password.request')->with('error', 'Invalid or expired reset link.');
+    }
+    
+    return view('auth.reset-password', ['token' => $token, 'email' => $request->email]);
+})->name('password.reset');
+
+Route::post('/reset-password', function (Request $request) {
+    $request->validate([
+        'token' => 'required|string',
+        'email' => 'required|email|exists:users,email',
+        'password' => 'required|string|min:8|confirmed',
+    ]);
+    
+    $user = \App\Models\User::where('email', $request->email)
+        ->where('remember_token', $request->token)
+        ->first();
+    
+    if (!$user) {
+        return back()->with('error', 'Invalid or expired reset link.');
+    }
+    
+    // Reset the password
+    $user->password = Hash::make($request->password);
+    $user->otp_code = null;
+    $user->otp_expires_at = null;
+    $user->remember_token = null;
+    $user->password_set_at = now();
+    $user->save();
+    
+    return redirect()->route('login')->with('success', 'Password has been reset successfully! You can now log in.');
+})->name('password.update');
+
 // Redirect /admin to main login page
 Route::get('/admin', function () {
     if (Auth::check() && Auth::user()->role === 'Admin') {
@@ -197,6 +323,9 @@ Route::get('/superadmin/2fa-setup', [SuperadminAuthController::class, 'show2FASe
 Route::post('/superadmin/2fa-enable', [SuperadminAuthController::class, 'enable2FA'])
     ->name('superadmin.2fa.enable');
 
+Route::post('/superadmin/2fa-reset', [SuperadminAuthController::class, 'reset2FA'])
+    ->name('superadmin.2fa.reset');
+
 Route::post('/superadmin/logout', [SuperadminAuthController::class, 'logout'])
     ->name('superadmin.logout');
 
@@ -216,16 +345,26 @@ Route::get('/admin/dashboard', function () {
     // Check user's admin type for appropriate dashboard
     $user = Auth::user();
     
-    // Superadmin gets superadmin_dashboard, DA Admin and regular admin gets admin_dacar
+    // Superadmin gets superadmin_dashboard - but MUST have completed 2FA this session
     if ($user->is_superadmin || $user->email === 'superadmin@smartharvest.ph') {
-        return view('admin_dash'); // Superadmin dashboard
+        // Check if 2FA was verified this session
+        if (!session('superadmin_2fa_verified')) {
+            // Superadmin must go through 2FA login
+            Auth::logout();
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+            return redirect()->route('superadmin.login')
+                ->with('info', 'Please complete two-factor authentication to access the dashboard.');
+        }
+        return view('superadmin_dashboard'); // Superadmin dashboard with 2FA
     }
     
-    return view('admin_dacar'); // DA-CAR Admin dashboard (for DA Admin role)
+    // DA Admin/DA Officer gets complete DA Officer dashboard (with Market Prices, Inbox, Announcements, Farmer's View)
+    return view('da_officer_dashboard'); // Complete DA Officer dashboard
 })->name('admin.dashboard');
 
-// DA-CAR Admin Dashboard (direct route)
-Route::get('/admin/dacar-dashboard', function () {
+// DA Officer Dashboard (direct route)
+Route::get('/admin/da-officer-dashboard', function () {
     $user = Auth::user();
     if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
         return redirect()->route('login')->withErrors(['error' => 'Admin access required']);
@@ -487,13 +626,14 @@ Route::get('/admin/users', function () {
     return view('users');
 })->name('admin.users');
 
-// Admin Datasets Page
+// Admin Datasets Page - Redirect to main DA Officer dashboard
 Route::get('/admin/datasets', function () {
     $user = Auth::user();
     if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
         return redirect()->route('login');
     }
-    return view('datasets');
+    // Redirect to main dashboard - datasets is handled via tabs in da_officer_dashboard
+    return redirect()->route('admin.dashboard');
 })->name('admin.datasets');
 
 // Admin System Status Page
@@ -505,22 +645,24 @@ Route::get('/admin/system-status', function () {
     return view('system_status');
 })->name('admin.system-status');
 
-// Admin Data Import Page (TEMPORARY: No auth check for testing)
+// Admin Data Import Page - Redirect to main DA Officer dashboard
 Route::get('/admin/dataimport', function () {
-    // Temporarily bypassed for testing
-    // if (!Auth::check() || Auth::user()->role !== 'Admin') {
-    //     return redirect()->route('admin.login');
-    // }
-    return view('dataimport');
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
+        return redirect()->route('login');
+    }
+    // Redirect to main dashboard - dataimport is handled via tabs in da_officer_dashboard
+    return redirect()->route('admin.dashboard');
 })->name('admin.dataimport');
 
-// Admin Monitoring Page
+// Admin Monitoring Page - Redirect to main DA Officer dashboard
 Route::get('/admin/monitoring', function () {
     $user = Auth::user();
     if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
         return redirect()->route('login');
     }
-    return view('monitoring');
+    // Redirect to main dashboard - monitoring is handled via tabs in da_officer_dashboard
+    return redirect()->route('admin.dashboard');
 })->name('admin.monitoring');
 
 // Admin API - Monitoring Climate Alerts
@@ -2495,30 +2637,36 @@ Route::get('/api/ml/yield/analysis', function (\Illuminate\Http\Request $request
 })->name('api.ml.yield.analysis');
 
 // User dashboard (protected)
-Route::get('/dashboard', function () {
+Route::get('/dashboard', function (Illuminate\Http\Request $request) {
     if (!Auth::check()) {
         return redirect()->route('login');
     }
     $user = Auth::user();
     
-    // Redirect DA Admin/Admin to admin dashboard
-    if ($user->is_superadmin || $user->role === 'Admin' || $user->role === 'DA Admin') {
+    // Allow DA Officers to view farmer dashboard with ?view=farmer parameter
+    $viewAsFarmer = $request->query('view') === 'farmer';
+    
+    // Redirect DA Admin/Admin to admin dashboard (unless viewing as farmer)
+    if (!$viewAsFarmer && ($user->is_superadmin || $user->role === 'Admin' || $user->role === 'DA Admin')) {
         return redirect()->route('admin.dashboard');
     }
     
-    // Check if email is verified
-    if (!$user->hasVerifiedEmail()) {
+    // Check if email is verified (skip for admins viewing as farmer)
+    if (!$viewAsFarmer && !$user->hasVerifiedEmail()) {
         return redirect()->route('verification.notice');
     }
     
-    // Check if password is set
-    if ($user->password_set_at === null) {
+    // Check if password is set (skip for admins viewing as farmer)
+    if (!$viewAsFarmer && $user->password_set_at === null) {
         return redirect()->route('password.setup')
             ->with('message', 'Please set your password to continue.');
     }
     
     $userMunicipality = $user->location ?? 'La Trinidad';
-    return view('dashboard', ['userMunicipality' => $userMunicipality]);
+    return view('dashboard', [
+        'userMunicipality' => $userMunicipality,
+        'viewingAsFarmer' => $viewAsFarmer
+    ]);
 })->name('dashboard');
 
 // Planting schedule page (protected)
@@ -3297,3 +3445,373 @@ Route::get('/switch-to-email-verification', function () {
     return redirect()->route('verification.notice')
         ->with('message', 'Switched to email verification. Please check your email.');
 })->middleware('auth')->name('otp.switch-to-email');
+
+// =============================================================================
+// API ROUTES FOR NEW FEATURES (Messages, Announcements, Market Prices)
+// =============================================================================
+
+// Market Prices API
+Route::get('/api/market-prices', function () {
+    $prices = \App\Models\MarketPrice::active()->latest()->get();
+    return response()->json($prices);
+})->name('api.market-prices');
+
+Route::post('/api/market-prices', function (Request $request) {
+    $user = Auth::user();
+    if (!$user || ($user->role !== 'Admin' && $user->role !== 'DA Admin' && !$user->is_superadmin)) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    $validated = $request->validate([
+        'crop_name' => 'required|string|max:100',
+        'variety' => 'nullable|string|max:100',
+        'price_per_kg' => 'required|numeric|min:0',
+        'price_trend' => 'in:up,down,stable',
+        'demand_level' => 'in:low,moderate,high,very_high',
+        'price_date' => 'required|date',
+        'notes' => 'nullable|string'
+    ]);
+    
+    // Get previous price
+    $previousPrice = \App\Models\MarketPrice::where('crop_name', $validated['crop_name'])
+        ->latest('price_date')
+        ->first();
+    
+    $price = \App\Models\MarketPrice::create([
+        'created_by' => $user->id,
+        'crop_name' => $validated['crop_name'],
+        'variety' => $validated['variety'] ?? null,
+        'price_per_kg' => $validated['price_per_kg'],
+        'previous_price' => $previousPrice ? $previousPrice->price_per_kg : null,
+        'price_trend' => $validated['price_trend'] ?? 'stable',
+        'demand_level' => $validated['demand_level'] ?? 'moderate',
+        'price_date' => $validated['price_date'],
+        'notes' => $validated['notes'] ?? null,
+    ]);
+    
+    return response()->json($price, 201);
+})->middleware('auth')->name('api.market-prices.store');
+
+// Announcements API
+Route::get('/api/announcements', function () {
+    $announcements = \App\Models\Announcement::active()
+        ->orderBy('priority', 'desc')
+        ->orderBy('created_at', 'desc')
+        ->get();
+    return response()->json($announcements);
+})->name('api.announcements');
+
+Route::post('/api/announcements', function (Request $request) {
+    $user = Auth::user();
+    if (!$user || ($user->role !== 'Admin' && $user->role !== 'DA Admin' && !$user->is_superadmin)) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    $validated = $request->validate([
+        'title' => 'required|string|max:255',
+        'content' => 'required|string',
+        'type' => 'in:general,weather,market,advisory,urgent',
+        'priority' => 'in:low,normal,high,urgent',
+    ]);
+    
+    $announcement = \App\Models\Announcement::create([
+        'created_by' => $user->id,
+        'title' => $validated['title'],
+        'content' => $validated['content'],
+        'type' => $validated['type'] ?? 'general',
+        'priority' => $validated['priority'] ?? 'normal',
+        'published_at' => now(),
+    ]);
+    
+    return response()->json($announcement, 201);
+})->middleware('auth')->name('api.announcements.store');
+
+// Messages API
+Route::get('/api/messages', function () {
+    $user = Auth::user();
+    if (!$user) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    $received = \App\Models\Message::with('sender:id,name')
+        ->where('receiver_id', $user->id)
+        ->orderBy('created_at', 'desc')
+        ->get()
+        ->map(function ($msg) {
+            return [
+                'id' => $msg->id,
+                'sender_name' => $msg->sender->name ?? 'Unknown',
+                'subject' => $msg->subject,
+                'content' => $msg->content,
+                'is_read' => $msg->is_read,
+                'created_at' => $msg->created_at->diffForHumans(),
+            ];
+        });
+    
+    $sent = \App\Models\Message::with('receiver:id,name')
+        ->where('sender_id', $user->id)
+        ->orderBy('created_at', 'desc')
+        ->get()
+        ->map(function ($msg) {
+            return [
+                'id' => $msg->id,
+                'receiver_name' => $msg->receiver->name ?? 'Unknown',
+                'subject' => $msg->subject,
+                'content' => $msg->content,
+                'is_read' => $msg->is_read,
+                'created_at' => $msg->created_at->diffForHumans(),
+            ];
+        });
+    
+    return response()->json([
+        'received' => $received,
+        'sent' => $sent,
+        'unread_count' => \App\Models\Message::where('receiver_id', $user->id)->where('is_read', false)->count()
+    ]);
+})->middleware('auth')->name('api.messages');
+
+Route::post('/api/messages', function (Request $request) {
+    $user = Auth::user();
+    if (!$user) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    $validated = $request->validate([
+        'receiver_id' => 'required|exists:users,id',
+        'subject' => 'required|string|max:255',
+        'content' => 'required|string',
+        'priority' => 'in:low,normal,high,urgent',
+    ]);
+    
+    $message = \App\Models\Message::create([
+        'sender_id' => $user->id,
+        'receiver_id' => $validated['receiver_id'],
+        'subject' => $validated['subject'],
+        'content' => $validated['content'],
+        'priority' => $validated['priority'] ?? 'normal',
+    ]);
+    
+    return response()->json($message, 201);
+})->middleware('auth')->name('api.messages.store');
+
+Route::patch('/api/messages/{id}/read', function ($id) {
+    $user = Auth::user();
+    $message = \App\Models\Message::where('id', $id)->where('receiver_id', $user->id)->first();
+    
+    if ($message) {
+        $message->markAsRead();
+    }
+    
+    return response()->json(['success' => true]);
+})->middleware('auth')->name('api.messages.read');
+
+// DA Officer Dashboard API
+Route::get('/api/da-officer/dashboard', function (Illuminate\Http\Request $request) {
+    $user = Auth::user();
+    if (!$user || ($user->role !== 'Admin' && $user->role !== 'DA Admin' && !$user->is_superadmin)) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    $municipality = $request->query('municipality');
+    
+    // Get start of current month for "this month" stats
+    $startOfMonth = now()->startOfMonth();
+    
+    // Base queries
+    $farmersQuery = \App\Models\User::where('role', 'Farmer');
+    $cropDataQuery = \App\Models\CropData::query();
+    $newFarmersQuery = \App\Models\User::where('role', 'Farmer')->where('created_at', '>=', $startOfMonth);
+    $newRecordsQuery = \App\Models\CropData::where('created_at', '>=', $startOfMonth);
+    
+    // Apply municipality filter if provided
+    if ($municipality) {
+        $farmersQuery->where('location', 'LIKE', '%' . $municipality . '%');
+        $cropDataQuery->where('municipality', $municipality);
+        $newFarmersQuery->where('location', 'LIKE', '%' . $municipality . '%');
+        $newRecordsQuery->where('municipality', $municipality);
+    }
+    
+    // Calculate stats
+    $totalFarmers = $farmersQuery->count();
+    $totalRecords = $cropDataQuery->count();
+    $newFarmersThisMonth = $newFarmersQuery->count();
+    $newRecordsThisMonth = $newRecordsQuery->count();
+    
+    // Total farm area (sum of area_planted from crop_data)
+    $farmAreaQuery = \App\Models\CropData::query();
+    if ($municipality) {
+        $farmAreaQuery->where('municipality', $municipality);
+    }
+    $totalFarmArea = round($farmAreaQuery->sum('area_planted'), 2);
+    
+    // Pending validation and flagged records
+    $pendingQuery = \App\Models\CropData::where('validation_status', 'Pending');
+    $flaggedQuery = \App\Models\CropData::where('validation_status', 'Flagged');
+    if ($municipality) {
+        $pendingQuery->where('municipality', $municipality);
+        $flaggedQuery->where('municipality', $municipality);
+    }
+    $pendingValidation = $pendingQuery->count();
+    $flaggedRecords = $flaggedQuery->count();
+    
+    // Active prices
+    $activePrices = \App\Models\MarketPrice::where('is_active', true)->count();
+    
+    return response()->json([
+        'stats' => [
+            'totalFarmers' => $totalFarmers,
+            'totalRecords' => $totalRecords,
+            'activePrices' => $activePrices,
+            'totalFarmArea' => $totalFarmArea,
+            'pendingValidation' => $pendingValidation,
+            'flaggedRecords' => $flaggedRecords,
+            'newFarmersThisMonth' => $newFarmersThisMonth,
+            'newRecordsThisMonth' => $newRecordsThisMonth
+        ],
+        'recentActivity' => []
+    ]);
+})->middleware('auth')->name('api.da-officer.dashboard');
+
+// Superadmin Dashboard API
+Route::get('/api/superadmin/dashboard', function () {
+    $user = Auth::user();
+    if (!$user || !$user->is_superadmin) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    return response()->json([
+        'stats' => [
+            'totalUsers' => \App\Models\User::count(),
+            'totalFarmers' => \App\Models\User::where('role', 'Farmer')->count(),
+            'totalAdmins' => \App\Models\User::whereIn('role', ['Admin', 'DA Admin'])->count(),
+            'activeToday' => \App\Models\User::where('updated_at', '>=', now()->subDay())->count(),
+        ],
+        'recentActivity' => []
+    ]);
+})->middleware('auth')->name('api.superadmin.dashboard');
+
+Route::get('/api/superadmin/users', function () {
+    $user = Auth::user();
+    if (!$user || !$user->is_superadmin) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    $users = \App\Models\User::select('id', 'name', 'email', 'role', 'status', 'created_at')
+        ->orderBy('created_at', 'desc')
+        ->get()
+        ->map(function ($u) {
+            return [
+                'id' => $u->id,
+                'name' => $u->name,
+                'email' => $u->email,
+                'role' => $u->role,
+                'status' => $u->status ?? 'active',
+                'created_at' => $u->created_at->format('M d, Y'),
+            ];
+        });
+    
+    return response()->json($users);
+})->middleware('auth')->name('api.superadmin.users');
+
+Route::post('/api/superadmin/users', function (Request $request) {
+    $user = Auth::user();
+    if (!$user || !$user->is_superadmin) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|unique:users,email',
+        'password' => 'required|string|min:8',
+        'role' => 'required|in:Farmer,Admin,DA Admin',
+    ]);
+    
+    $newUser = \App\Models\User::create([
+        'name' => $validated['name'],
+        'email' => $validated['email'],
+        'password' => Hash::make($validated['password']),
+        'role' => $validated['role'],
+        'email_verified_at' => now(),
+        'password_set_at' => now(),
+    ]);
+    
+    return response()->json($newUser, 201);
+})->middleware('auth')->name('api.superadmin.users.store');
+
+Route::patch('/api/superadmin/users/{id}/role', function (Request $request, $id) {
+    $user = Auth::user();
+    if (!$user || !$user->is_superadmin) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    $validated = $request->validate([
+        'role' => 'required|in:Farmer,Admin,DA Admin',
+    ]);
+    
+    $targetUser = \App\Models\User::findOrFail($id);
+    $targetUser->update(['role' => $validated['role']]);
+    
+    return response()->json(['success' => true]);
+})->middleware('auth')->name('api.superadmin.users.role');
+
+// Superadmin Logs API
+Route::get('/api/superadmin/logs', function () {
+    $user = Auth::user();
+    if (!$user || !$user->is_superadmin) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    // Get recent user activity as logs (from latest logins, registrations, data updates)
+    $recentUsers = \App\Models\User::latest('updated_at')->take(20)->get();
+    $logs = [];
+    
+    foreach ($recentUsers as $u) {
+        $type = 'login';
+        $message = 'User activity: ' . $u->name;
+        
+        if ($u->created_at->gte(now()->subDay())) {
+            $type = 'data';
+            $message = 'New user registered: ' . $u->name;
+        }
+        
+        $logs[] = [
+            'type' => $type,
+            'message' => $message,
+            'user' => $u->email,
+            'time' => $u->updated_at->diffForHumans(),
+        ];
+    }
+    
+    // Add market price updates as logs
+    $recentPrices = \App\Models\MarketPrice::with('creator')->latest()->take(5)->get();
+    foreach ($recentPrices as $price) {
+        $logs[] = [
+            'type' => 'data',
+            'message' => 'Market price updated: ' . $price->crop_name,
+            'user' => $price->creator?->email ?? 'system',
+            'time' => $price->updated_at->diffForHumans(),
+        ];
+    }
+    
+    // Sort by most recent and limit
+    usort($logs, fn($a, $b) => strtotime($b['time'] ?? 'now') <=> strtotime($a['time'] ?? 'now'));
+    
+    return response()->json(array_slice($logs, 0, 20));
+})->middleware('auth')->name('api.superadmin.logs');
+
+// Get ML Dataset Crops API (for crop dropdowns)
+Route::get('/api/ml-crops', function () {
+    $crops = [
+        'CABBAGE',
+        'CHINESE CABBAGE',
+        'LETTUCE',
+        'CAULIFLOWER',
+        'BROCCOLI',
+        'SNAP BEANS',
+        'GARDEN PEAS',
+        'SWEET PEPPER',
+        'WHITE POTATO',
+        'CARROTS'
+    ];
+    return response()->json($crops);
+})->name('api.ml-crops');

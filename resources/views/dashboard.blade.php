@@ -9,12 +9,33 @@
     <script src="{{ asset('js/translation.js') }}?v={{ time() }}"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
+        [x-cloak] { display: none !important; }
         .sidebar { background: linear-gradient(180deg, #047857 0%, #065f46 100%); }
         .sidebar-item:hover { background-color: rgba(255, 255, 255, 0.1); }
         .sidebar-item.active { background-color: rgba(255, 255, 255, 0.15); border-left: 4px solid #fff; }
     </style>
 </head>
-<body class="bg-gray-50 flex" x-data="farmerDashboard()">
+<body class="bg-gray-50 flex flex-col" x-data="farmerDashboard()">
+    @if(isset($viewingAsFarmer) && $viewingAsFarmer)
+    <!-- DA Officer View Banner -->
+    <div class="bg-gradient-to-r from-green-700 to-green-600 text-white py-3 px-6 flex items-center justify-between w-full z-50">
+        <div class="flex items-center space-x-3">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+            <span class="font-medium">You are viewing the Farmer Dashboard as a DA Officer</span>
+        </div>
+        <a href="{{ route('admin.dashboard') }}" class="flex items-center space-x-2 px-4 py-2 bg-white text-green-700 rounded-lg hover:bg-green-50 transition font-medium text-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            <span>Back to DA Dashboard</span>
+        </a>
+    </div>
+    @endif
+    
+    <div class="flex flex-1">
     <!-- Sidebar -->
     <aside class="sidebar w-64 min-h-screen text-white flex-shrink-0">
         <div class="p-6">
@@ -25,7 +46,7 @@
 
             <div class="mb-8">
                 <p class="text-xs uppercase text-green-300 mb-3" data-translate data-translate-id="menu-main">Main</p>
-                <a href="{{ route('dashboard') }}" class="sidebar-item active flex items-center space-x-3 px-4 py-2.5 rounded transition">
+                <a href="#" @click.prevent="showSection = 'dashboard'" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition" :class="{'active': showSection === 'dashboard'}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
                     <span data-translate data-translate-id="menu-dashboard">Dashboard</span>
                 </a>
@@ -48,6 +69,24 @@
                 <a href="{{ route('forecast') }}" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
                     <span data-translate data-translate-id="menu-forecast">Forecast</span>
+                </a>
+            </div>
+
+            <div class="mb-8">
+                <p class="text-xs uppercase text-green-300 mb-3" data-translate data-translate-id="menu-info">Information</p>
+                <a href="#" @click.prevent="showSection = 'market-prices'" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition" :class="{'active': showSection === 'market-prices'}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span data-translate data-translate-id="menu-market-prices">Market Prices</span>
+                </a>
+                <a href="#" @click.prevent="showSection = 'announcements'" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition" :class="{'active': showSection === 'announcements'}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+                    <span data-translate data-translate-id="menu-announcements">Announcements</span>
+                    <span x-show="unreadAnnouncements > 0" class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5" x-text="unreadAnnouncements"></span>
+                </a>
+                <a href="#" @click.prevent="showSection = 'inbox'" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition" :class="{'active': showSection === 'inbox'}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    <span data-translate data-translate-id="menu-inbox">Inbox</span>
+                    <span x-show="unreadMessages > 0" class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5" x-text="unreadMessages"></span>
                 </a>
             </div>
 
@@ -129,6 +168,9 @@
 
         <!-- Dashboard Content -->
         <main class="flex-1 p-8 overflow-y-auto bg-gray-50">
+            
+            <!-- Main Dashboard Section -->
+            <div x-show="showSection === 'dashboard'">
             <!-- Top 3 Cards -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <!-- Weather Forecast Card -->
@@ -279,18 +321,27 @@
                         <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
                             <div class="flex items-start justify-between mb-2">
                                 <h4 class="font-semibold text-gray-800" x-text="price.crop"></h4>
-                                <span class="text-xs px-2 py-1 rounded" 
-                                      :class="price.trend > 0 ? 'bg-green-100 text-green-700' : price.trend < 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'"
-                                      x-text="price.trend > 0 ? '+' + price.trend + '%' : price.trend + '%'">
-                                </span>
+                                <template x-if="price.hasPrice && price.previousPrice">
+                                    <span class="text-xs px-2 py-1 rounded" 
+                                          :class="price.trend === 'up' ? 'bg-green-100 text-green-700' : price.trend === 'down' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'"
+                                          x-text="price.trend === 'up' ? '↑ Up' : price.trend === 'down' ? '↓ Down' : '→ Stable'">
+                                    </span>
+                                </template>
                             </div>
-                            <p class="text-2xl font-bold text-green-600 mb-2">₱<span x-text="price.price"></span><span class="text-sm text-gray-500">/kg</span></p>
-                            <div class="flex items-center justify-between text-xs">
-                                <span class="px-2 py-1 rounded" 
-                                      :class="price.demand === 'High' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'">
-                                    Market Demand: <span class="font-semibold" x-text="price.demand"></span>
-                                </span>
-                            </div>
+                            <template x-if="price.hasPrice">
+                                <p class="text-2xl font-bold text-green-600 mb-2">₱<span x-text="price.price.toFixed(2)"></span><span class="text-sm text-gray-500">/kg</span></p>
+                            </template>
+                            <template x-if="!price.hasPrice">
+                                <p class="text-xl font-semibold text-gray-400 mb-2">Not Set</p>
+                            </template>
+                            <template x-if="price.hasPrice">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="px-2 py-1 rounded" 
+                                          :class="price.demand === 'high' || price.demand === 'very_high' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'">
+                                        Market Demand: <span class="font-semibold capitalize" x-text="price.demand.replace('_', ' ')"></span>
+                                    </span>
+                                </div>
+                            </template>
                         </div>
                     </template>
                 </div>
@@ -327,6 +378,290 @@
                     </p>
                 </div>
             </div>
+            </div> <!-- End Main Dashboard Section -->
+
+            <!-- Market Prices Section -->
+            <div x-show="showSection === 'market-prices'" x-cloak>
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Current Market Prices</h2>
+                        <p class="text-gray-500 text-sm">Latest prices for major Cordillera crops (Updated: {{ now()->format('F d, Y') }})</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <span class="text-2xl">💰</span>
+                    </div>
+                </div>
+                
+                <!-- Card Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    @php
+                        $marketPrices = \App\Models\MarketPrice::where('is_active', true)->orderBy('crop_name')->get();
+                        $cropIcons = [
+                            'CABBAGE' => '🥬',
+                            'CHINESE CABBAGE' => '🥬',
+                            'LETTUCE' => '🥗',
+                            'CAULIFLOWER' => '🥦',
+                            'BROCCOLI' => '🥦',
+                            'SNAP BEANS' => '🫛',
+                            'GARDEN PEAS' => '🫛',
+                            'SWEET PEPPER' => '🫑',
+                            'WHITE POTATO' => '🥔',
+                            'CARROTS' => '🥕',
+                            'STRAWBERRIES' => '🍓',
+                            'TINAWON RICE' => '🌾',
+                            'HIGHLAND CABBAGE' => '🥬',
+                            'POTATOES' => '🥔',
+                        ];
+                    @endphp
+                    @forelse($marketPrices as $price)
+                        @php
+                            $icon = $cropIcons[strtoupper($price->crop_name)] ?? '🌱';
+                            $trendPercent = 0;
+                            if ($price->price_per_kg && $price->previous_price && $price->previous_price > 0) {
+                                $trendPercent = round((($price->price_per_kg - $price->previous_price) / $price->previous_price) * 100);
+                            }
+                            $demandColors = [
+                                'high' => 'bg-green-500 text-white',
+                                'very_high' => 'bg-green-600 text-white',
+                                'moderate' => 'bg-yellow-400 text-yellow-900',
+                                'low' => 'bg-gray-300 text-gray-700',
+                            ];
+                            $demandColor = $demandColors[$price->demand_level] ?? 'bg-gray-300 text-gray-700';
+                            $demandLabel = $price->demand_level === 'very_high' ? 'Very High' : ucfirst($price->demand_level);
+                        @endphp
+                        <div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition">
+                            <div class="flex items-start justify-between">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-3xl">{{ $icon }}</span>
+                                    <div>
+                                        <h3 class="font-bold text-gray-800">{{ $price->crop_name }}</h3>
+                                        @if($price->price_per_kg)
+                                            <p class="text-2xl font-bold text-green-600">₱{{ number_format($price->price_per_kg, 0) }}<span class="text-sm font-normal text-gray-500"> per kg</span></p>
+                                        @else
+                                            <p class="text-lg font-medium text-gray-400">Price not set</p>
+                                        @endif
+                                    </div>
+                                </div>
+                                @if($price->price_per_kg)
+                                    <div class="text-right">
+                                        @if($trendPercent > 0)
+                                            <span class="inline-flex items-center text-green-600 text-sm font-medium">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                                                +{{ $trendPercent }}%
+                                            </span>
+                                        @elseif($trendPercent < 0)
+                                            <span class="inline-flex items-center text-red-500 text-sm font-medium">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"/></svg>
+                                                {{ $trendPercent }}%
+                                            </span>
+                                        @else
+                                            <span class="text-gray-400 text-sm">0%</span>
+                                        @endif
+                                    </div>
+                                @endif
+                            </div>
+                            @if($price->price_per_kg)
+                                <div class="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
+                                    <span class="text-sm text-gray-500">Market Demand:</span>
+                                    <span class="px-3 py-1 rounded-full text-xs font-semibold {{ $demandColor }}">{{ $demandLabel }}</span>
+                                </div>
+                            @endif
+                        </div>
+                    @empty
+                        <div class="col-span-full text-center py-8 text-gray-500">
+                            <p>No crops available.</p>
+                        </div>
+                    @endforelse
+                </div>
+
+                <!-- Price Insights -->
+                <div class="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4">
+                    <div class="flex items-start gap-3">
+                        <span class="text-xl">💡</span>
+                        <div>
+                            <h4 class="font-semibold text-blue-900 mb-1">Price Insights</h4>
+                            <p class="text-sm text-blue-800">Prices are based on current market conditions in La Trinidad Trading Post and Baguio City Public Market. Highland Cabbage and Potatoes show strong upward trends due to high demand and favorable weather conditions. Plan your planting accordingly to maximize returns.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Announcements Section -->
+            <div x-show="showSection === 'announcements'" x-cloak>
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Announcements</h2>
+                <p class="text-gray-600 mb-6">Important updates and announcements from the Department of Agriculture.</p>
+                
+                <div class="space-y-4">
+                    <template x-for="(announcement, index) in announcements" :key="index">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex items-center space-x-3">
+                                    <div :class="{
+                                        'bg-red-100': announcement.priority === 'urgent',
+                                        'bg-yellow-100': announcement.priority === 'high',
+                                        'bg-blue-100': announcement.priority === 'normal',
+                                        'bg-gray-100': announcement.priority === 'low'
+                                    }" class="w-10 h-10 rounded-full flex items-center justify-center">
+                                        <svg class="w-5 h-5" :class="{
+                                            'text-red-600': announcement.priority === 'urgent',
+                                            'text-yellow-600': announcement.priority === 'high',
+                                            'text-blue-600': announcement.priority === 'normal',
+                                            'text-gray-600': announcement.priority === 'low'
+                                        }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-gray-800" x-text="announcement.title"></h3>
+                                        <p class="text-xs text-gray-500" x-text="announcement.created_at"></p>
+                                    </div>
+                                </div>
+                                <span :class="{
+                                    'bg-red-100 text-red-700': announcement.type === 'urgent',
+                                    'bg-yellow-100 text-yellow-700': announcement.type === 'weather',
+                                    'bg-green-100 text-green-700': announcement.type === 'market',
+                                    'bg-blue-100 text-blue-700': announcement.type === 'advisory',
+                                    'bg-gray-100 text-gray-700': announcement.type === 'general'
+                                }" class="text-xs px-2 py-1 rounded" x-text="announcement.type"></span>
+                            </div>
+                            <p class="text-gray-700" x-text="announcement.content"></p>
+                        </div>
+                    </template>
+                    <template x-if="announcements.length === 0">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                            <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+                            </svg>
+                            <p class="text-gray-500">No announcements at this time.</p>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Inbox Section -->
+            <div x-show="showSection === 'inbox'" x-cloak>
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Inbox</h2>
+                        <p class="text-gray-600">Send and receive messages with DA Officers.</p>
+                    </div>
+                    <button @click="showComposeModal = true" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        <span>New Message</span>
+                    </button>
+                </div>
+
+                <!-- Tabs for Received/Sent -->
+                <div x-data="{ inboxTab: 'received' }" class="bg-white rounded-xl shadow-sm border border-gray-200">
+                    <div class="border-b border-gray-200">
+                        <nav class="flex">
+                            <button @click="inboxTab = 'received'" :class="{'border-b-2 border-green-500 text-green-600': inboxTab === 'received', 'text-gray-500': inboxTab !== 'received'}" class="px-6 py-3 font-medium">
+                                Received (<span x-text="messages.received.length"></span>)
+                            </button>
+                            <button @click="inboxTab = 'sent'" :class="{'border-b-2 border-green-500 text-green-600': inboxTab === 'sent', 'text-gray-500': inboxTab !== 'sent'}" class="px-6 py-3 font-medium">
+                                Sent (<span x-text="messages.sent.length"></span>)
+                            </button>
+                        </nav>
+                    </div>
+                    
+                    <!-- Received Messages -->
+                    <div x-show="inboxTab === 'received'" class="p-4">
+                        <template x-for="msg in messages.received" :key="msg.id">
+                            <div @click="markAsRead(msg.id)" class="p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer" :class="{'bg-green-50': !msg.is_read}">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <p class="font-medium text-gray-800" :class="{'font-bold': !msg.is_read}" x-text="msg.subject"></p>
+                                        <p class="text-sm text-gray-500">From: <span x-text="msg.sender_name"></span></p>
+                                        <p class="text-sm text-gray-600 mt-1" x-text="msg.content.substring(0, 100) + '...'"></p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-xs text-gray-400" x-text="msg.created_at"></p>
+                                        <span x-show="!msg.is_read" class="inline-block mt-1 w-2 h-2 bg-green-500 rounded-full"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                        <template x-if="messages.received.length === 0">
+                            <div class="text-center py-12 text-gray-500">
+                                <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                                <p>No messages received yet.</p>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Sent Messages -->
+                    <div x-show="inboxTab === 'sent'" x-cloak class="p-4">
+                        <template x-for="msg in messages.sent" :key="msg.id">
+                            <div class="p-4 border-b border-gray-100 hover:bg-gray-50">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <p class="font-medium text-gray-800" x-text="msg.subject"></p>
+                                        <p class="text-sm text-gray-500">To: <span x-text="msg.receiver_name"></span></p>
+                                        <p class="text-sm text-gray-600 mt-1" x-text="msg.content.substring(0, 100) + '...'"></p>
+                                    </div>
+                                    <p class="text-xs text-gray-400" x-text="msg.created_at"></p>
+                                </div>
+                            </div>
+                        </template>
+                        <template x-if="messages.sent.length === 0">
+                            <div class="text-center py-12 text-gray-500">
+                                <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                                <p>No messages sent yet.</p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compose Message Modal -->
+            <div x-show="showComposeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" x-cloak>
+                <div class="bg-white rounded-xl p-6 w-full max-w-lg mx-4" @click.away="showComposeModal = false">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">New Message</h3>
+                        <button @click="showComposeModal = false" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <form @submit.prevent="sendMessage">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">To (DA Officer)</label>
+                                <select x-model="newMessage.receiver_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" required>
+                                    <option value="">Select a DA Officer...</option>
+                                    @php
+                                        $daOfficers = \App\Models\User::whereIn('role', ['Admin', 'DA Admin'])->get();
+                                    @endphp
+                                    @foreach($daOfficers as $officer)
+                                        <option value="{{ $officer->id }}">{{ $officer->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                                <input type="text" x-model="newMessage.subject" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Message subject..." required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                                <textarea x-model="newMessage.content" rows="5" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Write your message here..." required></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="flex space-x-3 mt-6">
+                            <button type="button" @click="showComposeModal = false" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
+                            <button type="submit" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Send Message</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -337,6 +672,14 @@
                 selectedLanguageName: localStorage.getItem('preferredLanguageName') || 'English',
                 originalTexts: {},
                 selectedMunicipality: '{{ $userMunicipality ?? "La Trinidad" }}',
+                showSection: new URLSearchParams(window.location.search).get('tab') || 'dashboard',
+                unreadAnnouncements: 0,
+                unreadMessages: 0,
+                announcements: [],
+                messages: { received: [], sent: [] },
+                daOfficers: [],
+                showComposeModal: false,
+                newMessage: { receiver_id: '', subject: '', content: '' },
                 municipalities: [
                     'Atok', 'Bakun', 'Bokod', 'Buguias', 'Itogon', 
                     'Kabayan', 'Kapangan', 'Kibungan', 'La Trinidad', 'Mankayan', 
@@ -361,17 +704,10 @@
                     confidence: ''
                 },
                 weatherPrediction: {
-                    condition: 'Good Rain',
-                    rainfall: '120'
+                    condition: 'Loading...',
+                    rainfall: '0'
                 },
-                marketPrices: [
-                    { crop: 'Highland Cabbage', price: '25', demand: 'High', trend: 4 },
-                    { crop: 'Tinawon Rice', price: '45', demand: 'High', trend: 0 },
-                    { crop: 'Lettuce', price: '35', demand: 'Medium', trend: -3 },
-                    { crop: 'Potatoes', price: '28', demand: 'High', trend: 12 },
-                    { crop: 'Carrots', price: '30', demand: 'Medium', trend: 4 },
-                    { crop: 'Strawberries', price: '250', demand: 'High', trend: 8 }
-                ],
+                marketPrices: [],
                 weatherForecast: [],
                 recentHarvests: [],
                 topCrops: [],
@@ -381,9 +717,96 @@
                 init() {
                     console.log('Dashboard initialized for municipality:', this.selectedMunicipality);
                     this.loadDashboardData();
+                    this.loadMarketPrices();
+                    this.loadAnnouncements();
+                    this.loadMessages();
                     SmartHarvestTranslation.init();
                     if (this.selectedLanguage !== 'en') {
                         this.translatePage(this.selectedLanguage);
+                    }
+                },
+
+                async loadAnnouncements() {
+                    try {
+                        const response = await fetch('/api/announcements');
+                        if (response.ok) {
+                            this.announcements = await response.json();
+                            this.unreadAnnouncements = this.announcements.filter(a => a.is_active).length;
+                        }
+                    } catch (error) {
+                        console.error('Error loading announcements:', error);
+                    }
+                },
+
+                async loadMarketPrices() {
+                    try {
+                        const response = await fetch('/api/market-prices');
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.marketPrices = data.map(p => ({
+                                crop: p.crop_name,
+                                variety: p.variety,
+                                price: p.price_per_kg ? parseFloat(p.price_per_kg) : null,
+                                previousPrice: p.previous_price ? parseFloat(p.previous_price) : null,
+                                demand: p.demand_level,
+                                trend: p.price_trend,
+                                location: p.market_location,
+                                hasPrice: p.price_per_kg !== null
+                            }));
+                        }
+                    } catch (error) {
+                        console.error('Error loading market prices:', error);
+                    }
+                },
+
+                async loadMessages() {
+                    try {
+                        const response = await fetch('/api/messages');
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.messages = { received: data.received, sent: data.sent };
+                            this.unreadMessages = data.unread_count;
+                        }
+                    } catch (error) {
+                        console.error('Error loading messages:', error);
+                    }
+                },
+
+                async sendMessage() {
+                    if (!this.newMessage.receiver_id || !this.newMessage.subject || !this.newMessage.content) {
+                        alert('Please fill all fields');
+                        return;
+                    }
+                    try {
+                        const response = await fetch('/api/messages', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify(this.newMessage)
+                        });
+                        if (response.ok) {
+                            this.showComposeModal = false;
+                            this.newMessage = { receiver_id: '', subject: '', content: '' };
+                            await this.loadMessages();
+                            alert('Message sent successfully!');
+                        }
+                    } catch (error) {
+                        console.error('Error sending message:', error);
+                        alert('Error sending message');
+                    }
+                },
+
+                async markAsRead(messageId) {
+                    try {
+                        await fetch(`/api/messages/${messageId}/read`, {
+                            method: 'PATCH',
+                            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+                        });
+                        await this.loadMessages();
+                    } catch (error) {
+                        console.error('Error marking message as read:', error);
                     }
                 },
                 
@@ -623,5 +1046,6 @@
         };
     </script>
 
+    </div><!-- End of flex wrapper -->
 </body>
 </html>

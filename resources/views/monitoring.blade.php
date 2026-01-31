@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Provincial Monitoring Dashboard - SmartHarvest Admin</title>
+    <title>Provincial Monitoring Dashboard - SmartHarvest DA Officer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -28,51 +28,33 @@
 </head>
 <body class="bg-gray-50" x-data="monitoringApp()" x-init="init()">
     <div class="flex h-screen overflow-hidden">
-        <!-- Sidebar -->
-        <aside class="w-64 bg-gradient-to-b from-blue-800 to-blue-900 text-white flex-shrink-0 overflow-y-auto">
-            <div class="p-6 border-b border-blue-700">
+        <!-- Sidebar - Green Theme for DA Officer -->
+        <aside class="w-64 bg-gradient-to-b from-green-700 to-green-900 text-white flex-shrink-0 overflow-y-auto">
+            <div class="p-6 border-b border-green-600">
                 <div class="flex items-center space-x-3">
                     <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                        <svg class="w-6 h-6 text-blue-800" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
-                        </svg>
+                        <span class="text-xl">🌾</span>
                     </div>
                     <div>
                         <h1 class="text-lg font-bold">SmartHarvest</h1>
-                        <p class="text-xs text-blue-200">Admin</p>
+                        <p class="text-xs text-green-200">DA Officer</p>
                     </div>
                 </div>
             </div>
 
             <nav class="p-4 space-y-2">
                 <div class="mb-4">
-                    <p class="text-xs uppercase text-blue-300 mb-2 px-4">Overview</p>
+                    <p class="text-xs uppercase text-green-300 mb-2 px-4">Overview</p>
                     <a href="{{ route('admin.dashboard') }}" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
                         </svg>
-                        <span>Admin Dashboard</span>
+                        <span>Dashboard</span>
                     </a>
                 </div>
 
                 <div class="mb-4">
-                    <p class="text-xs uppercase text-blue-300 mb-2 px-4">User Management</p>
-                    <a href="{{ route('admin.users') }}" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-                        </svg>
-                        <span>Users</span>
-                    </a>
-                    <a href="{{ route('admin.roles') }}" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1721 9z"/>
-                        </svg>
-                        <span>Roles & Permissions</span>
-                    </a>
-                </div>
-
-                <div class="mb-4">
-                    <p class="text-xs uppercase text-blue-300 mb-2 px-4">Data Management</p>
+                    <p class="text-xs uppercase text-green-300 mb-2 px-4">Data Management</p>
                     <a href="{{ route('admin.datasets') }}" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/>
@@ -88,18 +70,12 @@
                 </div>
 
                 <div class="mb-4">
-                    <p class="text-xs uppercase text-blue-300 mb-2 px-4">System</p>
+                    <p class="text-xs uppercase text-green-300 mb-2 px-4">System</p>
                     <a href="{{ route('admin.monitoring') }}" class="sidebar-item active flex items-center space-x-3 px-4 py-3 rounded">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                         </svg>
                         <span>Monitoring</span>
-                    </a>
-                    <a href="#" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        <span>Logs</span>
                     </a>
                     <form method="POST" action="{{ route('logout') }}" class="sidebar-item" onsubmit="sessionStorage.setItem('isLoggedOut','true');">
                         @csrf
@@ -122,7 +98,7 @@
                     <div class="flex items-center">
                         <div class="flex items-center">
                             <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-                            <span class="text-sm text-gray-600">SmartHarvest Admin</span>
+                            <span class="text-sm text-gray-600">SmartHarvest DA Officer</span>
                         </div>
                     </div>
                     <div class="flex items-center space-x-4">
