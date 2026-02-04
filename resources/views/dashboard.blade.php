@@ -381,7 +381,126 @@
             </div> <!-- End Main Dashboard Section -->
 
             <!-- Market Prices Section -->
-            <div x-show="showSection === 'market-prices'" x-cloak>
+            <div x-show="showSection === 'market-prices'" x-cloak
+                 x-data="{
+                    pricesCurrentPage: 1,
+                    pricesPerPage: 10,
+                    pricesSearchQuery: '',
+                    pricesSortColumn: 'crop_name',
+                    pricesSortDirection: 'asc',
+                    allPrices: [],
+                    
+                    init() {
+                        this.loadPricesData();
+                    },
+                    
+                    async loadPricesData() {
+                        try {
+                            const response = await fetch('/api/market-prices');
+                            if (response.ok) {
+                                this.allPrices = await response.json();
+                            }
+                        } catch (error) {
+                            console.error('Error loading market prices:', error);
+                        }
+                    },
+                    
+                    get filteredPrices() {
+                        let filtered = this.allPrices.filter(p => 
+                            p.crop_name.toLowerCase().includes(this.pricesSearchQuery.toLowerCase()) ||
+                            (p.variety && p.variety.toLowerCase().includes(this.pricesSearchQuery.toLowerCase())) ||
+                            (p.market_location && p.market_location.toLowerCase().includes(this.pricesSearchQuery.toLowerCase()))
+                        );
+                        
+                        // Sort
+                        filtered.sort((a, b) => {
+                            let aVal = a[this.pricesSortColumn] ?? '';
+                            let bVal = b[this.pricesSortColumn] ?? '';
+                            
+                            if (this.pricesSortColumn === 'price_per_kg' || this.pricesSortColumn === 'previous_price') {
+                                aVal = parseFloat(aVal) || 0;
+                                bVal = parseFloat(bVal) || 0;
+                            } else {
+                                aVal = String(aVal).toLowerCase();
+                                bVal = String(bVal).toLowerCase();
+                            }
+                            
+                            if (this.pricesSortDirection === 'asc') {
+                                return aVal > bVal ? 1 : -1;
+                            } else {
+                                return aVal < bVal ? 1 : -1;
+                            }
+                        });
+                        
+                        return filtered;
+                    },
+                    
+                    get paginatedPrices() {
+                        const start = (this.pricesCurrentPage - 1) * this.pricesPerPage;
+                        return this.filteredPrices.slice(start, start + this.pricesPerPage);
+                    },
+                    
+                    get totalPages() {
+                        return Math.ceil(this.filteredPrices.length / this.pricesPerPage);
+                    },
+                    
+                    get startIndex() {
+                        return (this.pricesCurrentPage - 1) * this.pricesPerPage + 1;
+                    },
+                    
+                    get endIndex() {
+                        return Math.min(this.pricesCurrentPage * this.pricesPerPage, this.filteredPrices.length);
+                    },
+                    
+                    sortBy(column) {
+                        if (this.pricesSortColumn === column) {
+                            this.pricesSortDirection = this.pricesSortDirection === 'asc' ? 'desc' : 'asc';
+                        } else {
+                            this.pricesSortColumn = column;
+                            this.pricesSortDirection = 'asc';
+                        }
+                        this.pricesCurrentPage = 1;
+                    },
+                    
+                    goToPage(page) {
+                        if (page >= 1 && page <= this.totalPages) {
+                            this.pricesCurrentPage = page;
+                        }
+                    },
+                    
+                    getTrendPercent(price) {
+                        if (price.price_per_kg && price.previous_price && price.previous_price > 0) {
+                            return Math.round(((price.price_per_kg - price.previous_price) / price.previous_price) * 100);
+                        }
+                        return 0;
+                    },
+                    
+                    getCropIcon(cropName) {
+                        const icons = {
+                            'CABBAGE': '🥬', 'CHINESE CABBAGE': '🥬', 'LETTUCE': '🥗',
+                            'CAULIFLOWER': '🥦', 'BROCCOLI': '🥦', 'SNAP BEANS': '🫛',
+                            'GARDEN PEAS': '🫛', 'SWEET PEPPER': '🫑', 'WHITE POTATO': '🥔',
+                            'CARROTS': '🥕', 'STRAWBERRIES': '🍓', 'TINAWON RICE': '🌾',
+                            'HIGHLAND CABBAGE': '🥬', 'POTATOES': '🥔'
+                        };
+                        return icons[cropName.toUpperCase()] || '🌱';
+                    },
+                    
+                    getDemandClass(level) {
+                        const classes = {
+                            'high': 'bg-green-100 text-green-700',
+                            'very_high': 'bg-green-200 text-green-800',
+                            'moderate': 'bg-yellow-100 text-yellow-700',
+                            'low': 'bg-gray-100 text-gray-600'
+                        };
+                        return classes[level] || 'bg-gray-100 text-gray-600';
+                    },
+                    
+                    formatDemand(level) {
+                        if (!level) return 'N/A';
+                        return level === 'very_high' ? 'Very High' : level.charAt(0).toUpperCase() + level.slice(1);
+                    }
+                 }">
                 <div class="flex items-center justify-between mb-6">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-800">Current Market Prices</h2>
@@ -392,86 +511,189 @@
                     </div>
                 </div>
                 
-                <!-- Card Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    @php
-                        $marketPrices = \App\Models\MarketPrice::where('is_active', true)->orderBy('crop_name')->get();
-                        $cropIcons = [
-                            'CABBAGE' => '🥬',
-                            'CHINESE CABBAGE' => '🥬',
-                            'LETTUCE' => '🥗',
-                            'CAULIFLOWER' => '🥦',
-                            'BROCCOLI' => '🥦',
-                            'SNAP BEANS' => '🫛',
-                            'GARDEN PEAS' => '🫛',
-                            'SWEET PEPPER' => '🫑',
-                            'WHITE POTATO' => '🥔',
-                            'CARROTS' => '🥕',
-                            'STRAWBERRIES' => '🍓',
-                            'TINAWON RICE' => '🌾',
-                            'HIGHLAND CABBAGE' => '🥬',
-                            'POTATOES' => '🥔',
-                        ];
-                    @endphp
-                    @forelse($marketPrices as $price)
-                        @php
-                            $icon = $cropIcons[strtoupper($price->crop_name)] ?? '🌱';
-                            $trendPercent = 0;
-                            if ($price->price_per_kg && $price->previous_price && $price->previous_price > 0) {
-                                $trendPercent = round((($price->price_per_kg - $price->previous_price) / $price->previous_price) * 100);
-                            }
-                            $demandColors = [
-                                'high' => 'bg-green-500 text-white',
-                                'very_high' => 'bg-green-600 text-white',
-                                'moderate' => 'bg-yellow-400 text-yellow-900',
-                                'low' => 'bg-gray-300 text-gray-700',
-                            ];
-                            $demandColor = $demandColors[$price->demand_level] ?? 'bg-gray-300 text-gray-700';
-                            $demandLabel = $price->demand_level === 'very_high' ? 'Very High' : ucfirst($price->demand_level);
-                        @endphp
-                        <div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition">
-                            <div class="flex items-start justify-between">
-                                <div class="flex items-center gap-3">
-                                    <span class="text-3xl">{{ $icon }}</span>
-                                    <div>
-                                        <h3 class="font-bold text-gray-800">{{ $price->crop_name }}</h3>
-                                        @if($price->price_per_kg)
-                                            <p class="text-2xl font-bold text-green-600">₱{{ number_format($price->price_per_kg, 0) }}<span class="text-sm font-normal text-gray-500"> per kg</span></p>
-                                        @else
-                                            <p class="text-lg font-medium text-gray-400">Price not set</p>
-                                        @endif
-                                    </div>
-                                </div>
-                                @if($price->price_per_kg)
-                                    <div class="text-right">
-                                        @if($trendPercent > 0)
-                                            <span class="inline-flex items-center text-green-600 text-sm font-medium">
-                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-                                                +{{ $trendPercent }}%
-                                            </span>
-                                        @elseif($trendPercent < 0)
-                                            <span class="inline-flex items-center text-red-500 text-sm font-medium">
-                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"/></svg>
-                                                {{ $trendPercent }}%
-                                            </span>
-                                        @else
-                                            <span class="text-gray-400 text-sm">0%</span>
-                                        @endif
-                                    </div>
-                                @endif
+                <!-- Search and Controls -->
+                <div class="bg-white rounded-xl border border-gray-200 p-4 mb-4">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div class="relative flex-1 max-w-md">
+                            <input type="text" 
+                                   x-model="pricesSearchQuery" 
+                                   @input="pricesCurrentPage = 1"
+                                   placeholder="Search crops, varieties, or locations..." 
+                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                            <svg class="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm text-gray-600">Show:</label>
+                            <select x-model="pricesPerPage" @change="pricesCurrentPage = 1" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500">
+                                <option value="5">5</option>
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                            </select>
+                            <span class="text-sm text-gray-600">per page</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Table -->
+                <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-4">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th @click="sortBy('crop_name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                                        <div class="flex items-center gap-1">
+                                            Crop Name
+                                            <svg x-show="pricesSortColumn === 'crop_name'" class="w-4 h-4" :class="pricesSortDirection === 'desc' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                                            </svg>
+                                        </div>
+                                    </th>
+                                    <th @click="sortBy('variety')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                                        <div class="flex items-center gap-1">
+                                            Variety
+                                            <svg x-show="pricesSortColumn === 'variety'" class="w-4 h-4" :class="pricesSortDirection === 'desc' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                                            </svg>
+                                        </div>
+                                    </th>
+                                    <th @click="sortBy('price_per_kg')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                                        <div class="flex items-center gap-1">
+                                            Price (₱/kg)
+                                            <svg x-show="pricesSortColumn === 'price_per_kg'" class="w-4 h-4" :class="pricesSortDirection === 'desc' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                                            </svg>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Trend
+                                    </th>
+                                    <th @click="sortBy('demand_level')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                                        <div class="flex items-center gap-1">
+                                            Demand
+                                            <svg x-show="pricesSortColumn === 'demand_level'" class="w-4 h-4" :class="pricesSortDirection === 'desc' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                                            </svg>
+                                        </div>
+                                    </th>
+                                    <th @click="sortBy('market_location')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                                        <div class="flex items-center gap-1">
+                                            Market Location
+                                            <svg x-show="pricesSortColumn === 'market_location'" class="w-4 h-4" :class="pricesSortDirection === 'desc' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                                            </svg>
+                                        </div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <template x-for="price in paginatedPrices" :key="price.id">
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-xl" x-text="getCropIcon(price.crop_name)"></span>
+                                                <span class="font-medium text-gray-900" x-text="price.crop_name"></span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600" x-text="price.variety || '-'"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <template x-if="price.price_per_kg">
+                                                <span class="text-lg font-bold text-green-600">₱<span x-text="parseFloat(price.price_per_kg).toFixed(2)"></span></span>
+                                            </template>
+                                            <template x-if="!price.price_per_kg">
+                                                <span class="text-gray-400">Not set</span>
+                                            </template>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <template x-if="price.price_per_kg && getTrendPercent(price) > 0">
+                                                <span class="inline-flex items-center text-green-600 text-sm font-medium">
+                                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                                                    +<span x-text="getTrendPercent(price)"></span>%
+                                                </span>
+                                            </template>
+                                            <template x-if="price.price_per_kg && getTrendPercent(price) < 0">
+                                                <span class="inline-flex items-center text-red-500 text-sm font-medium">
+                                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"/></svg>
+                                                    <span x-text="getTrendPercent(price)"></span>%
+                                                </span>
+                                            </template>
+                                            <template x-if="price.price_per_kg && getTrendPercent(price) === 0">
+                                                <span class="text-gray-400 text-sm">0%</span>
+                                            </template>
+                                            <template x-if="!price.price_per_kg">
+                                                <span class="text-gray-400 text-sm">-</span>
+                                            </template>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2.5 py-1 rounded-full text-xs font-medium" :class="getDemandClass(price.demand_level)" x-text="formatDemand(price.demand_level)"></span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600" x-text="price.market_location || '-'"></td>
+                                    </tr>
+                                </template>
+                                <template x-if="paginatedPrices.length === 0">
+                                    <tr>
+                                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                                            <div class="flex flex-col items-center">
+                                                <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                </svg>
+                                                <p class="text-lg font-medium">No crops found</p>
+                                                <p class="text-sm" x-show="pricesSearchQuery">Try adjusting your search terms</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div class="text-sm text-gray-600">
+                                <template x-if="filteredPrices.length > 0">
+                                    <span>Showing <span class="font-medium" x-text="startIndex"></span> to <span class="font-medium" x-text="endIndex"></span> of <span class="font-medium" x-text="filteredPrices.length"></span> results</span>
+                                </template>
+                                <template x-if="filteredPrices.length === 0">
+                                    <span>No results found</span>
+                                </template>
                             </div>
-                            @if($price->price_per_kg)
-                                <div class="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
-                                    <span class="text-sm text-gray-500">Market Demand:</span>
-                                    <span class="px-3 py-1 rounded-full text-xs font-semibold {{ $demandColor }}">{{ $demandLabel }}</span>
-                                </div>
-                            @endif
+                            <div class="flex items-center gap-2" x-show="totalPages > 1">
+                                <button @click="goToPage(1)" :disabled="pricesCurrentPage === 1" 
+                                        class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    First
+                                </button>
+                                <button @click="goToPage(pricesCurrentPage - 1)" :disabled="pricesCurrentPage === 1" 
+                                        class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                                    </svg>
+                                </button>
+                                
+                                <template x-for="page in totalPages" :key="page">
+                                    <button x-show="page === 1 || page === totalPages || (page >= pricesCurrentPage - 1 && page <= pricesCurrentPage + 1)"
+                                            @click="goToPage(page)" 
+                                            :class="pricesCurrentPage === page ? 'bg-green-600 text-white border-green-600' : 'border-gray-300 hover:bg-gray-100'"
+                                            class="px-3 py-1.5 text-sm border rounded-lg font-medium"
+                                            x-text="page">
+                                    </button>
+                                </template>
+                                
+                                <button @click="goToPage(pricesCurrentPage + 1)" :disabled="pricesCurrentPage === totalPages" 
+                                        class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                    </svg>
+                                </button>
+                                <button @click="goToPage(totalPages)" :disabled="pricesCurrentPage === totalPages" 
+                                        class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    Last
+                                </button>
+                            </div>
                         </div>
-                    @empty
-                        <div class="col-span-full text-center py-8 text-gray-500">
-                            <p>No crops available.</p>
-                        </div>
-                    @endforelse
+                    </div>
                 </div>
 
                 <!-- Price Insights -->

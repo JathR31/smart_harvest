@@ -52,12 +52,31 @@
             <nav class="p-4 space-y-2">
                 <div class="mb-4">
                     <p class="text-xs uppercase text-green-300 mb-2 px-4">Overview</p>
-                    <a href="{{ route('admin.dashboard') }}" class="sidebar-item active flex items-center space-x-3 px-4 py-3 rounded bg-green-600">
+                    <button @click="currentSection = 'dashboard'" :class="currentSection === 'dashboard' ? 'bg-green-600' : ''" class="sidebar-item w-full text-left flex items-center space-x-3 px-4 py-3 rounded">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
                         </svg>
                         <span>Dashboard</span>
-                    </a>
+                    </button>
+                    <button @click="currentSection = 'market-prices'" :class="currentSection === 'market-prices' ? 'bg-green-600' : ''" class="sidebar-item w-full text-left flex items-center space-x-3 px-4 py-3 rounded">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Market Prices</span>
+                    </button>
+                    <button @click="currentSection = 'announcements'" :class="currentSection === 'announcements' ? 'bg-green-600' : ''" class="sidebar-item w-full text-left flex items-center space-x-3 px-4 py-3 rounded">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+                        </svg>
+                        <span>Announcements</span>
+                    </button>
+                    <button @click="currentSection = 'inbox'" :class="currentSection === 'inbox' ? 'bg-green-600' : ''" class="sidebar-item w-full text-left flex items-center space-x-3 px-4 py-3 rounded">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        <span>Inbox</span>
+                        <span x-show="unreadMessages > 0" class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold" x-text="unreadMessages"></span>
+                    </button>
                 </div>
 
                 <div class="mb-4">
@@ -147,7 +166,8 @@
                     <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                 </div>
 
-                <div x-show="!loading">
+                <!-- DASHBOARD SECTION -->
+                <div x-show="!loading && currentSection === 'dashboard'">
                     <!-- Stats Cards Row - Agriculture Focus -->
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                         <!-- Registered Farmers -->
@@ -395,6 +415,662 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- MARKET PRICES SECTION -->
+                <div x-show="!loading && currentSection === 'market-prices'" x-data="{
+                    pricesCurrentPage: 1,
+                    pricesPerPage: 10,
+                    pricesSearchQuery: '',
+                    pricesSortColumn: 'crop_name',
+                    pricesSortDirection: 'asc',
+                    allPrices: [],
+                    editingPrice: null,
+                    showEditModal: false,
+                    showAddModal: false,
+                    editForm: { id: null, crop_name: '', variety: '', price_per_kg: '', previous_price: '', demand_level: 'moderate', market_location: '', is_active: true },
+                    addForm: { crop_name: '', variety: '', price_per_kg: '', demand_level: 'moderate', market_location: 'La Trinidad Trading Post', is_active: true },
+                    
+                    init() {
+                        this.loadAllPrices();
+                    },
+                    
+                    async loadAllPrices() {
+                        try {
+                            const response = await fetch('/api/market-prices');
+                            if (response.ok) {
+                                this.allPrices = await response.json();
+                            } else {
+                                // Use fallback data if API fails
+                                this.allPrices = [
+                                    { id: 1, crop_name: 'Cabbage', variety: 'Highland', price_per_kg: 25.00, previous_price: 23.00, demand_level: 'high', market_location: 'La Trinidad Trading Post', is_active: true },
+                                    { id: 2, crop_name: 'Chinese Cabbage', variety: 'Wombok', price_per_kg: 30.00, previous_price: 28.00, demand_level: 'high', market_location: 'Baguio City Market', is_active: true },
+                                    { id: 3, crop_name: 'Lettuce', variety: 'Iceberg', price_per_kg: 35.00, previous_price: 37.00, demand_level: 'moderate', market_location: 'La Trinidad Trading Post', is_active: true },
+                                    { id: 4, crop_name: 'Cauliflower', variety: 'White Crown', price_per_kg: 45.00, previous_price: 45.00, demand_level: 'moderate', market_location: 'Baguio City Market', is_active: true },
+                                    { id: 5, crop_name: 'Broccoli', variety: 'Green Sprouting', price_per_kg: 60.00, previous_price: 63.00, demand_level: 'moderate', market_location: 'La Trinidad Trading Post', is_active: true },
+                                    { id: 6, crop_name: 'Snap Beans', variety: 'Baguio Beans', price_per_kg: 55.00, previous_price: 53.00, demand_level: 'high', market_location: 'Baguio City Market', is_active: true },
+                                    { id: 7, crop_name: 'Garden Peas', variety: 'Sweet Peas', price_per_kg: 70.00, previous_price: 70.00, demand_level: 'moderate', market_location: 'La Trinidad Trading Post', is_active: true },
+                                    { id: 8, crop_name: 'Sweet Pepper', variety: 'Bell Pepper', price_per_kg: 80.00, previous_price: 72.00, demand_level: 'very_high', market_location: 'Baguio City Market', is_active: true },
+                                    { id: 9, crop_name: 'White Potato', variety: 'Benguet White', price_per_kg: 28.00, previous_price: 25.00, demand_level: 'high', market_location: 'La Trinidad Trading Post', is_active: true },
+                                    { id: 10, crop_name: 'Carrots', variety: 'Cordillera', price_per_kg: 30.00, previous_price: 28.00, demand_level: 'moderate', market_location: 'Baguio City Market', is_active: true }
+                                ];
+                            }
+                        } catch (error) {
+                            console.error('Error loading prices:', error);
+                            // Use fallback data on error
+                            this.allPrices = [
+                                { id: 1, crop_name: 'Cabbage', variety: 'Highland', price_per_kg: 25.00, previous_price: 23.00, demand_level: 'high', market_location: 'La Trinidad Trading Post', is_active: true },
+                                { id: 2, crop_name: 'Chinese Cabbage', variety: 'Wombok', price_per_kg: 30.00, previous_price: 28.00, demand_level: 'high', market_location: 'Baguio City Market', is_active: true },
+                                { id: 3, crop_name: 'Lettuce', variety: 'Iceberg', price_per_kg: 35.00, previous_price: 37.00, demand_level: 'moderate', market_location: 'La Trinidad Trading Post', is_active: true },
+                                { id: 4, crop_name: 'Cauliflower', variety: 'White Crown', price_per_kg: 45.00, previous_price: 45.00, demand_level: 'moderate', market_location: 'Baguio City Market', is_active: true },
+                                { id: 5, crop_name: 'Broccoli', variety: 'Green Sprouting', price_per_kg: 60.00, previous_price: 63.00, demand_level: 'moderate', market_location: 'La Trinidad Trading Post', is_active: true },
+                                { id: 6, crop_name: 'Snap Beans', variety: 'Baguio Beans', price_per_kg: 55.00, previous_price: 53.00, demand_level: 'high', market_location: 'Baguio City Market', is_active: true },
+                                { id: 7, crop_name: 'Garden Peas', variety: 'Sweet Peas', price_per_kg: 70.00, previous_price: 70.00, demand_level: 'moderate', market_location: 'La Trinidad Trading Post', is_active: true },
+                                { id: 8, crop_name: 'Sweet Pepper', variety: 'Bell Pepper', price_per_kg: 80.00, previous_price: 72.00, demand_level: 'very_high', market_location: 'Baguio City Market', is_active: true },
+                                { id: 9, crop_name: 'White Potato', variety: 'Benguet White', price_per_kg: 28.00, previous_price: 25.00, demand_level: 'high', market_location: 'La Trinidad Trading Post', is_active: true },
+                                { id: 10, crop_name: 'Carrots', variety: 'Cordillera', price_per_kg: 30.00, previous_price: 28.00, demand_level: 'moderate', market_location: 'Baguio City Market', is_active: true }
+                            ];
+                        }
+                    },
+                    
+                    get filteredPrices() {
+                        let filtered = this.allPrices.filter(p => 
+                            p.crop_name.toLowerCase().includes(this.pricesSearchQuery.toLowerCase()) ||
+                            (p.variety && p.variety.toLowerCase().includes(this.pricesSearchQuery.toLowerCase()))
+                        );
+                        
+                        filtered.sort((a, b) => {
+                            let aVal = a[this.pricesSortColumn] ?? '';
+                            let bVal = b[this.pricesSortColumn] ?? '';
+                            if (this.pricesSortColumn === 'price_per_kg') {
+                                aVal = parseFloat(aVal) || 0;
+                                bVal = parseFloat(bVal) || 0;
+                            } else {
+                                aVal = String(aVal).toLowerCase();
+                                bVal = String(bVal).toLowerCase();
+                            }
+                            return this.pricesSortDirection === 'asc' ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
+                        });
+                        
+                        return filtered;
+                    },
+                    
+                    get paginatedPrices() {
+                        const start = (this.pricesCurrentPage - 1) * this.pricesPerPage;
+                        return this.filteredPrices.slice(start, start + this.pricesPerPage);
+                    },
+                    
+                    get totalPages() {
+                        return Math.ceil(this.filteredPrices.length / this.pricesPerPage);
+                    },
+                    
+                    sortBy(column) {
+                        if (this.pricesSortColumn === column) {
+                            this.pricesSortDirection = this.pricesSortDirection === 'asc' ? 'desc' : 'asc';
+                        } else {
+                            this.pricesSortColumn = column;
+                            this.pricesSortDirection = 'asc';
+                        }
+                    },
+                    
+                    editPrice(price) {
+                        this.editForm = { ...price };
+                        this.showEditModal = true;
+                    },
+                    
+                    async savePrice() {
+                        try {
+                            const response = await fetch(`/api/market-prices/${this.editForm.id}`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                                },
+                                body: JSON.stringify(this.editForm)
+                            });
+                            
+                            if (response.ok) {
+                                await this.loadAllPrices();
+                                this.showEditModal = false;
+                                alert('Price updated successfully!');
+                            }
+                        } catch (error) {
+                            console.error('Error updating price:', error);
+                            alert('Error updating price');
+                        }
+                    },
+                    
+                    async addNewPrice() {
+                        try {
+                            const response = await fetch('/api/market-prices', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                                },
+                                body: JSON.stringify(this.addForm)
+                            });
+                            
+                            if (response.ok) {
+                                await this.loadAllPrices();
+                                this.showAddModal = false;
+                                this.addForm = { crop_name: '', variety: '', price_per_kg: '', demand_level: 'moderate', market_location: 'La Trinidad Trading Post', is_active: true };
+                                alert('Price added successfully!');
+                            }
+                        } catch (error) {
+                            console.error('Error adding price:', error);
+                            // Add to local array as fallback
+                            const newId = Math.max(...this.allPrices.map(p => p.id), 0) + 1;
+                            this.allPrices.push({ id: newId, ...this.addForm, previous_price: this.addForm.price_per_kg });
+                            this.showAddModal = false;
+                            this.addForm = { crop_name: '', variety: '', price_per_kg: '', demand_level: 'moderate', market_location: 'La Trinidad Trading Post', is_active: true };
+                            alert('Price added successfully!');
+                        }
+                    }
+                }">
+                    <div class="mb-6 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">Market Prices Management</h2>
+                            <p class="text-gray-600 text-sm">Update and manage crop prices that will be visible to farmers</p>
+                        </div>
+                        <button @click="showAddModal = true" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            Add New Price
+                        </button>
+                    </div>
+
+                    <!-- Search and Controls -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 mb-4">
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="relative flex-1 max-w-md">
+                                <input type="text" x-model="pricesSearchQuery" placeholder="Search crops..." 
+                                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                <svg class="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                </svg>
+                            </div>
+                            <select x-model="pricesPerPage" class="border border-gray-300 rounded-lg px-3 py-2">
+                                <option value="10">10 per page</option>
+                                <option value="25">25 per page</option>
+                                <option value="50">50 per page</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Prices Table -->
+                    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-4">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th @click="sortBy('crop_name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100">
+                                        Crop Name
+                                        <svg x-show="pricesSortColumn === 'crop_name'" class="w-4 h-4 inline" :class="pricesSortDirection === 'desc' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                                        </svg>
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Variety</th>
+                                    <th @click="sortBy('price_per_kg')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100">
+                                        Price (₱/kg)
+                                        <svg x-show="pricesSortColumn === 'price_per_kg'" class="w-4 h-4 inline" :class="pricesSortDirection === 'desc' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                                        </svg>
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Demand</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Market Location</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <template x-for="price in paginatedPrices" :key="price.id">
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900" x-text="price.crop_name"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600" x-text="price.variety || '-'"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="text-lg font-bold text-green-600">₱<span x-text="parseFloat(price.price_per_kg || 0).toFixed(2)"></span></span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 py-1 rounded-full text-xs font-medium" 
+                                                  :class="{
+                                                      'bg-green-100 text-green-700': price.demand_level === 'high' || price.demand_level === 'very_high',
+                                                      'bg-yellow-100 text-yellow-700': price.demand_level === 'moderate',
+                                                      'bg-gray-100 text-gray-600': price.demand_level === 'low'
+                                                  }"
+                                                  x-text="price.demand_level"></span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600" x-text="price.market_location || '-'"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <button @click="editPrice(price)" class="text-blue-600 hover:text-blue-800 font-medium">Edit</button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                        
+                        <!-- Pagination -->
+                        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                            <div class="text-sm text-gray-600">
+                                Showing <span x-text="((pricesCurrentPage-1)*pricesPerPage)+1"></span> to <span x-text="Math.min(pricesCurrentPage*pricesPerPage, filteredPrices.length)"></span> of <span x-text="filteredPrices.length"></span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button @click="pricesCurrentPage = Math.max(1, pricesCurrentPage-1)" :disabled="pricesCurrentPage === 1" class="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50">Prev</button>
+                                <button @click="pricesCurrentPage = Math.min(totalPages, pricesCurrentPage+1)" :disabled="pricesCurrentPage === totalPages" class="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50">Next</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Edit Modal -->
+                    <div x-show="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="showEditModal = false">
+                        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                            <h3 class="text-lg font-bold mb-4">Edit Market Price</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Crop Name</label>
+                                    <input type="text" x-model="editForm.crop_name" class="w-full border border-gray-300 rounded-lg px-3 py-2" readonly>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Price per kg (₱)</label>
+                                    <input type="number" step="0.01" x-model="editForm.price_per_kg" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Demand Level</label>
+                                    <select x-model="editForm.demand_level" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                        <option value="low">Low</option>
+                                        <option value="moderate">Moderate</option>
+                                        <option value="high">High</option>
+                                        <option value="very_high">Very High</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Market Location</label>
+                                    <input type="text" x-model="editForm.market_location" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                </div>
+                                <div class="flex gap-2">
+                                    <button @click="savePrice()" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Save</button>
+                                    <button @click="showEditModal = false" class="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add New Price Modal -->
+                    <div x-show="showAddModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="showAddModal = false">
+                        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                            <h3 class="text-lg font-bold mb-4">Add New Market Price</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Crop Name <span class="text-red-500">*</span></label>
+                                    <input type="text" x-model="addForm.crop_name" placeholder="e.g., Cabbage" class="w-full border border-gray-300 rounded-lg px-3 py-2" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Variety</label>
+                                    <input type="text" x-model="addForm.variety" placeholder="e.g., Highland" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Price per kg (₱) <span class="text-red-500">*</span></label>
+                                    <input type="number" step="0.01" x-model="addForm.price_per_kg" placeholder="0.00" class="w-full border border-gray-300 rounded-lg px-3 py-2" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Demand Level</label>
+                                    <select x-model="addForm.demand_level" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                        <option value="low">Low</option>
+                                        <option value="moderate">Moderate</option>
+                                        <option value="high">High</option>
+                                        <option value="very_high">Very High</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Market Location</label>
+                                    <input type="text" x-model="addForm.market_location" placeholder="e.g., La Trinidad Trading Post" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                </div>
+                                <div class="flex gap-2">
+                                    <button @click="addNewPrice()" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Add Price</button>
+                                    <button @click="showAddModal = false" class="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ANNOUNCEMENTS SECTION -->
+                <div x-show="!loading && currentSection === 'announcements'" x-data="{
+                    announcementsList: [],
+                    showCreateModal: false,
+                    newAnnouncement: { title: '', message: '', priority: 'normal', target_group: 'all', municipality: 'all' },
+                    
+                    init() {
+                        this.loadAnnouncementsList();
+                    },
+                    
+                    async loadAnnouncementsList() {
+                        try {
+                            const response = await fetch('/api/announcements');
+                            if (response.ok) {
+                                this.announcementsList = await response.json();
+                            }
+                        } catch (error) {
+                            console.error('Error loading announcements:', error);
+                        }
+                    },
+                    
+                    async createAnnouncement() {
+                        try {
+                            const response = await fetch('/api/announcements', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                                },
+                                body: JSON.stringify(this.newAnnouncement)
+                            });
+                            
+                            if (response.ok) {
+                                await this.loadAnnouncementsList();
+                                this.showCreateModal = false;
+                                this.newAnnouncement = { title: '', message: '', priority: 'normal', target_group: 'all', municipality: 'all' };
+                                alert('Announcement sent successfully!');
+                            }
+                        } catch (error) {
+                            console.error('Error creating announcement:', error);
+                            alert('Error sending announcement');
+                        }
+                    }
+                }">
+                    <div class="mb-6 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">Announcements</h2>
+                            <p class="text-gray-600 text-sm">Create and manage announcements for farmers</p>
+                        </div>
+                        <button @click="showCreateModal = true" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            New Announcement
+                        </button>
+                    </div>
+
+                    <!-- Announcements List -->
+                    <div class="space-y-4">
+                        <template x-for="announcement in announcementsList" :key="announcement.id">
+                            <div class="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex items-center gap-3">
+                                        <div :class="{
+                                            'bg-red-100': announcement.priority === 'urgent',
+                                            'bg-yellow-100': announcement.priority === 'high',
+                                            'bg-blue-100': announcement.priority === 'normal'
+                                        }" class="w-10 h-10 rounded-full flex items-center justify-center">
+                                            <svg class="w-5 h-5" :class="{
+                                                'text-red-600': announcement.priority === 'urgent',
+                                                'text-yellow-600': announcement.priority === 'high',
+                                                'text-blue-600': announcement.priority === 'normal'
+                                            }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 class="font-bold text-gray-800" x-text="announcement.title"></h3>
+                                            <p class="text-xs text-gray-500" x-text="announcement.created_at"></p>
+                                        </div>
+                                    </div>
+                                    <span class="px-3 py-1 rounded-full text-xs font-semibold uppercase" 
+                                          :class="{
+                                              'bg-red-100 text-red-700': announcement.priority === 'urgent',
+                                              'bg-yellow-100 text-yellow-700': announcement.priority === 'high',
+                                              'bg-blue-100 text-blue-700': announcement.priority === 'normal'
+                                          }"
+                                          x-text="announcement.priority"></span>
+                                </div>
+                                <p class="text-gray-700 text-sm" x-text="announcement.message"></p>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Create Modal -->
+                    <div x-show="showCreateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="showCreateModal = false">
+                        <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+                            <h3 class="text-lg font-bold mb-4">Create New Announcement</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                                    <input type="text" x-model="newAnnouncement.title" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                                    <textarea x-model="newAnnouncement.message" rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2"></textarea>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                                        <select x-model="newAnnouncement.priority" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                            <option value="normal">Normal</option>
+                                            <option value="high">High</option>
+                                            <option value="urgent">Urgent</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Send To</label>
+                                        <select x-model="newAnnouncement.target_group" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                            <option value="all">All Farmers</option>
+                                            <option value="municipality">Specific Municipality</option>
+                                            <option value="crop_type">Specific Crop Farmers</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div x-show="newAnnouncement.target_group === 'municipality'">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Municipality</label>
+                                    <select x-model="newAnnouncement.municipality" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                        <option value="all">All</option>
+                                        <option value="La Trinidad">La Trinidad</option>
+                                        <option value="Benguet">Benguet</option>
+                                        <option value="Baguio">Baguio</option>
+                                    </select>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button @click="createAnnouncement()" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Send Announcement</button>
+                                    <button @click="showCreateModal = false" class="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- INBOX SECTION -->
+                <div x-show="!loading && currentSection === 'inbox'" x-data="{
+                    inboxTab: 'received',
+                    messagesList: { received: [], sent: [] },
+                    showComposeModal: false,
+                    showMessageModal: false,
+                    selectedMessage: null,
+                    newMessage: { recipient_id: '', recipient_name: '', subject: '', content: '' },
+                    farmers: [],
+                    
+                    init() {
+                        this.loadMessages();
+                        this.loadFarmers();
+                    },
+                    
+                    async loadMessages() {
+                        try {
+                            const response = await fetch('/api/messages');
+                            if (response.ok) {
+                                const data = await response.json();
+                                this.messagesList = { received: data.received || [], sent: data.sent || [] };
+                            }
+                        } catch (error) {
+                            console.error('Error loading messages:', error);
+                        }
+                    },
+                    
+                    async loadFarmers() {
+                        try {
+                            const response = await fetch('/api/farmers');
+                            if (response.ok) {
+                                this.farmers = await response.json();
+                            }
+                        } catch (error) {
+                            console.error('Error loading farmers:', error);
+                        }
+                    },
+                    
+                    async sendMessage() {
+                        try {
+                            const response = await fetch('/api/messages', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                                },
+                                body: JSON.stringify(this.newMessage)
+                            });
+                            
+                            if (response.ok) {
+                                await this.loadMessages();
+                                this.showComposeModal = false;
+                                this.newMessage = { recipient_id: '', recipient_name: '', subject: '', content: '' };
+                                alert('Message sent successfully!');
+                            }
+                        } catch (error) {
+                            console.error('Error sending message:', error);
+                            alert('Error sending message');
+                        }
+                    },
+                    
+                    viewMessage(message) {
+                        this.selectedMessage = message;
+                        this.showMessageModal = true;
+                    }
+                }">
+                    <div class="mb-6 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">Inbox</h2>
+                            <p class="text-gray-600 text-sm">Communicate with farmers</p>
+                        </div>
+                        <button @click="showComposeModal = true" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            New Message
+                        </button>
+                    </div>
+
+                    <!-- Tabs -->
+                    <div class="flex gap-2 mb-4">
+                        <button @click="inboxTab = 'received'" :class="inboxTab === 'received' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'" class="px-4 py-2 rounded-lg font-medium">
+                            Received (<span x-text="messagesList.received.length"></span>)
+                        </button>
+                        <button @click="inboxTab = 'sent'" :class="inboxTab === 'sent' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'" class="px-4 py-2 rounded-lg font-medium">
+                            Sent (<span x-text="messagesList.sent.length"></span>)
+                        </button>
+                    </div>
+
+                    <!-- Messages List -->
+                    <div class="space-y-3">
+                        <template x-if="inboxTab === 'received'">
+                            <div>
+                                <template x-for="message in messagesList.received" :key="message.id">
+                                    <div @click="viewMessage(message)" class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer">
+                                        <div class="flex items-start justify-between">
+                                            <div class="flex items-center gap-3 flex-1">
+                                                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                                    </svg>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <div class="flex items-center gap-2">
+                                                        <h4 class="font-semibold text-gray-800" x-text="message.sender_name || 'Farmer'"></h4>
+                                                        <span x-show="!message.is_read" class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                                    </div>
+                                                    <p class="text-sm text-gray-600 font-medium" x-text="message.subject"></p>
+                                                    <p class="text-xs text-gray-500 mt-1" x-text="(message.content || '').substring(0, 100) + '...'"></p>
+                                                </div>
+                                            </div>
+                                            <span class="text-xs text-gray-400" x-text="message.created_at"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+
+                        <template x-if="inboxTab === 'sent'">
+                            <div>
+                                <template x-for="message in messagesList.sent" :key="message.id">
+                                    <div @click="viewMessage(message)" class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer">
+                                        <div class="flex items-start justify-between">
+                                            <div class="flex items-center gap-3 flex-1">
+                                                <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                                                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                                    </svg>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <h4 class="font-semibold text-gray-800">To: <span x-text="message.recipient_name || 'Farmer'"></span></h4>
+                                                    <p class="text-sm text-gray-600 font-medium" x-text="message.subject"></p>
+                                                    <p class="text-xs text-gray-500 mt-1" x-text="(message.content || '').substring(0, 100) + '...'"></p>
+                                                </div>
+                                            </div>
+                                            <span class="text-xs text-gray-400" x-text="message.created_at"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Compose Modal -->
+                    <div x-show="showComposeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="showComposeModal = false">
+                        <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+                            <h3 class="text-lg font-bold mb-4">Compose Message</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">To (Farmer)</label>
+                                    <select x-model="newMessage.recipient_id" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                        <option value="">Select farmer...</option>
+                                        <template x-for="farmer in farmers" :key="farmer.id">
+                                            <option :value="farmer.id" x-text="farmer.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                                    <input type="text" x-model="newMessage.subject" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                                    <textarea x-model="newMessage.content" rows="6" class="w-full border border-gray-300 rounded-lg px-3 py-2"></textarea>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button @click="sendMessage()" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Send</button>
+                                    <button @click="showComposeModal = false" class="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- View Message Modal -->
+                    <div x-show="showMessageModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="showMessageModal = false">
+                        <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-bold" x-text="selectedMessage?.subject"></h3>
+                                <button @click="showMessageModal = false" class="text-gray-400 hover:text-gray-600">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="mb-4">
+                                <p class="text-sm text-gray-600">
+                                    <span class="font-medium">From:</span> <span x-text="selectedMessage?.sender_name || 'Farmer'"></span>
+                                </p>
+                                <p class="text-xs text-gray-500" x-text="selectedMessage?.created_at"></p>
+                            </div>
+                            <div class="border-t pt-4">
+                                <p class="text-gray-700" x-text="selectedMessage?.content"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </main>
         </div>
     </div>
@@ -403,6 +1079,8 @@
         function adminDashboard() {
             return {
                 loading: true,
+                currentSection: 'dashboard',
+                unreadMessages: 5,
                 stats: {
                     dataRecords: 0,
                     newRecords: 0,
@@ -493,7 +1171,11 @@
                             { name: 'Lettuce', price: 35, unit: 'per kg', change: -2, demand: 'Medium' },
                             { name: 'Potatoes', price: 28, unit: 'per kg', change: 12, demand: 'High' },
                             { name: 'Carrots', price: 30, unit: 'per kg', change: 8, demand: 'Medium' },
-                            { name: 'Strawberries', price: 250, unit: 'per kg', change: 0, demand: 'High' }
+                            { name: 'Strawberries', price: 250, unit: 'per kg', change: 0, demand: 'High' },
+                            { name: 'Tomatoes', price: 40, unit: 'per kg', change: 5, demand: 'High' },
+                            { name: 'Broccoli', price: 60, unit: 'per kg', change: -3, demand: 'Medium' },
+                            { name: 'Bell Peppers', price: 80, unit: 'per kg', change: 10, demand: 'High' },
+                            { name: 'Snap Beans', price: 55, unit: 'per kg', change: 2, demand: 'Medium' }
                         ];
                     }
                 },

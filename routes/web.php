@@ -360,7 +360,7 @@ Route::get('/admin/dashboard', function () {
     }
     
     // DA Admin/DA Officer gets complete DA Officer dashboard (with Market Prices, Inbox, Announcements, Farmer's View)
-    return view('da_officer_dashboard'); // Complete DA Officer dashboard
+    return view('admin_dacar'); // Complete DA Officer dashboard
 })->name('admin.dashboard');
 
 // DA Officer Dashboard (direct route)
@@ -991,7 +991,7 @@ Route::get('/admin/api/roles-permissions', function () {
     }
 
     return response()->json(['roles' => $rolesData]);
-})->name('admin.api.roles');
+})->middleware('auth')->name('admin.api.roles');
 
 // Admin API - Get Role Permissions
 Route::get('/admin/api/roles-permissions/{role}', function ($role) {
@@ -1027,7 +1027,7 @@ Route::get('/admin/api/roles-permissions/{role}', function ($role) {
     }
 
     return response()->json(['permissions' => $grouped]);
-})->name('admin.api.roles.show');
+})->middleware('auth')->name('admin.api.roles.show');
 
 // Admin API - Update Role Permissions
 Route::put('/admin/api/roles-permissions/{role}', function (Request $request, $role) {
@@ -1062,7 +1062,7 @@ Route::put('/admin/api/roles-permissions/{role}', function (Request $request, $r
         'success' => true,
         'message' => 'Permissions updated successfully'
     ]);
-})->name('admin.api.roles.update');
+})->middleware('auth')->name('admin.api.roles.update');
 
 // Superadmin API - Get DA Admins
 Route::get('/superadmin/api/admins', function () {
@@ -1167,7 +1167,8 @@ Route::get('/admin/api/users', function () {
             'farm_name' => $user->farm_name,
             'farm_id' => $user->farm_name ? 'FARM-2025-' . str_pad($user->id, 3, '0', STR_PAD_LEFT) : null,
             'last_login' => $user->last_login ? $user->last_login->diffForHumans() : 'Never',
-            'created_at' => $user->created_at->format('M d, Y')
+            'created_at' => $user->created_at->format('M d, Y'),
+            'is_superadmin' => $user->is_superadmin ?? false
         ];
     });
 
@@ -1186,7 +1187,7 @@ Route::get('/admin/api/users', function () {
             'suspended' => $suspended
         ]
     ]);
-})->name('admin.api.users');
+})->middleware('auth')->name('admin.api.users');
 
 // Admin API - Create User
 Route::post('/admin/api/users/create', function (Request $request) {
@@ -1220,7 +1221,8 @@ Route::post('/admin/api/users/create', function (Request $request) {
         'password' => $validated['password'], // Will be auto-hashed by model
         'phone' => $validated['phone'] ?? null,
         'role' => $validated['role'],
-        'status' => $validated['status'] ?? 'Active',
+        // DA Officers can only create Pending users; Admins/Superadmins can set any status
+        'status' => ($user->role === 'DA Admin') ? 'Pending' : ($validated['status'] ?? 'Active'),
         'location' => $validated['location'] ?? null,
     ];
 
@@ -1238,11 +1240,16 @@ Route::post('/admin/api/users/create', function (Request $request) {
 
     $user = \App\Models\User::create($userData);
 
+    $message = ($userData['status'] === 'Pending') 
+        ? 'User created successfully and is pending admin approval'
+        : 'User created successfully';
+
     return response()->json([
-        'message' => 'User created successfully',
-        'user' => $user
+        'message' => $message,
+        'user' => $user,
+        'requires_approval' => ($userData['status'] === 'Pending')
     ], 201);
-})->name('admin.api.users.create');
+})->middleware('auth')->name('admin.api.users.create');
 
 // Admin API - Update User
 Route::put('/admin/api/users/{id}', function (Request $request, $id) {
@@ -1253,11 +1260,16 @@ Route::put('/admin/api/users/{id}', function (Request $request, $id) {
 
     $user = \App\Models\User::findOrFail($id);
     
+    // Prevent modifying superadmin
+    if ($user->is_superadmin && !$authUser->is_superadmin) {
+        return response()->json(['error' => 'Cannot modify superadmin user'], 403);
+    }
+    
     $validated = $request->validate([
         'name' => 'sometimes|string|max:255',
         'email' => 'sometimes|email|max:255|unique:users,email,' . $id,
-        'role' => 'sometimes|in:DA Admin,Farmer',
-        'status' => 'sometimes|in:Active,Pending,Suspended',
+        'role' => 'sometimes|in:DA Admin,Farmer,Admin',
+        'status' => 'sometimes|in:Active,Pending,Suspended,Inactive',
         'location' => 'nullable|string|max:255',
         'phone' => 'nullable|string|max:20',
         'farm_name' => 'nullable|string|max:255',
@@ -1266,7 +1278,7 @@ Route::put('/admin/api/users/{id}', function (Request $request, $id) {
     $user->update($validated);
 
     return response()->json(['message' => 'User updated successfully', 'user' => $user]);
-})->name('admin.api.users.update');
+})->middleware('auth')->name('admin.api.users.update');
 
 // Admin API - Delete User
 Route::delete('/admin/api/users/{id}', function ($id) {
@@ -1279,7 +1291,7 @@ Route::delete('/admin/api/users/{id}', function ($id) {
     $user->delete();
 
     return response()->json(['message' => 'User deleted successfully']);
-})->name('admin.api.users.delete');
+})->middleware('auth')->name('admin.api.users.delete');
 
 // Admin API - Upload Dataset (Data Import) - Using Laravel Excel
 Route::post('/admin/api/import', function (Request $request) {
@@ -2761,59 +2773,119 @@ Route::get('/api/weather', function (Request $request) {
     ];
     
     $coords = $coordinates[$municipality] ?? $coordinates['Atok'];
-    $apiKey = env('OPENWEATHER_API_KEY', '735d56dd7a0f98a8ac7638cbd8911242');
     
     try {
-        // Fetch current weather and forecast data using One Call API 3.0
-        $response = Http::timeout(10)->get('https://api.openweathermap.org/data/3.0/onecall', [
-            'lat' => $coords['lat'],
-            'lon' => $coords['lon'],
-            'appid' => $apiKey,
-            'units' => 'metric',
-            'exclude' => 'minutely,alerts'
+        // Fetch weather data from Open-Meteo API (free, no API key needed)
+        $response = Http::timeout(10)->get('https://api.open-meteo.com/v1/forecast', [
+            'latitude' => $coords['lat'],
+            'longitude' => $coords['lon'],
+            'current' => 'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,cloud_cover,wind_speed_10m',
+            'hourly' => 'temperature_2m,precipitation_probability,weather_code',
+            'daily' => 'temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code',
+            'timezone' => 'Asia/Manila',
+            'forecast_days' => 7
         ]);
         
         if ($response->successful()) {
             $data = $response->json();
             
-            // Process hourly data (next 48 hours available, we'll use first 8)
+            // Map Open-Meteo weather codes to OpenWeather-like format
+            $weatherCodeMap = [
+                0 => ['main' => 'Clear', 'description' => 'clear sky', 'icon' => '01d'],
+                1 => ['main' => 'Clear', 'description' => 'mainly clear', 'icon' => '01d'],
+                2 => ['main' => 'Clouds', 'description' => 'partly cloudy', 'icon' => '02d'],
+                3 => ['main' => 'Clouds', 'description' => 'overcast', 'icon' => '03d'],
+                45 => ['main' => 'Fog', 'description' => 'foggy', 'icon' => '50d'],
+                48 => ['main' => 'Fog', 'description' => 'depositing rime fog', 'icon' => '50d'],
+                51 => ['main' => 'Drizzle', 'description' => 'light drizzle', 'icon' => '09d'],
+                53 => ['main' => 'Drizzle', 'description' => 'moderate drizzle', 'icon' => '09d'],
+                55 => ['main' => 'Drizzle', 'description' => 'dense drizzle', 'icon' => '09d'],
+                61 => ['main' => 'Rain', 'description' => 'slight rain', 'icon' => '10d'],
+                63 => ['main' => 'Rain', 'description' => 'moderate rain', 'icon' => '10d'],
+                65 => ['main' => 'Rain', 'description' => 'heavy rain', 'icon' => '10d'],
+                71 => ['main' => 'Snow', 'description' => 'slight snow', 'icon' => '13d'],
+                73 => ['main' => 'Snow', 'description' => 'moderate snow', 'icon' => '13d'],
+                75 => ['main' => 'Snow', 'description' => 'heavy snow', 'icon' => '13d'],
+                80 => ['main' => 'Rain', 'description' => 'slight rain showers', 'icon' => '09d'],
+                81 => ['main' => 'Rain', 'description' => 'moderate rain showers', 'icon' => '09d'],
+                82 => ['main' => 'Rain', 'description' => 'violent rain showers', 'icon' => '09d'],
+                95 => ['main' => 'Thunderstorm', 'description' => 'thunderstorm', 'icon' => '11d'],
+                96 => ['main' => 'Thunderstorm', 'description' => 'thunderstorm with slight hail', 'icon' => '11d'],
+                99 => ['main' => 'Thunderstorm', 'description' => 'thunderstorm with heavy hail', 'icon' => '11d'],
+            ];
+            
+            $getWeatherInfo = function($code) use ($weatherCodeMap) {
+                return $weatherCodeMap[$code] ?? ['main' => 'Clear', 'description' => 'clear sky', 'icon' => '01d'];
+            };
+            
+            // Process current weather
+            $currentWeatherCode = $data['current']['weather_code'] ?? 0;
+            $currentWeather = $getWeatherInfo($currentWeatherCode);
+            
+            // Process hourly data (next 24 hours, every 3 hours)
             $hourly = [];
-            if (isset($data['hourly']) && is_array($data['hourly'])) {
-                foreach (array_slice($data['hourly'], 0, 8) as $hour) {
+            if (isset($data['hourly']['time']) && is_array($data['hourly']['time'])) {
+                for ($i = 0; $i < min(8, count($data['hourly']['time'])); $i += 3) {
+                    $weatherCode = $data['hourly']['weather_code'][$i] ?? 0;
+                    $weatherInfo = $getWeatherInfo($weatherCode);
+                    
                     $hourly[] = [
-                        'dt' => $hour['dt'],
-                        'temp' => round($hour['temp'], 1),
-                        'weather' => $hour['weather'],
-                        'pop' => $hour['pop'] ?? 0
+                        'dt' => strtotime($data['hourly']['time'][$i]),
+                        'temp' => round($data['hourly']['temperature_2m'][$i], 1),
+                        'weather' => [
+                            [
+                                'main' => $weatherInfo['main'],
+                                'description' => $weatherInfo['description'],
+                                'icon' => $weatherInfo['icon']
+                            ]
+                        ],
+                        'pop' => ($data['hourly']['precipitation_probability'][$i] ?? 0) / 100
                     ];
                 }
             }
             
-            // Process daily data (next 8 days available, we'll use first 5)
+            // Process daily data (next 7 days)
             $daily = [];
-            if (isset($data['daily']) && is_array($data['daily'])) {
-                foreach (array_slice($data['daily'], 0, 5) as $day) {
+            if (isset($data['daily']['time']) && is_array($data['daily']['time'])) {
+                foreach ($data['daily']['time'] as $index => $date) {
+                    if ($index >= 7) break;
+                    
+                    $weatherCode = $data['daily']['weather_code'][$index] ?? 0;
+                    $weatherInfo = $getWeatherInfo($weatherCode);
+                    
                     $daily[] = [
-                        'dt' => $day['dt'],
+                        'dt' => strtotime($date),
                         'temp' => [
-                            'max' => round($day['temp']['max'], 1),
-                            'min' => round($day['temp']['min'], 1)
+                            'max' => round($data['daily']['temperature_2m_max'][$index], 1),
+                            'min' => round($data['daily']['temperature_2m_min'][$index], 1)
                         ],
-                        'weather' => $day['weather'],
-                        'pop' => $day['pop'] ?? 0
+                        'weather' => [
+                            [
+                                'main' => $weatherInfo['main'],
+                                'description' => $weatherInfo['description'],
+                                'icon' => $weatherInfo['icon']
+                            ]
+                        ],
+                        'pop' => ($data['daily']['precipitation_probability_max'][$index] ?? 0) / 100
                     ];
                 }
             }
             
             return response()->json([
                 'current' => [
-                    'temp' => round($data['current']['temp'], 1),
-                    'feels_like' => round($data['current']['feels_like'], 1),
-                    'humidity' => $data['current']['humidity'],
-                    'clouds' => $data['current']['clouds'],
-                    'wind_speed' => round($data['current']['wind_speed'] ?? 0, 1),
-                    'weather' => $data['current']['weather'],
-                    'rain' => isset($data['current']['rain']['1h']) ? round($data['current']['rain']['1h'], 1) : 0,
+                    'temp' => round($data['current']['temperature_2m'], 1),
+                    'feels_like' => round($data['current']['apparent_temperature'], 1),
+                    'humidity' => $data['current']['relative_humidity_2m'],
+                    'clouds' => $data['current']['cloud_cover'],
+                    'wind_speed' => round($data['current']['wind_speed_10m'], 1),
+                    'weather' => [
+                        [
+                            'main' => $currentWeather['main'],
+                            'description' => $currentWeather['description'],
+                            'icon' => $currentWeather['icon']
+                        ]
+                    ],
+                    'rain' => round($data['current']['rain'] ?? 0, 1),
                     'pop' => 0.7
                 ],
                 'hourly' => $hourly,
@@ -2821,92 +2893,7 @@ Route::get('/api/weather', function (Request $request) {
             ]);
         }
     } catch (\Exception $e) {
-        // Log error and try fallback with free tier 5-day forecast
-        \Log::error('OpenWeather One Call API error: ' . $e->getMessage());
-        
-        try {
-            // Try current weather API
-            $currentResponse = Http::timeout(5)->get('https://api.openweathermap.org/data/2.5/weather', [
-                'lat' => $coords['lat'],
-                'lon' => $coords['lon'],
-                'appid' => $apiKey,
-                'units' => 'metric'
-            ]);
-            
-            // Try 5-day forecast API (free tier)
-            $forecastResponse = Http::timeout(5)->get('https://api.openweathermap.org/data/2.5/forecast', [
-                'lat' => $coords['lat'],
-                'lon' => $coords['lon'],
-                'appid' => $apiKey,
-                'units' => 'metric'
-            ]);
-            
-            if ($currentResponse->successful() && $forecastResponse->successful()) {
-                $currentData = $currentResponse->json();
-                $forecastData = $forecastResponse->json();
-                
-                // Process hourly data from 5-day forecast (data points every 3 hours)
-                $hourly = [];
-                if (isset($forecastData['list']) && is_array($forecastData['list'])) {
-                    foreach (array_slice($forecastData['list'], 0, 8) as $item) {
-                        $hourly[] = [
-                            'dt' => $item['dt'],
-                            'temp' => round($item['main']['temp'], 1),
-                            'weather' => $item['weather'],
-                            'pop' => $item['pop'] ?? 0
-                        ];
-                    }
-                }
-                
-                // Process daily data from 5-day forecast (group by day)
-                $daily = [];
-                $dayGroups = [];
-                if (isset($forecastData['list']) && is_array($forecastData['list'])) {
-                    foreach ($forecastData['list'] as $item) {
-                        $date = date('Y-m-d', $item['dt']);
-                        if (!isset($dayGroups[$date])) {
-                            $dayGroups[$date] = [];
-                        }
-                        $dayGroups[$date][] = $item;
-                    }
-                    
-                    // Get max/min for each day
-                    $count = 0;
-                    foreach ($dayGroups as $date => $items) {
-                        if ($count >= 5) break;
-                        
-                        $temps = array_map(function($item) { return $item['main']['temp']; }, $items);
-                        $daily[] = [
-                            'dt' => $items[0]['dt'],
-                            'temp' => [
-                                'max' => round(max($temps), 1),
-                                'min' => round(min($temps), 1)
-                            ],
-                            'weather' => $items[0]['weather'],
-                            'pop' => max(array_map(function($item) { return $item['pop'] ?? 0; }, $items))
-                        ];
-                        $count++;
-                    }
-                }
-                
-                return response()->json([
-                    'current' => [
-                        'temp' => round($currentData['main']['temp'], 1),
-                        'feels_like' => round($currentData['main']['feels_like'], 1),
-                        'humidity' => $currentData['main']['humidity'],
-                        'clouds' => $currentData['clouds']['all'],
-                        'wind_speed' => round($currentData['wind']['speed'] ?? 0, 1),
-                        'weather' => $currentData['weather'],
-                        'rain' => isset($currentData['rain']['1h']) ? round($currentData['rain']['1h'], 1) : 0,
-                        'pop' => 0.7
-                    ],
-                    'hourly' => $hourly,
-                    'daily' => $daily
-                ]);
-            }
-        } catch (\Exception $fallbackError) {
-            \Log::error('OpenWeather fallback API error: ' . $fallbackError->getMessage());
-        }
+        \Log::error('Open-Meteo API error: ' . $e->getMessage());
     }
     
     // Final fallback: Try to get realistic data from database first, then generate demo data
@@ -3491,6 +3478,41 @@ Route::post('/api/market-prices', function (Request $request) {
     
     return response()->json($price, 201);
 })->middleware('auth')->name('api.market-prices.store');
+
+Route::put('/api/market-prices/{id}', function (Request $request, $id) {
+    $user = Auth::user();
+    if (!$user || ($user->role !== 'Admin' && $user->role !== 'DA Admin' && !$user->is_superadmin)) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    $price = \App\Models\MarketPrice::findOrFail($id);
+    
+    $validated = $request->validate([
+        'crop_name' => 'required|string|max:100',
+        'variety' => 'nullable|string|max:100',
+        'price_per_kg' => 'required|numeric|min:0',
+        'price_trend' => 'in:up,down,stable',
+        'demand_level' => 'in:low,moderate,high,very_high',
+        'price_date' => 'required|date',
+        'notes' => 'nullable|string'
+    ]);
+    
+    // Store old price before updating
+    $oldPrice = $price->price_per_kg;
+    
+    $price->update([
+        'crop_name' => $validated['crop_name'],
+        'variety' => $validated['variety'] ?? null,
+        'price_per_kg' => $validated['price_per_kg'],
+        'previous_price' => $oldPrice,
+        'price_trend' => $validated['price_trend'] ?? 'stable',
+        'demand_level' => $validated['demand_level'] ?? 'moderate',
+        'price_date' => $validated['price_date'],
+        'notes' => $validated['notes'] ?? null,
+    ]);
+    
+    return response()->json($price);
+})->middleware('auth')->name('api.market-prices.update');
 
 // Announcements API
 Route::get('/api/announcements', function () {

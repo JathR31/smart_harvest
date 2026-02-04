@@ -85,7 +85,7 @@
                 console.log('📤 Sending', texts.length, 'texts for translation');
                 
                 // Call translation API
-                const response = await fetch('/dashboard/smart_harvest/public/translate.php/batch', {
+                const response = await fetch('{{ url("/api/translate/batch") }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
