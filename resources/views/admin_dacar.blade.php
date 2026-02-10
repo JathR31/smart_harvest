@@ -52,25 +52,25 @@
             <nav class="p-4 space-y-2">
                 <div class="mb-4">
                     <p class="text-xs uppercase text-green-300 mb-2 px-4">Overview</p>
-                    <button @click="currentSection = 'dashboard'" :class="currentSection === 'dashboard' ? 'bg-green-600' : ''" class="sidebar-item w-full text-left flex items-center space-x-3 px-4 py-3 rounded">
+                    <button @click="currentSection = 'dashboard'" :class="currentSection === 'dashboard' ? 'bg-green-600' : 'hover:bg-green-800'" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded transition-colors w-full text-left">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
                         </svg>
                         <span>Dashboard</span>
                     </button>
-                    <button @click="currentSection = 'market-prices'" :class="currentSection === 'market-prices' ? 'bg-green-600' : ''" class="sidebar-item w-full text-left flex items-center space-x-3 px-4 py-3 rounded">
+                    <button @click="currentSection = 'market-prices'" :class="currentSection === 'market-prices' ? 'bg-green-600' : 'hover:bg-green-800'" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded transition-colors w-full text-left">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                         <span>Market Prices</span>
                     </button>
-                    <button @click="currentSection = 'announcements'" :class="currentSection === 'announcements' ? 'bg-green-600' : ''" class="sidebar-item w-full text-left flex items-center space-x-3 px-4 py-3 rounded">
+                    <button @click="currentSection = 'announcements'" :class="currentSection === 'announcements' ? 'bg-green-600' : 'hover:bg-green-800'" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded transition-colors w-full text-left">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
                         </svg>
                         <span>Announcements</span>
                     </button>
-                    <button @click="currentSection = 'inbox'" :class="currentSection === 'inbox' ? 'bg-green-600' : ''" class="sidebar-item w-full text-left flex items-center space-x-3 px-4 py-3 rounded">
+                    <button @click="currentSection = 'inbox'" :class="currentSection === 'inbox' ? 'bg-green-600' : 'hover:bg-green-800'" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded transition-colors w-full text-left">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                         </svg>
@@ -80,14 +80,24 @@
                 </div>
 
                 <div class="mb-4">
+                    <p class="text-xs uppercase text-green-300 mb-2 px-4">User Management</p>
+                    <a href="{{ route('admin.users') }}" class="flex items-center space-x-3 px-4 py-3 rounded hover:bg-green-800 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        <span>Users</span>
+                    </a>
+                </div>
+
+                <div class="mb-4">
                     <p class="text-xs uppercase text-green-300 mb-2 px-4">Data Management</p>
-                    <a href="{{ route('admin.datasets') }}" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded">
+                    <a href="{{ route('admin.datasets') }}" class="flex items-center space-x-3 px-4 py-3 rounded hover:bg-green-800 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/>
                         </svg>
                         <span>Datasets</span>
                     </a>
-                    <a href="{{ route('admin.dataimport') }}" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded">
+                    <a href="{{ route('admin.dataimport') }}" class="flex items-center space-x-3 px-4 py-3 rounded hover:bg-green-800 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                         </svg>
@@ -96,13 +106,26 @@
                 </div>
 
                 <div class="mb-4">
-                    <p class="text-xs uppercase text-green-300 mb-2 px-4">System</p>
-                    <a href="{{ route('admin.monitoring') }}" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded">
+                    <p class="text-xs uppercase text-green-300 mb-2 px-4">Monitoring</p>
+                    <a href="{{ route('admin.monitoring') }}" class="flex items-center space-x-3 px-4 py-3 rounded hover:bg-green-800 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                         </svg>
-                        <span>Monitoring</span>
+                        <span>Provincial Monitoring</span>
                     </a>
+                </div>
+
+                <div class="mb-4">
+                    <p class="text-xs uppercase text-green-300 mb-2 px-4">System</p>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="sidebar-item w-full flex items-center space-x-3 px-4 py-3 rounded hover:bg-red-600 transition-colors text-left">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                            </svg>
+                            <span>Logout</span>
+                        </button>
+                    </form>
                 </div>
             </nav>
         </aside>
@@ -175,8 +198,8 @@
                             <div class="flex items-start justify-between">
                                 <div>
                                     <p class="text-xs text-gray-500 mb-1">Registered Farmers</p>
-                                    <h3 class="text-2xl font-bold text-gray-800" x-text="stats.registeredFarmers?.toLocaleString() || '1,248'">1,248</h3>
-                                    <p class="text-xs text-green-600 mt-1">+24 this month</p>
+                                    <h3 class="text-2xl font-bold text-gray-800" x-text="(stats.registeredFarmers || 0).toLocaleString()">0</h3>
+                                    <p class="text-xs text-green-600 mt-1" x-text="'+' + (stats.newFarmersThisMonth || 0) + ' this month'">+0 this month</p>
                                 </div>
                                 <div class="bg-green-500 p-2 rounded-lg">
                                     <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -191,8 +214,8 @@
                             <div class="flex items-start justify-between">
                                 <div>
                                     <p class="text-xs text-gray-500 mb-1">Data Records</p>
-                                    <h3 class="text-2xl font-bold text-gray-800" x-text="stats.dataRecords?.toLocaleString() || '42,876'">42,876</h3>
-                                    <p class="text-xs text-blue-600 mt-1">+243 new</p>
+                                    <h3 class="text-2xl font-bold text-gray-800" x-text="(stats.dataRecords || 0).toLocaleString()">0</h3>
+                                    <p class="text-xs text-blue-600 mt-1" x-text="'+' + (stats.newRecords || 0) + ' new'">+0 new</p>
                                 </div>
                                 <div class="bg-blue-500 p-2 rounded-lg">
                                     <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -209,8 +232,8 @@
                             <div class="flex items-start justify-between">
                                 <div>
                                     <p class="text-xs text-gray-500 mb-1">Total Farms</p>
-                                    <h3 class="text-2xl font-bold text-gray-800" x-text="stats.totalFarms?.toLocaleString() || '856'">856</h3>
-                                    <p class="text-xs text-yellow-600 mt-1">Across 13 municipalities</p>
+                                    <h3 class="text-2xl font-bold text-gray-800" x-text="(stats.totalFarms || 0).toLocaleString()">0</h3>
+                                    <p class="text-xs text-yellow-600 mt-1" x-text="'Across ' + (stats.municipalitiesCount || 0) + ' municipalities'">Across 0 municipalities</p>
                                 </div>
                                 <div class="bg-yellow-500 p-2 rounded-lg">
                                     <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -239,9 +262,20 @@
 
                     <!-- Yield & Planting Schedule Analysis -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-                        <div class="mb-6">
-                            <h3 class="text-lg font-bold text-green-700">Yield & Planting Schedule Analysis</h3>
-                            <p class="text-sm text-gray-500">Combined analysis showing optimal planting periods (May-June) based on historical yield data, rainfall patterns, and temperature trends</p>
+                        <div class="mb-6 flex items-center justify-between">
+                            <div>
+                                <div class="flex items-center gap-3">
+                                    <h3 class="text-lg font-bold text-green-700">Yield & Planting Schedule Analysis</h3>
+                                    <span x-show="mlStatus.yieldAnalysis" class="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full flex items-center gap-1">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M13 7H7v6h6V7z"/>
+                                            <path fill-rule="evenodd" d="M7 2a1 1 0 012 0v1h2V2a1 1 0 112 0v1h2a2 2 0 012 2v2h1a1 1 0 110 2h-1v2h1a1 1 0 110 2h-1v2a2 2 0 01-2 2h-2v1a1 1 0 11-2 0v-1H9v1a1 1 0 11-2 0v-1H5a2 2 0 01-2-2v-2H2a1 1 0 110-2h1V9H2a1 1 0 010-2h1V5a2 2 0 012-2h2V2zM5 5h10v10H5V5z" clip-rule="evenodd"/>
+                                        </svg>
+                                        ML POWERED
+                                    </span>
+                                </div>
+                                <p class="text-sm text-gray-500">Combined analysis showing optimal planting periods (May-June) based on historical yield data, rainfall patterns, and temperature trends</p>
+                            </div>
                         </div>
                         
                         <div class="h-80 mb-6">
@@ -366,7 +400,7 @@
                                             </span>
                                         </div>
                                         <div class="mb-2">
-                                            <span class="text-2xl font-bold text-green-700">₱<span x-text="crop.price"></span></span>
+                                            <span class="text-2xl font-bold text-green-700">₱<span x-text="parseFloat(crop.price).toFixed(2)"></span></span>
                                             <span class="text-sm text-gray-500" x-text="'/' + crop.unit"></span>
                                         </div>
                                         <div class="flex items-center justify-between">
@@ -385,8 +419,37 @@
                         <!-- Crop Performance by Variety (TOP 5) -->
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                             <div class="mb-4">
-                                <h3 class="text-lg font-bold text-gray-800">Crop Performance by Variety (TOP 5)</h3>
-                                <p class="text-sm text-gray-500">Average yield per hectare in <span x-text="new Date().getFullYear()"></span></p>
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center gap-3">
+                                        <h3 class="text-lg font-bold text-gray-800">Crop Performance by Variety (TOP 5)</h3>
+                                        <span x-show="mlStatus.cropPerformance" class="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full flex items-center gap-1">
+                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M13 7H7v6h6V7z"/>
+                                                <path fill-rule="evenodd" d="M7 2a1 1 0 012 0v1h2V2a1 1 0 112 0v1h2a2 2 0 012 2v2h1a1 1 0 110 2h-1v2h1a1 1 0 110 2h-1v2a2 2 0 01-2 2h-2v1a1 1 0 11-2 0v-1H9v1a1 1 0 11-2 0v-1H5a2 2 0 01-2-2v-2H2a1 1 0 110-2h1V9H2a1 1 0 010-2h1V5a2 2 0 012-2h2V2zM5 5h10v10H5V5z" clip-rule="evenodd"/>
+                                            </svg>
+                                            ML
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <select x-model="selectedMunicipality" @change="onMunicipalityChange()" class="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-500">
+                                            <option value="">All Municipalities</option>
+                                            <option value="La Trinidad">La Trinidad</option>
+                                            <option value="Baguio City">Baguio City</option>
+                                            <option value="Tublay">Tublay</option>
+                                            <option value="Sablan">Sablan</option>
+                                            <option value="Tuba">Tuba</option>
+                                            <option value="Itogon">Itogon</option>
+                                            <option value="Atok">Atok</option>
+                                            <option value="Bokod">Bokod</option>
+                                            <option value="Kabayan">Kabayan</option>
+                                            <option value="Kapangan">Kapangan</option>
+                                            <option value="Kibungan">Kibungan</option>
+                                            <option value="Mankayan">Mankayan</option>
+                                            <option value="Buguias">Buguias</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-gray-500">Average yield per hectare in <span x-text="new Date().getFullYear()"></span> <span x-show="selectedMunicipality" class="font-semibold" x-text="'- ' + selectedMunicipality"></span></p>
                             </div>
                             
                             <div class="space-y-4">
@@ -427,8 +490,8 @@
                     editingPrice: null,
                     showEditModal: false,
                     showAddModal: false,
-                    editForm: { id: null, crop_name: '', variety: '', price_per_kg: '', previous_price: '', demand_level: 'moderate', market_location: '', is_active: true },
-                    addForm: { crop_name: '', variety: '', price_per_kg: '', demand_level: 'moderate', market_location: 'La Trinidad Trading Post', is_active: true },
+                    editForm: { id: null, crop_name: '', variety: '', price_per_kg: '', previous_price: '', demand_level: 'moderate', market_location: '', is_active: true, price_date: new Date().toISOString().split('T')[0] },
+                    addForm: { crop_name: '', variety: '', price_per_kg: '', demand_level: 'moderate', market_location: 'La Trinidad Trading Post', is_active: true, price_date: new Date().toISOString().split('T')[0] },
                     
                     init() {
                         this.loadAllPrices();
@@ -436,7 +499,7 @@
                     
                     async loadAllPrices() {
                         try {
-                            const response = await fetch('/api/market-prices');
+                            const response = await fetch('{{ url("/api/market-prices") }}');
                             if (response.ok) {
                                 this.allPrices = await response.json();
                             } else {
@@ -514,24 +577,45 @@
                     
                     editPrice(price) {
                         this.editForm = { ...price };
+                        // Format price_date for date input (YYYY-MM-DD)
+                        if (this.editForm.price_date) {
+                            this.editForm.price_date = new Date(this.editForm.price_date).toISOString().split('T')[0];
+                        } else {
+                            this.editForm.price_date = new Date().toISOString().split('T')[0];
+                        }
                         this.showEditModal = true;
                     },
                     
                     async savePrice() {
                         try {
-                            const response = await fetch(`/api/market-prices/${this.editForm.id}`, {
+                            const payload = {
+                                crop_name: this.editForm.crop_name,
+                                variety: this.editForm.variety || '',
+                                price_per_kg: parseFloat(this.editForm.price_per_kg),
+                                demand_level: this.editForm.demand_level || 'moderate',
+                                market_location: this.editForm.market_location || 'La Trinidad Trading Post',
+                                is_active: this.editForm.is_active !== false,
+                                price_date: this.editForm.price_date || new Date().toISOString().split('T')[0],
+                                price_trend: this.editForm.price_trend || 'stable'
+                            };
+                            const response = await fetch(`{{ url('/api/market-prices') }}/${this.editForm.id}`, {
                                 method: 'PUT',
                                 headers: {
                                     'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                    'Accept': 'application/json'
                                 },
-                                body: JSON.stringify(this.editForm)
+                                credentials: 'same-origin',
+                                body: JSON.stringify(payload)
                             });
                             
                             if (response.ok) {
                                 await this.loadAllPrices();
                                 this.showEditModal = false;
                                 alert('Price updated successfully!');
+                            } else {
+                                const err = await response.json().catch(() => ({}));
+                                alert(err.message || err.error || 'Error updating price. Make sure you are logged in.');
                             }
                         } catch (error) {
                             console.error('Error updating price:', error);
@@ -540,30 +624,45 @@
                     },
                     
                     async addNewPrice() {
+                        if (!this.addForm.crop_name || !this.addForm.price_per_kg) {
+                            alert('Please fill in the required fields: Crop Name and Price per kg');
+                            return;
+                        }
                         try {
-                            const response = await fetch('/api/market-prices', {
+                            const payload = {
+                                crop_name: this.addForm.crop_name,
+                                variety: this.addForm.variety || '',
+                                price_per_kg: parseFloat(this.addForm.price_per_kg),
+                                demand_level: this.addForm.demand_level || 'moderate',
+                                market_location: this.addForm.market_location || 'La Trinidad Trading Post',
+                                is_active: this.addForm.is_active !== false,
+                                price_date: this.addForm.price_date || new Date().toISOString().split('T')[0],
+                                price_trend: 'stable'
+                            };
+                            const response = await fetch('{{ url("/api/market-prices") }}', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                    'Accept': 'application/json'
                                 },
-                                body: JSON.stringify(this.addForm)
+                                credentials: 'same-origin',
+                                body: JSON.stringify(payload)
                             });
                             
                             if (response.ok) {
                                 await this.loadAllPrices();
                                 this.showAddModal = false;
-                                this.addForm = { crop_name: '', variety: '', price_per_kg: '', demand_level: 'moderate', market_location: 'La Trinidad Trading Post', is_active: true };
+                                this.addForm = { crop_name: '', variety: '', price_per_kg: '', demand_level: 'moderate', market_location: 'La Trinidad Trading Post', is_active: true, price_date: new Date().toISOString().split('T')[0] };
                                 alert('Price added successfully!');
+                            } else {
+                                const err = await response.json().catch(() => ({}));
+                                console.error('Server error:', err);
+                                alert(err.message || err.error || 'Error adding price. Make sure you are logged in.');
                             }
                         } catch (error) {
                             console.error('Error adding price:', error);
-                            // Add to local array as fallback
-                            const newId = Math.max(...this.allPrices.map(p => p.id), 0) + 1;
-                            this.allPrices.push({ id: newId, ...this.addForm, previous_price: this.addForm.price_per_kg });
-                            this.showAddModal = false;
-                            this.addForm = { crop_name: '', variety: '', price_per_kg: '', demand_level: 'moderate', market_location: 'La Trinidad Trading Post', is_active: true };
-                            alert('Price added successfully!');
+                            alert('Network error adding price. Please try again.');
                         }
                     }
                 }">
@@ -669,7 +768,11 @@
                                     <input type="text" x-model="editForm.crop_name" class="w-full border border-gray-300 rounded-lg px-3 py-2" readonly>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Price per kg (₱)</label>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Variety</label>
+                                    <input type="text" x-model="editForm.variety" class="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="e.g., Highland">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Price per kg (₱) <span class="text-red-500">*</span></label>
                                     <input type="number" step="0.01" x-model="editForm.price_per_kg" class="w-full border border-gray-300 rounded-lg px-3 py-2">
                                 </div>
                                 <div>
@@ -684,6 +787,10 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Market Location</label>
                                     <input type="text" x-model="editForm.market_location" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Price Date <span class="text-red-500">*</span></label>
+                                    <input type="date" x-model="editForm.price_date" class="w-full border border-gray-300 rounded-lg px-3 py-2">
                                 </div>
                                 <div class="flex gap-2">
                                     <button @click="savePrice()" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Save</button>
@@ -723,6 +830,10 @@
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Market Location</label>
                                     <input type="text" x-model="addForm.market_location" placeholder="e.g., La Trinidad Trading Post" class="w-full border border-gray-300 rounded-lg px-3 py-2">
                                 </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Price Date <span class="text-red-500">*</span></label>
+                                    <input type="date" x-model="addForm.price_date" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                </div>
                                 <div class="flex gap-2">
                                     <button @click="addNewPrice()" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Add Price</button>
                                     <button @click="showAddModal = false" class="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">Cancel</button>
@@ -744,7 +855,7 @@
                     
                     async loadAnnouncementsList() {
                         try {
-                            const response = await fetch('/api/announcements');
+                            const response = await fetch('{{ url("/api/announcements") }}');
                             if (response.ok) {
                                 this.announcementsList = await response.json();
                             }
@@ -755,7 +866,7 @@
                     
                     async createAnnouncement() {
                         try {
-                            const response = await fetch('/api/announcements', {
+                            const response = await fetch('{{ url("/api/announcements") }}', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -892,7 +1003,7 @@
                     
                     async loadMessages() {
                         try {
-                            const response = await fetch('/api/messages');
+                            const response = await fetch('{{ url("/api/messages") }}');
                             if (response.ok) {
                                 const data = await response.json();
                                 this.messagesList = { received: data.received || [], sent: data.sent || [] };
@@ -904,7 +1015,7 @@
                     
                     async loadFarmers() {
                         try {
-                            const response = await fetch('/api/farmers');
+                            const response = await fetch('{{ url("/api/farmers") }}');
                             if (response.ok) {
                                 this.farmers = await response.json();
                             }
@@ -915,7 +1026,7 @@
                     
                     async sendMessage() {
                         try {
-                            const response = await fetch('/api/messages', {
+                            const response = await fetch('{{ url("/api/messages") }}', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -1081,16 +1192,26 @@
                 loading: true,
                 currentSection: 'dashboard',
                 unreadMessages: 5,
+                selectedMunicipality: '',
+                baseUrl: '{{ url("/") }}',  // Laravel base URL
                 stats: {
+                    registeredFarmers: 0,
+                    newFarmersThisMonth: 0,
                     dataRecords: 0,
                     newRecords: 0,
+                    totalFarms: 0,
+                    municipalitiesCount: 0,
                     urgentActions: 0
                 },
                 pendingActions: 0,
+                mlStatus: {
+                    yieldAnalysis: false,
+                    cropPerformance: false
+                },
                 insights: {
-                    peakYieldPeriod: '',
-                    rainfallPattern: '',
-                    recommendation: ''
+                    peakYieldPeriod: 'Loading analysis...',
+                    rainfallPattern: 'Loading analysis...',
+                    recommendation: 'Loading analysis...'
                 },
                 validationAlerts: [],
                 marketPrices: {
@@ -1102,52 +1223,103 @@
                 yieldChart: null,
 
                 async init() {
+                    console.log('===== DA OFFICER DASHBOARD INITIALIZING =====');
+                    console.log('Current URL:', window.location.href);
+                    console.log('Loading dynamic data from ML-powered APIs...');
+                    
+                    // Handle URL hash for navigation
+                    const hash = window.location.hash.substring(1); // Remove the # symbol
+                    if (hash && ['dashboard', 'market-prices', 'announcements', 'inbox'].includes(hash)) {
+                        this.currentSection = hash;
+                        console.log('Navigating to section from URL hash:', hash);
+                    }
+                    
                     await this.loadDashboardData();
                     await this.loadYieldAnalysis();
                     await this.loadMarketPrices();
                     await this.loadValidationAlerts();
                     await this.loadCropPerformance();
                     this.loading = false;
+                    
+                    console.log('===== DASHBOARD INITIALIZATION COMPLETE =====');
                 },
 
                 async loadDashboardData() {
                     try {
-                        const response = await fetch('{{ route("admin.api.dashboard") }}');
+                        console.log('Fetching dashboard stats from', this.baseUrl + '/api/admin/dashboard');
+                        const response = await fetch(this.baseUrl + '/api/admin/dashboard');
+                        
+                        console.log('Response status:', response.status, response.statusText);
+                        
+                        if (!response.ok) {
+                            throw new Error(`API returned ${response.status}`);
+                        }
+                        
                         const data = await response.json();
                         
-                        this.stats.dataRecords = data.totalRecords || 42876;
-                        this.stats.newRecords = data.newRecords || 243;
-                        this.pendingActions = data.pendingAlerts || 12;
-                        this.stats.urgentActions = data.urgentAlerts || 3;
+                        console.log('Dashboard stats loaded:', data);
+                        this.stats.registeredFarmers = data.registeredFarmers || 0;
+                        this.stats.newFarmersThisMonth = data.newFarmersThisMonth || 0;
+                        this.stats.dataRecords = data.totalRecords || 0;
+                        this.stats.newRecords = data.newRecords || 0;
+                        this.stats.totalFarms = data.totalFarms || 0;
+                        this.stats.municipalitiesCount = data.municipalitiesCount || 0;
+                        this.pendingActions = data.pendingAlerts || 0;
+                        this.stats.urgentActions = data.urgentAlerts || 0;
                     } catch (error) {
                         console.error('Error loading dashboard data:', error);
-                        // Use fallback data
-                        this.stats.dataRecords = 42876;
-                        this.stats.newRecords = 243;
-                        this.pendingActions = 12;
-                        this.stats.urgentActions = 3;
+                        // Use zero values on error - will trigger data collection
+                        this.stats.registeredFarmers = 0;
+                        this.stats.newFarmersThisMonth = 0;
+                        this.stats.dataRecords = 0;
+                        this.stats.newRecords = 0;
+                        this.stats.totalFarms = 0;
+                        this.stats.municipalitiesCount = 0;
+                        this.pendingActions = 0;
+                        this.stats.urgentActions = 0;
                     }
                 },
 
                 async loadYieldAnalysis() {
                     try {
-                        const response = await fetch('{{ route("admin.api.yield-analysis") }}');
-                        const data = await response.json();
+                        console.log('Fetching yield analysis from', this.baseUrl + '/api/admin/yield-analysis');
+                        const response = await fetch(this.baseUrl + '/api/admin/yield-analysis');
                         
-                        if (data.chartData) {
-                            this.renderYieldChart(data.chartData);
+                        console.log('Response status:', response.status, response.statusText);
+                        
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            console.error('API Error Response:', errorText);
+                            throw new Error(`API returned ${response.status}: ${errorText}`);
                         }
                         
+                        const data = await response.json();
+                        
+                        console.log('Yield analysis loaded (ML Connected: ' + data.ml_connected + '):', data);
+                        
+                        // Update ML status
+                        this.mlStatus.yieldAnalysis = data.ml_connected || false;
+                        
+                        // Set insights FIRST before rendering chart
                         if (data.insights) {
                             this.insights = data.insights;
+                            console.log('Insights updated:', this.insights);
+                        }
+                        
+                        if (data.chartData && data.chartData.length > 0) {
+                            this.renderYieldChart(data.chartData);
+                        } else {
+                            this.renderFallbackChart();
                         }
                     } catch (error) {
                         console.error('Error loading yield analysis:', error);
-                        // Use fallback data
+                        alert('Failed to load yield analysis: ' + error.message);
+                        this.mlStatus.yieldAnalysis = false;
+                        // Only use fallback if API completely fails
                         this.insights = {
-                            peakYieldPeriod: 'May-June shows highest yields (5-8 MT/ha) when rainfall and temperatures are optimal.',
-                            rainfallPattern: 'Moderate rainfall (120-250mm) during May-June supports optimal crop growth and development.',
-                            recommendation: 'Plant between May 15 - June 15 to achieve yields matching or exceeding optimal benchmarks.'
+                            peakYieldPeriod: 'May-June typically shows highest yields (6-8 MT/ha) when rainfall (180-220mm) and temperatures (22-23°C) are optimal for vegetable production.',
+                            rainfallPattern: 'Moderate rainfall (120-250mm) during May-June provides sufficient moisture without waterlogging, supporting optimal crop growth and development.',
+                            recommendation: 'Plant between May 15 - June 15 to capitalize on favorable conditions. Monitor local weather forecasts and adjust planting dates within this window for best results.'
                         };
                         this.renderFallbackChart();
                     }
@@ -1155,36 +1327,50 @@
 
                 async loadMarketPrices() {
                     try {
-                        const response = await fetch('{{ route("admin.api.market-prices") }}');
+                        console.log('Fetching market prices from', this.baseUrl + '/api/admin/market-prices');
+                        const response = await fetch(this.baseUrl + '/api/admin/market-prices');
+                        
+                        if (!response.ok) {
+                            throw new Error(`API returned ${response.status}`);
+                        }
+                        
                         const data = await response.json();
                         
-                        if (data.crops) {
+                        console.log('Market prices loaded:', data);
+                        if (data.crops && data.crops.length > 0) {
                             this.marketPrices.crops = data.crops;
                             this.marketPrices.lastUpdated = data.lastUpdated || 'January 20, 2026';
+                        } else {
+                            this.useFallbackMarketPrices();
                         }
                     } catch (error) {
                         console.error('Error loading market prices:', error);
-                        // Use fallback data
-                        this.marketPrices.crops = [
-                            { name: 'Highland Cabbage', price: 25, unit: 'per kg', change: 8, demand: 'High' },
-                            { name: 'Tinawon Rice', price: 45, unit: 'per kg', change: 0, demand: 'High' },
-                            { name: 'Lettuce', price: 35, unit: 'per kg', change: -2, demand: 'Medium' },
-                            { name: 'Potatoes', price: 28, unit: 'per kg', change: 12, demand: 'High' },
-                            { name: 'Carrots', price: 30, unit: 'per kg', change: 8, demand: 'Medium' },
-                            { name: 'Strawberries', price: 250, unit: 'per kg', change: 0, demand: 'High' },
-                            { name: 'Tomatoes', price: 40, unit: 'per kg', change: 5, demand: 'High' },
-                            { name: 'Broccoli', price: 60, unit: 'per kg', change: -3, demand: 'Medium' },
-                            { name: 'Bell Peppers', price: 80, unit: 'per kg', change: 10, demand: 'High' },
-                            { name: 'Snap Beans', price: 55, unit: 'per kg', change: 2, demand: 'Medium' }
-                        ];
+                        this.useFallbackMarketPrices();
                     }
+                },
+
+                useFallbackMarketPrices() {
+                    // Use fallback data - only ML-supported crops
+                    this.marketPrices.crops = [
+                        { name: 'Cabbage', price: 25, unit: 'per kg', change: 8, demand: 'High' },
+                        { name: 'Bell Pepper', price: 80, unit: 'per kg', change: 10, demand: 'High' },
+                        { name: 'Broccoli', price: 60, unit: 'per kg', change: -3, demand: 'Medium' },
+                        { name: 'Snap Beans', price: 55, unit: 'per kg', change: 2, demand: 'High' },
+                        { name: 'Tomato', price: 40, unit: 'per kg', change: 5, demand: 'High' },
+                        { name: 'Lettuce', price: 35, unit: 'per kg', change: -2, demand: 'Medium' },
+                        { name: 'Carrot', price: 30, unit: 'per kg', change: 8, demand: 'Medium' },
+                        { name: 'White Potato', price: 28, unit: 'per kg', change: 12, demand: 'High' },
+                        { name: 'Cauliflower', price: 45, unit: 'per kg', change: 3, demand: 'Medium' },
+                        { name: 'Chinese Cabbage', price: 30, unit: 'per kg', change: 5, demand: 'High' }
+                    ];
                 },
 
                 async loadValidationAlerts() {
                     try {
-                        const response = await fetch('{{ route("admin.api.validation-alerts") }}');
+                        const response = await fetch(this.baseUrl + '/api/admin/validation-alerts');
                         const data = await response.json();
                         
+                        console.log('Validation alerts loaded:', data);
                         if (data.alerts) {
                             this.validationAlerts = data.alerts;
                         }
@@ -1200,8 +1386,14 @@
 
                 async loadCropPerformance() {
                     try {
-                        const response = await fetch('{{ route("admin.api.crop-performance") }}');
+                        const url = this.baseUrl + '/api/admin/crop-performance' + (this.selectedMunicipality ? '?municipality=' + encodeURIComponent(this.selectedMunicipality) : '');
+                        const response = await fetch(url);
                         const data = await response.json();
+                        
+                        console.log('Crop performance loaded (ML Connected: ' + data.ml_connected + ', Municipality: ' + (this.selectedMunicipality || 'All') + '):', data);
+                        
+                        // Update ML status
+                        this.mlStatus.cropPerformance = data.ml_connected || false;
                         
                         if (data.topVarieties && data.topVarieties.length > 0) {
                             this.cropPerformance = data.topVarieties.map(v => ({
@@ -1209,34 +1401,59 @@
                                 yield: v.yieldPerHectare
                             }));
                             this.maxYield = Math.max(...this.cropPerformance.map(c => c.yield)) * 1.1;
+                        } else {
+                            this.useFallbackCropPerformance();
                         }
                     } catch (error) {
                         console.error('Error loading crop performance:', error);
-                        // Use fallback data
-                        this.cropPerformance = [
-                            { variety: 'Lettuce', yield: 8.2 },
-                            { variety: 'Cabbage', yield: 9.5 },
-                            { variety: 'Carrots', yield: 5.8 },
-                            { variety: 'White Potato', yield: 12.3 },
-                            { variety: 'Snap Beans', yield: 6.1 }
-                        ];
-                        this.maxYield = 15;
+                        this.mlStatus.cropPerformance = false;
+                        this.useFallbackCropPerformance();
                     }
                 },
 
+                useFallbackCropPerformance() {
+                    // Use fallback data
+                    this.cropPerformance = [
+                        { variety: 'Lettuce', yield: 8.2 },
+                        { variety: 'Cabbage', yield: 9.5 },
+                        { variety: 'Carrots', yield: 5.8 },
+                        { variety: 'White Potato', yield: 12.3 },
+                        { variety: 'Snap Beans', yield: 6.1 }
+                    ];
+                    this.maxYield = 15;
+                },
+
+                onMunicipalityChange() {
+                    console.log('Municipality changed to:', this.selectedMunicipality || 'All Municipalities');
+                    this.loadCropPerformance();
+                },
+
                 renderYieldChart(chartData) {
-                    const ctx = document.getElementById('yieldChart').getContext('2d');
+                    const ctx = document.getElementById('yieldChart');
+                    
+                    if (!ctx) {
+                        console.error('Canvas element yieldChart not found!');
+                        return;
+                    }
                     
                     if (this.yieldChart) {
                         this.yieldChart.destroy();
                     }
                     
+                    console.log('Rendering chart with data:', chartData);
+                    
                     const labels = chartData.map(d => d.month);
-                    const actualYield = chartData.map(d => d.actualYield);
-                    const optimalYield = chartData.map(d => d.optimalYield);
-                    const rainfall = chartData.map(d => d.rainfall);
-                    const temperature = chartData.map(d => d.temperature);
+                    const actualYield = chartData.map(d => parseFloat(d.actualYield) || 0);
+                    const optimalYield = chartData.map(d => parseFloat(d.optimalYield) || 0);
+                    const rainfall = chartData.map(d => parseFloat(d.rainfall) || 0);
+                    const temperature = chartData.map(d => parseFloat(d.temperature) || 0);
                     const isOptimal = chartData.map(d => d.isOptimalPlanting);
+                    
+                    // Calculate max values for dynamic scaling
+                    const maxActualYield = Math.max(...actualYield, ...optimalYield);
+                    const maxRainfall = Math.max(...rainfall);
+                    const yieldMax = Math.ceil(maxActualYield * 1.2); // 20% above max for headroom
+                    const rainfallMax = Math.ceil(maxRainfall * 1.2);
                     
                     this.yieldChart = new Chart(ctx, {
                         type: 'bar',
@@ -1324,7 +1541,10 @@
                                         text: 'Yield (t/ha)'
                                     },
                                     min: 0,
-                                    max: 8
+                                    max: Math.max(yieldMax, 8),
+                                    ticks: {
+                                        stepSize: 1
+                                    }
                                 },
                                 y1: {
                                     type: 'linear',
@@ -1334,7 +1554,7 @@
                                         text: 'Rainfall (mm)'
                                     },
                                     min: 0,
-                                    max: 300,
+                                    max: Math.max(rainfallMax, 300),
                                     grid: {
                                         drawOnChartArea: false
                                     }
@@ -1356,6 +1576,8 @@
                             }
                         }
                     });
+                    
+                    console.log('Chart rendered successfully');
                 },
 
                 renderFallbackChart() {

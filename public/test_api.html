@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DA Officer API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { color: #333; }
+        .test-section { margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 4px solid #4CAF50; }
+        .test-section h3 { margin-top: 0; color: #4CAF50; }
+        button { background: #4CAF50; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; margin: 5px; }
+        button:hover { background: #45a049; }
+        pre { background: #333; color: #0f0; padding: 15px; border-radius: 4px; overflow-x: auto; max-height: 400px; overflow-y: auto; }
+        .error { color: #f44336; font-weight: bold; }
+        .success { color: #4CAF50; font-weight: bold; }
+        .info { color: #2196F3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 DA Officer Dashboard API Tester</h1>
+        <p class="info">This page tests the ML-powered API endpoints for the DA Officer dashboard.</p>
+        
+        <div class="test-section">
+            <h3>1. Dashboard Stats API</h3>
+            <button onclick="testDashboardStats()">Test /api/admin/dashboard</button>
+            <pre id="dashboard-result">Click button to test...</pre>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Yield Analysis API</h3>
+            <button onclick="testYieldAnalysis()">Test /api/admin/yield-analysis</button>
+            <pre id="yield-result">Click button to test...</pre>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Market Prices API</h3>
+            <button onclick="testMarketPrices()">Test /api/admin/market-prices</button>
+            <pre id="market-result">Click button to test...</pre>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Crop Performance API</h3>
+            <button onclick="testCropPerformance()">Test /api/admin/crop-performance</button>
+            <button onclick="testCropPerformance('La Trinidad')">Test with La Trinidad filter</button>
+            <pre id="crop-result">Click button to test...</pre>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Validation Alerts API</h3>
+            <button onclick="testValidationAlerts()">Test /api/admin/validation-alerts</button>
+            <pre id="validation-result">Click button to test...</pre>
+        </div>
+
+        <div class="test-section">
+            <h3>6. Test All APIs</h3>
+            <button onclick="testAll()">Run All Tests</button>
+        </div>
+    </div>
+
+    <script>
+        async function testAPI(endpoint, resultElementId, municipality = null) {
+            const resultElement = document.getElementById(resultElementId);
+            resultElement.textContent = 'Testing ' + endpoint + '...\n';
+            
+            try {
+                const url = endpoint + (municipality ? '?municipality=' + encodeURIComponent(municipality) : '');
+                console.log('Fetching:', url);
+                
+                const response = await fetch(url);
+                
+                resultElement.textContent = 'HTTP Status: ' + response.status + ' ' + response.statusText + '\n';
+                resultElement.textContent += 'Headers: ' + JSON.stringify(Object.fromEntries(response.headers), null, 2) + '\n\n';
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    resultElement.textContent += 'ERROR RESPONSE:\n' + errorText;
+                    resultElement.className = 'error';
+                    return;
+                }
+                
+                const data = await response.json();
+                resultElement.textContent += 'SUCCESS! Response Data:\n';
+                resultElement.textContent += JSON.stringify(data, null, 2);
+                resultElement.className = 'success';
+                
+                console.log(endpoint + ' response:', data);
+            } catch (error) {
+                resultElement.textContent = 'ERROR:\n' + error.message + '\n\n';
+                resultElement.textContent += 'Stack:\n' + error.stack;
+                resultElement.className = 'error';
+                console.error(endpoint + ' error:', error);
+            }
+        }
+
+        async function testDashboardStats() {
+            await testAPI('/api/admin/dashboard', 'dashboard-result');
+        }
+
+        async function testYieldAnalysis() {
+            await testAPI('/api/admin/yield-analysis', 'yield-result');
+        }
+
+        async function testMarketPrices() {
+            await testAPI('/api/admin/market-prices', 'market-result');
+        }
+
+        async function testCropPerformance(municipality = null) {
+            await testAPI('/api/admin/crop-performance', 'crop-result', municipality);
+        }
+
+        async function testValidationAlerts() {
+            await testAPI('/api/admin/validation-alerts', 'validation-result');
+        }
+
+        async function testAll() {
+            console.log('=== RUNNING ALL API TESTS ===');
+            await testDashboardStats();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await testYieldAnalysis();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await testMarketPrices();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await testCropPerformance();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await testValidationAlerts();
+            console.log('=== ALL TESTS COMPLETE ===');
+        }
+    </script>
+</body>
+</html>

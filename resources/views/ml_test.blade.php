@@ -57,7 +57,7 @@
             addResult('Testing health check endpoint...', 'info');
             
             try {
-                const response = await fetch('/api/ml/test');
+                const response = await fetch('{{ url("/api/ml/test") }}');
                 const data = await response.json();
                 
                 if (data.health_check.status === 'success') {
@@ -74,7 +74,7 @@
             addResult('Testing prediction endpoint...', 'info');
             
             try {
-                const response = await fetch('/api/ml/test-prediction');
+                const response = await fetch('{{ url("/api/ml/test-prediction") }}');
                 const data = await response.json();
                 
                 if (data.prediction_result.status === 'success') {

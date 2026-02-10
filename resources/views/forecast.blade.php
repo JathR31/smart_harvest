@@ -187,10 +187,10 @@
 
                 <!-- Charts Row -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    <!-- 5-Day Temperature Forecast -->
+                    <!-- 7-Day Temperature Forecast -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <div class="flex items-center justify-between mb-6">
-                            <h2 class="text-lg font-semibold text-green-700">5-Day Temperature Forecast</h2>
+                            <h2 class="text-lg font-semibold text-green-700">7-Day Temperature Forecast</h2>
                         </div>
                         <div class="h-64">
                             <canvas id="temperatureForecastChart"></canvas>
@@ -362,7 +362,7 @@
                     if (texts.length === 0) return;
                     
                     try {
-                        const response = await fetch('/api/translate/batch', {
+                        const response = await fetch('{{ url("/api/translate/batch") }}', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -420,7 +420,7 @@
                         }));
 
                         // Update daily forecast
-                        this.dailyForecast = data.daily.slice(0, 5);
+                        this.dailyForecast = data.daily.slice(0, 7);
 
                         // Update charts
                         this.updateCharts();
@@ -610,10 +610,10 @@
                     }
 
                     // Generate day labels based on actual data received
-                    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-                    const days = this.dailyForecast.slice(0, 5).map((day, index) => dayNames[index] || 'Day ' + (index + 1));
-                    const highs = this.dailyForecast.slice(0, 5).map(day => Math.round(day.temp.max));
-                    const lows = this.dailyForecast.slice(0, 5).map(day => Math.round(day.temp.min));
+                    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                    const days = this.dailyForecast.slice(0, 7).map((day, index) => dayNames[index] || 'Day ' + (index + 1));
+                    const highs = this.dailyForecast.slice(0, 7).map(day => Math.round(day.temp.max));
+                    const lows = this.dailyForecast.slice(0, 7).map(day => Math.round(day.temp.min));
 
                     this.temperatureChart = new Chart(ctx, {
                         type: 'line',

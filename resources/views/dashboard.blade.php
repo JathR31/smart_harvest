@@ -313,7 +313,7 @@
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
-                        <span>Latest prices for major Cordillera crops (Updated: January 20, 2026)</span>
+                        <span>Latest prices for major Cordillera crops (Updated: {{ now()->format('F d, Y') }})</span>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -396,7 +396,7 @@
                     
                     async loadPricesData() {
                         try {
-                            const response = await fetch('/api/market-prices');
+                            const response = await fetch(`{{ url('/api/market-prices') }}`);
                             if (response.ok) {
                                 this.allPrices = await response.json();
                             }
@@ -950,7 +950,7 @@
 
                 async loadAnnouncements() {
                     try {
-                        const response = await fetch('/api/announcements');
+                        const response = await fetch(`{{ url('/api/announcements') }}`);
                         if (response.ok) {
                             this.announcements = await response.json();
                             this.unreadAnnouncements = this.announcements.filter(a => a.is_active).length;
@@ -962,7 +962,7 @@
 
                 async loadMarketPrices() {
                     try {
-                        const response = await fetch('/api/market-prices');
+                        const response = await fetch(`{{ url('/api/market-prices') }}`);
                         if (response.ok) {
                             const data = await response.json();
                             this.marketPrices = data.map(p => ({
@@ -983,7 +983,7 @@
 
                 async loadMessages() {
                     try {
-                        const response = await fetch('/api/messages');
+                        const response = await fetch(`{{ url('/api/messages') }}`);
                         if (response.ok) {
                             const data = await response.json();
                             this.messages = { received: data.received, sent: data.sent };
@@ -1000,7 +1000,7 @@
                         return;
                     }
                     try {
-                        const response = await fetch('/api/messages', {
+                        const response = await fetch(`{{ url('/api/messages') }}`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -1022,7 +1022,7 @@
 
                 async markAsRead(messageId) {
                     try {
-                        await fetch(`/api/messages/${messageId}/read`, {
+                        await fetch(`{{ url('/api/messages') }}/${messageId}/read`, {
                             method: 'PATCH',
                             headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
                         });
@@ -1058,7 +1058,7 @@
                     if (texts.length === 0) return;
                     
                     try {
-                        const response = await fetch('/api/translate/batch', {
+                        const response = await fetch(`{{ url('/api/translate/batch') }}`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',

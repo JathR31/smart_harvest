@@ -293,114 +293,380 @@
 
                 <!-- Roles & Permissions Tab -->
                 <div x-show="activeTab === 'roles'" x-cloak>
-                    <h3 class="text-2xl font-bold text-gray-800 mb-6">Roles & Permissions</h3>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <!-- Farmer Role -->
-                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                            <div class="flex items-center space-x-3 mb-4">
-                                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                                    <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-800">Roles & Permissions</h3>
+                            <p class="text-gray-500 text-sm mt-1">Manage user roles and permissions across the system</p>
+                        </div>
+                        <button @click="fetchRolesUsers()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg flex items-center space-x-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
+                            <span>Refresh</span>
+                        </button>
+                    </div>
+
+                    <!-- Role Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold text-gray-800" x-text="roleStats.farmers">0</p>
+                                    <p class="text-xs text-gray-500">Farmers</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold text-gray-800" x-text="roleStats.daAdmins">0</p>
+                                    <p class="text-xs text-gray-500">DA Officers</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold text-gray-800" x-text="roleStats.admins">0</p>
+                                    <p class="text-xs text-gray-500">Admins</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-4 border border-purple-200">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold text-gray-800" x-text="roleStats.superadmins">0</p>
+                                    <p class="text-xs text-gray-500">Superadmins</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filters Section -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+                        <div class="flex flex-wrap gap-4 items-center">
+                            <!-- Search -->
+                            <div class="flex-1 min-w-[200px]">
+                                <div class="relative">
+                                    <input type="text" x-model="roleSearch" @input="filterRolesUsers()" 
+                                           placeholder="Search users by name or email..." 
+                                           class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            
+                            <!-- Role Filter -->
+                            <div class="min-w-[150px]">
+                                <select x-model="roleFilter" @change="filterRolesUsers()" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <option value="">All Roles</option>
+                                    <option value="Farmer">Farmer</option>
+                                    <option value="DA Admin">DA Admin</option>
+                                    <option value="Admin">Admin</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Municipality Filter -->
+                            <div class="min-w-[180px]">
+                                <select x-model="municipalityFilter" @change="filterRolesUsers()" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <option value="">All Municipalities</option>
+                                    <template x-for="mun in municipalities" :key="mun">
+                                        <option :value="mun" x-text="mun"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            
+                            <!-- Status Filter -->
+                            <div class="min-w-[130px]">
+                                <select x-model="statusFilter" @change="filterRolesUsers()" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <option value="">All Status</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                    <option value="Pending">Pending</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Clear Filters -->
+                            <button @click="clearRoleFilters()" class="px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <!-- Active Filters Display -->
+                        <div x-show="roleSearch || roleFilter || municipalityFilter || statusFilter" class="mt-3 flex flex-wrap gap-2">
+                            <span class="text-xs text-gray-500">Active filters:</span>
+                            <template x-if="roleSearch">
+                                <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full flex items-center">
+                                    Search: <span x-text="roleSearch" class="ml-1 font-medium"></span>
+                                    <button @click="roleSearch = ''; filterRolesUsers()" class="ml-1 hover:text-purple-900">&times;</button>
+                                </span>
+                            </template>
+                            <template x-if="roleFilter">
+                                <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full flex items-center">
+                                    Role: <span x-text="roleFilter" class="ml-1 font-medium"></span>
+                                    <button @click="roleFilter = ''; filterRolesUsers()" class="ml-1 hover:text-blue-900">&times;</button>
+                                </span>
+                            </template>
+                            <template x-if="municipalityFilter">
+                                <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full flex items-center">
+                                    Municipality: <span x-text="municipalityFilter" class="ml-1 font-medium"></span>
+                                    <button @click="municipalityFilter = ''; filterRolesUsers()" class="ml-1 hover:text-green-900">&times;</button>
+                                </span>
+                            </template>
+                            <template x-if="statusFilter">
+                                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full flex items-center">
+                                    Status: <span x-text="statusFilter" class="ml-1 font-medium"></span>
+                                    <button @click="statusFilter = ''; filterRolesUsers()" class="ml-1 hover:text-yellow-900">&times;</button>
+                                </span>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Users Table with Role Management -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-4 border-b border-gray-100 flex justify-between items-center">
+                            <div>
+                                <h4 class="font-semibold text-gray-800">User Role Management</h4>
+                                <p class="text-sm text-gray-500">
+                                    <span x-show="rolesLoading">Loading users...</span>
+                                    <span x-show="!rolesLoading">Showing <span x-text="filteredRolesUsersList.length"></span> of <span x-text="rolesUsersList.length"></span> users</span>
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Error Message -->
+                        <div x-show="rolesError" class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                            <p class="font-semibold">Error loading users:</p>
+                            <p x-text="rolesError" class="text-sm"></p>
+                        </div>
+                        
+                        <!-- Loading Indicator -->
+                        <div x-show="rolesLoading" class="p-8 text-center">
+                            <svg class="animate-spin h-8 w-8 mx-auto text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <p class="mt-2 text-gray-500">Loading users...</p>
+                        </div>
+                        
+                        <div x-show="!rolesLoading" class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">User</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Municipality</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Current Role</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Change Role</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <template x-for="user in paginatedRolesUsers" :key="user.id">
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3">
+                                                <div class="flex items-center">
+                                                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold" 
+                                                         :class="{
+                                                            'bg-green-500': user.role === 'Farmer',
+                                                            'bg-blue-500': user.role === 'DA Admin',
+                                                            'bg-orange-500': user.role === 'Admin',
+                                                            'bg-purple-500': user.is_superadmin
+                                                         }">
+                                                        <span x-text="user.name ? user.name.charAt(0).toUpperCase() : 'U'"></span>
+                                                    </div>
+                                                    <div class="ml-3">
+                                                        <p class="text-sm font-medium text-gray-900" x-text="user.name"></p>
+                                                        <p class="text-xs text-gray-500" x-text="user.email"></p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <span class="text-sm text-gray-600" x-text="user.location || 'Not specified'"></span>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <span class="px-2 py-1 text-xs font-semibold rounded-full" 
+                                                      :class="{
+                                                        'bg-green-100 text-green-800': user.role === 'Farmer',
+                                                        'bg-blue-100 text-blue-800': user.role === 'DA Admin',
+                                                        'bg-orange-100 text-orange-800': user.role === 'Admin',
+                                                        'bg-purple-100 text-purple-800': user.is_superadmin
+                                                      }">
+                                                    <span x-text="user.is_superadmin ? 'Superadmin' : user.role"></span>
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <template x-if="!user.is_superadmin">
+                                                    <select x-model="user.newRole" 
+                                                            class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                                        <option value="Farmer">Farmer</option>
+                                                        <option value="DA Admin">DA Admin</option>
+                                                        <option value="Admin">Admin</option>
+                                                    </select>
+                                                </template>
+                                                <template x-if="user.is_superadmin">
+                                                    <span class="text-xs text-gray-400 italic">Cannot change</span>
+                                                </template>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                                                      :class="{
+                                                        'bg-green-100 text-green-800': user.status === 'Active',
+                                                        'bg-red-100 text-red-800': user.status === 'Inactive',
+                                                        'bg-yellow-100 text-yellow-800': user.status === 'Pending'
+                                                      }" 
+                                                      x-text="user.status || 'Active'"></span>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <div class="flex space-x-2">
+                                                    <template x-if="!user.is_superadmin">
+                                                        <button @click="updateRoleForUser(user)" 
+                                                                :disabled="user.role === user.newRole || user.saving"
+                                                                class="px-3 py-1.5 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center">
+                                                            <svg x-show="user.saving" class="animate-spin -ml-1 mr-1 h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
+                                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                            </svg>
+                                                            <span x-text="user.saving ? 'Saving...' : 'Update Role'"></span>
+                                                        </button>
+                                                    </template>
+                                                    <button @click="openPermissionsModal(user)" 
+                                                            class="px-3 py-1.5 text-xs bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center"
+                                                            :class="{'opacity-50 cursor-not-allowed': user.is_superadmin}"
+                                                            :disabled="user.is_superadmin">
+                                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                                                        </svg>
+                                                        Permissions
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <tr x-show="filteredRolesUsersList.length === 0">
+                                        <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                                            <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                                            </svg>
+                                            <p class="font-medium">No users found</p>
+                                            <p class="text-sm">Try adjusting your filters</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        <div class="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+                            <div class="text-sm text-gray-500">
+                                Page <span x-text="rolesCurrentPage"></span> of <span x-text="rolesTotalPages"></span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button @click="rolesCurrentPage = Math.max(1, rolesCurrentPage - 1); paginateRolesUsers()" 
+                                        :disabled="rolesCurrentPage === 1"
+                                        class="px-3 py-1 border border-gray-300 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50">
+                                    Previous
+                                </button>
+                                <button @click="rolesCurrentPage = Math.min(rolesTotalPages, rolesCurrentPage + 1); paginateRolesUsers()" 
+                                        :disabled="rolesCurrentPage === rolesTotalPages"
+                                        class="px-3 py-1 border border-gray-300 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50">
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Role Definitions Section -->
+                    <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Farmer Role Card -->
+                        <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                            <div class="flex items-center space-x-3 mb-3">
+                                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
                                     </svg>
                                 </div>
                                 <div>
                                     <h4 class="font-semibold text-gray-800">Farmer</h4>
-                                    <p class="text-xs text-gray-500" x-text="stats.totalFarmers + ' users'"></p>
+                                    <p class="text-xs text-gray-500">Basic access level</p>
                                 </div>
                             </div>
-                            <div class="space-y-2">
-                                <div class="flex items-center text-sm text-gray-600">
-                                    <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                    View Market Prices
-                                </div>
-                                <div class="flex items-center text-sm text-gray-600">
-                                    <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                    View Announcements
-                                </div>
-                                <div class="flex items-center text-sm text-gray-600">
-                                    <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                    Send/Receive Messages
-                                </div>
-                                <div class="flex items-center text-sm text-gray-600">
-                                    <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                    View Planting Schedules
-                                </div>
-                            </div>
+                            <ul class="space-y-1 text-sm text-gray-600">
+                                <li class="flex items-center"><span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-2"></span>View Market Prices</li>
+                                <li class="flex items-center"><span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-2"></span>View Announcements</li>
+                                <li class="flex items-center"><span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-2"></span>Send/Receive Messages</li>
+                                <li class="flex items-center"><span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-2"></span>View Planting Schedules</li>
+                            </ul>
                         </div>
 
-                        <!-- DA Officer Role -->
-                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                            <div class="flex items-center space-x-3 mb-4">
-                                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                                    <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                        <!-- DA Admin Role Card -->
+                        <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                            <div class="flex items-center space-x-3 mb-3">
+                                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"/>
                                     </svg>
                                 </div>
                                 <div>
                                     <h4 class="font-semibold text-gray-800">DA Officer</h4>
-                                    <p class="text-xs text-gray-500" x-text="stats.totalAdmins + ' users'"></p>
+                                    <p class="text-xs text-gray-500">Administrative access</p>
                                 </div>
                             </div>
-                            <div class="space-y-2">
-                                <div class="flex items-center text-sm text-gray-600">
-                                    <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                    Manage Datasets
-                                </div>
-                                <div class="flex items-center text-sm text-gray-600">
-                                    <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                    Import Data
-                                </div>
-                                <div class="flex items-center text-sm text-gray-600">
-                                    <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                    Set Market Prices
-                                </div>
-                                <div class="flex items-center text-sm text-gray-600">
-                                    <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                    Create Announcements
-                                </div>
-                                <div class="flex items-center text-sm text-gray-600">
-                                    <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                    Monitor Farmers
-                                </div>
-                            </div>
+                            <ul class="space-y-1 text-sm text-gray-600">
+                                <li class="flex items-center"><span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></span>Manage Datasets</li>
+                                <li class="flex items-center"><span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></span>Import Data</li>
+                                <li class="flex items-center"><span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></span>Set Market Prices</li>
+                                <li class="flex items-center"><span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></span>Create Announcements</li>
+                                <li class="flex items-center"><span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></span>Monitor Farmers</li>
+                            </ul>
                         </div>
 
-                        <!-- Superadmin Role -->
-                        <div class="bg-white rounded-xl shadow-sm p-6 border border-purple-200 border-2">
-                            <div class="flex items-center space-x-3 mb-4">
-                                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                                    <svg class="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                        <!-- Superadmin Role Card -->
+                        <div class="bg-white rounded-xl shadow-sm p-4 border border-purple-200">
+                            <div class="flex items-center space-x-3 mb-3">
+                                <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                                     </svg>
                                 </div>
                                 <div>
                                     <h4 class="font-semibold text-gray-800">Superadmin</h4>
-                                    <p class="text-xs text-purple-600">Full Access</p>
+                                    <p class="text-xs text-purple-600">Full system access</p>
                                 </div>
                             </div>
-                            <div class="space-y-2">
-                                <div class="flex items-center text-sm text-gray-600">
-                                    <svg class="w-4 h-4 text-purple-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                    All DA Officer Permissions
-                                </div>
-                                <div class="flex items-center text-sm text-gray-600">
-                                    <svg class="w-4 h-4 text-purple-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                    Manage Users
-                                </div>
-                                <div class="flex items-center text-sm text-gray-600">
-                                    <svg class="w-4 h-4 text-purple-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                    Change Roles/Permissions
-                                </div>
-                                <div class="flex items-center text-sm text-gray-600">
-                                    <svg class="w-4 h-4 text-purple-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                    View System Logs
-                                </div>
-                                <div class="flex items-center text-sm text-gray-600">
-                                    <svg class="w-4 h-4 text-purple-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                    2FA Authentication
-                                </div>
-                            </div>
+                            <ul class="space-y-1 text-sm text-gray-600">
+                                <li class="flex items-center"><span class="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2"></span>All DA Officer Permissions</li>
+                                <li class="flex items-center"><span class="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2"></span>Manage All Users</li>
+                                <li class="flex items-center"><span class="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2"></span>Change Roles/Permissions</li>
+                                <li class="flex items-center"><span class="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2"></span>View System Logs</li>
+                                <li class="flex items-center"><span class="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2"></span>2FA Management</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -576,11 +842,87 @@
         </div>
     </div>
 
+    <!-- User Permissions Modal -->
+    <div x-show="showPermissionsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" x-cloak>
+        <div class="bg-white rounded-xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-hidden" @click.away="closePermissionsModal()">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4 flex items-center justify-between">
+                <div>
+                    <h3 class="text-xl font-semibold text-white">Edit User Permissions</h3>
+                    <p class="text-purple-200 text-sm mt-1" x-text="selectedUserForPermissions ? selectedUserForPermissions.name + ' (' + selectedUserForPermissions.role + ')' : ''"></p>
+                </div>
+                <button @click="closePermissionsModal()" class="text-white hover:text-gray-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+                <!-- Loading State -->
+                <div x-show="loadingPermissions" class="flex justify-center items-center py-12">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                </div>
+
+                <!-- Permissions by Category -->
+                <div x-show="!loadingPermissions">
+                    <template x-for="(perms, category) in userPermissionsByCategory" :key="category">
+                        <div class="mb-6">
+                            <h4 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                                <span class="w-2 h-2 bg-purple-600 rounded-full mr-2"></span>
+                                <span x-text="category"></span>
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 ml-4">
+                                <template x-for="perm in perms" :key="perm.permission">
+                                    <label class="flex items-start p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors border border-gray-100">
+                                        <input type="checkbox" 
+                                               :checked="perm.enabled"
+                                               @change="toggleUserPermission(perm.permission, $event.target.checked)"
+                                               class="mt-1 w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
+                                        <div class="ml-3">
+                                            <div class="font-medium text-gray-800 text-sm" x-text="formatPermissionName(perm.permission)"></div>
+                                            <div class="text-xs text-gray-500" x-text="perm.description"></div>
+                                        </div>
+                                    </label>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200">
+                <div class="flex items-center space-x-4">
+                    <button @click="selectAllPermissions()" class="text-sm text-purple-600 hover:text-purple-800">Select All</button>
+                    <button @click="deselectAllPermissions()" class="text-sm text-gray-600 hover:text-gray-800">Deselect All</button>
+                </div>
+                <div class="flex space-x-3">
+                    <button @click="closePermissionsModal()" 
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">
+                        Cancel
+                    </button>
+                    <button @click="saveUserPermissions()" 
+                            :disabled="savingPermissions"
+                            class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center">
+                        <svg x-show="savingPermissions" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span x-text="savingPermissions ? 'Saving...' : 'Save Permissions'"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         function superadminDashboard() {
             return {
                 activeTab: 'dashboard',
                 showAddUserModal: false,
+                showPermissionsModal: false,
                 logFilter: 'all',
                 
                 stats: {
@@ -603,15 +945,47 @@
                     role: 'Farmer'
                 },
 
+                // Roles & Permissions Tab Data
+                municipalities: [
+                    'Atok', 'Bakun', 'Bokod', 'Buguias', 'Itogon', 
+                    'Kabayan', 'Kapangan', 'Kibungan', 'La Trinidad', 'Mankayan', 
+                    'Sablan', 'Tuba', 'Tublay'
+                ],
+                roleStats: {
+                    farmers: 0,
+                    daAdmins: 0,
+                    admins: 0,
+                    superadmins: 0
+                },
+                rolesLoading: false,
+                rolesError: '',
+                rolesUsersList: [],
+                filteredRolesUsersList: [],
+                paginatedRolesUsers: [],
+                roleSearch: '',
+                roleFilter: '',
+                municipalityFilter: '',
+                statusFilter: '',
+                rolesCurrentPage: 1,
+                rolesPerPage: 10,
+                rolesTotalPages: 1,
+                
+                // Permissions Modal
+                selectedUserForPermissions: null,
+                userPermissionsByCategory: {},
+                loadingPermissions: false,
+                savingPermissions: false,
+
                 async init() {
                     await this.fetchDashboardData();
                     await this.fetchUsers();
                     await this.fetchSystemLogs();
+                    await this.fetchRolesUsers();
                 },
 
                 async fetchDashboardData() {
                     try {
-                        const response = await fetch('/api/superadmin/dashboard');
+                        const response = await fetch('{{ url("/api/superadmin/dashboard") }}');
                         if (response.ok) {
                             const data = await response.json();
                             this.stats = data.stats || this.stats;
@@ -624,7 +998,7 @@
 
                 async fetchUsers() {
                     try {
-                        const response = await fetch('/api/superadmin/users');
+                        const response = await fetch('{{ url("/api/superadmin/users") }}');
                         if (response.ok) {
                             const data = await response.json();
                             this.users = data;
@@ -636,9 +1010,274 @@
                     }
                 },
 
+                async fetchRolesUsers() {
+                    this.rolesLoading = true;
+                    this.rolesError = '';
+                    try {
+                        console.log('Fetching users from:', '{{ url("/admin/api/users") }}');
+                        const response = await fetch('{{ url("/admin/api/users") }}', {
+                            credentials: 'same-origin',
+                            headers: { 
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                        
+                        console.log('Response status:', response.status);
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            console.log('Users data received:', data);
+                            this.rolesUsersList = (data.users || []).map(user => ({
+                                ...user,
+                                newRole: user.role || 'Farmer',
+                                saving: false
+                            }));
+                            
+                            // Calculate role stats
+                            this.roleStats.farmers = this.rolesUsersList.filter(u => u.role === 'Farmer').length;
+                            this.roleStats.daAdmins = this.rolesUsersList.filter(u => u.role === 'DA Admin').length;
+                            this.roleStats.admins = this.rolesUsersList.filter(u => u.role === 'Admin').length;
+                            this.roleStats.superadmins = this.rolesUsersList.filter(u => u.is_superadmin).length;
+                            
+                            console.log('Role stats:', this.roleStats);
+                            console.log('Total users loaded:', this.rolesUsersList.length);
+                            this.filterRolesUsers();
+                        } else {
+                            const errorText = await response.text();
+                            console.error('API Error:', response.status, errorText);
+                            this.rolesError = `Error ${response.status}: ${errorText.substring(0, 100)}`;
+                        }
+                    } catch (error) {
+                        console.error('Error fetching roles users:', error);
+                        this.rolesError = 'Network error: ' + error.message;
+                    } finally {
+                        this.rolesLoading = false;
+                    }
+                },
+
+                filterRolesUsers() {
+                    let filtered = [...this.rolesUsersList];
+                    
+                    // Search filter
+                    if (this.roleSearch) {
+                        const search = this.roleSearch.toLowerCase();
+                        filtered = filtered.filter(user => 
+                            (user.name && user.name.toLowerCase().includes(search)) || 
+                            (user.email && user.email.toLowerCase().includes(search))
+                        );
+                    }
+                    
+                    // Role filter
+                    if (this.roleFilter) {
+                        filtered = filtered.filter(user => user.role === this.roleFilter);
+                    }
+                    
+                    // Municipality filter
+                    if (this.municipalityFilter) {
+                        filtered = filtered.filter(user => 
+                            user.location && user.location.toLowerCase().includes(this.municipalityFilter.toLowerCase())
+                        );
+                    }
+                    
+                    // Status filter
+                    if (this.statusFilter) {
+                        filtered = filtered.filter(user => (user.status || 'Active') === this.statusFilter);
+                    }
+                    
+                    this.filteredRolesUsersList = filtered;
+                    this.rolesCurrentPage = 1;
+                    this.paginateRolesUsers();
+                },
+
+                paginateRolesUsers() {
+                    const start = (this.rolesCurrentPage - 1) * this.rolesPerPage;
+                    const end = start + this.rolesPerPage;
+                    this.paginatedRolesUsers = this.filteredRolesUsersList.slice(start, end);
+                    this.rolesTotalPages = Math.max(1, Math.ceil(this.filteredRolesUsersList.length / this.rolesPerPage));
+                },
+
+                clearRoleFilters() {
+                    this.roleSearch = '';
+                    this.roleFilter = '';
+                    this.municipalityFilter = '';
+                    this.statusFilter = '';
+                    this.filterRolesUsers();
+                },
+
+                async updateRoleForUser(user) {
+                    if (user.role === user.newRole || user.is_superadmin) return;
+                    
+                    user.saving = true;
+                    
+                    try {
+                        const response = await fetch(`{{ url('/admin/api/users') }}/${user.id}`, {
+                            method: 'PUT',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({ role: user.newRole })
+                        });
+
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            user.role = user.newRole;
+                            await this.fetchRolesUsers();
+                            await this.fetchUsers();
+                            alert('User role updated successfully!');
+                        } else {
+                            alert('Error updating role: ' + (data.message || data.error || 'Unknown error'));
+                            user.newRole = user.role;
+                        }
+                    } catch (error) {
+                        console.error('Error updating user role:', error);
+                        alert('Error updating user role');
+                        user.newRole = user.role;
+                    } finally {
+                        user.saving = false;
+                    }
+                },
+
+                async openPermissionsModal(user) {
+                    if (user.is_superadmin) return;
+                    
+                    this.selectedUserForPermissions = user;
+                    this.showPermissionsModal = true;
+                    this.loadingPermissions = true;
+                    
+                    try {
+                        // Fetch permissions for the user's role
+                        const response = await fetch(`{{ url('/admin/api/roles-permissions') }}/${user.role}`, {
+                            credentials: 'same-origin',
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.userPermissionsByCategory = data.permissions || {};
+                        } else {
+                            // If the specific endpoint doesn't exist, use default permissions
+                            this.userPermissionsByCategory = this.getDefaultPermissions(user.role);
+                        }
+                    } catch (error) {
+                        console.error('Error loading permissions:', error);
+                        this.userPermissionsByCategory = this.getDefaultPermissions(user.role);
+                    } finally {
+                        this.loadingPermissions = false;
+                    }
+                },
+
+                getDefaultPermissions(role) {
+                    const basePermissions = {
+                        'User Management': [
+                            { permission: 'view_users', description: 'View user list', enabled: role !== 'Farmer' },
+                            { permission: 'create_users', description: 'Create new users', enabled: role !== 'Farmer' },
+                            { permission: 'edit_users', description: 'Edit user information', enabled: role !== 'Farmer' },
+                            { permission: 'delete_users', description: 'Delete users', enabled: role === 'Admin' || role === 'DA Admin' }
+                        ],
+                        'Data Management': [
+                            { permission: 'view_datasets', description: 'View datasets', enabled: true },
+                            { permission: 'import_data', description: 'Import crop data', enabled: role !== 'Farmer' },
+                            { permission: 'export_data', description: 'Export data', enabled: role !== 'Farmer' },
+                            { permission: 'delete_datasets', description: 'Delete datasets', enabled: role === 'Admin' || role === 'DA Admin' }
+                        ],
+                        'Market & Prices': [
+                            { permission: 'view_prices', description: 'View market prices', enabled: true },
+                            { permission: 'edit_prices', description: 'Edit market prices', enabled: role !== 'Farmer' },
+                            { permission: 'manage_announcements', description: 'Manage announcements', enabled: role !== 'Farmer' }
+                        ],
+                        'Reports & Analytics': [
+                            { permission: 'view_reports', description: 'View reports', enabled: true },
+                            { permission: 'generate_reports', description: 'Generate reports', enabled: role !== 'Farmer' },
+                            { permission: 'view_analytics', description: 'View analytics dashboard', enabled: true }
+                        ]
+                    };
+                    return basePermissions;
+                },
+
+                closePermissionsModal() {
+                    this.showPermissionsModal = false;
+                    this.selectedUserForPermissions = null;
+                    this.userPermissionsByCategory = {};
+                },
+
+                toggleUserPermission(permission, enabled) {
+                    Object.keys(this.userPermissionsByCategory).forEach(category => {
+                        const perm = this.userPermissionsByCategory[category].find(p => p.permission === permission);
+                        if (perm) {
+                            perm.enabled = enabled;
+                        }
+                    });
+                },
+
+                selectAllPermissions() {
+                    Object.keys(this.userPermissionsByCategory).forEach(category => {
+                        this.userPermissionsByCategory[category].forEach(perm => {
+                            perm.enabled = true;
+                        });
+                    });
+                },
+
+                deselectAllPermissions() {
+                    Object.keys(this.userPermissionsByCategory).forEach(category => {
+                        this.userPermissionsByCategory[category].forEach(perm => {
+                            perm.enabled = false;
+                        });
+                    });
+                },
+
+                async saveUserPermissions() {
+                    if (!this.selectedUserForPermissions) return;
+                    
+                    this.savingPermissions = true;
+                    
+                    const permissions = {};
+                    Object.keys(this.userPermissionsByCategory).forEach(category => {
+                        this.userPermissionsByCategory[category].forEach(perm => {
+                            permissions[perm.permission] = perm.enabled;
+                        });
+                    });
+
+                    try {
+                        const response = await fetch(`{{ url('/admin/api/roles-permissions') }}/${this.selectedUserForPermissions.role}`, {
+                            method: 'PUT',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({ permissions })
+                        });
+
+                        if (response.ok) {
+                            alert('Permissions saved successfully!');
+                            this.closePermissionsModal();
+                        } else {
+                            const data = await response.json();
+                            alert('Error saving permissions: ' + (data.message || 'Unknown error'));
+                        }
+                    } catch (error) {
+                        console.error('Error saving permissions:', error);
+                        alert('Error saving permissions');
+                    } finally {
+                        this.savingPermissions = false;
+                    }
+                },
+
+                formatPermissionName(permission) {
+                    return permission.split('_').map(word => 
+                        word.charAt(0).toUpperCase() + word.slice(1)
+                    ).join(' ');
+                },
+
                 async fetchSystemLogs() {
                     try {
-                        const response = await fetch('/api/superadmin/logs');
+                        const response = await fetch('{{ url("/api/superadmin/logs") }}');
                         if (response.ok) {
                             this.systemLogs = await response.json();
                         }
@@ -649,7 +1288,7 @@
 
                 async addUser() {
                     try {
-                        const response = await fetch('/api/superadmin/users', {
+                        const response = await fetch('{{ url("/api/superadmin/users") }}', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -660,6 +1299,7 @@
                         
                         if (response.ok) {
                             await this.fetchUsers();
+                            await this.fetchRolesUsers();
                             this.showAddUserModal = false;
                             this.newUser = { name: '', email: '', password: '', role: 'Farmer' };
                             alert('User added successfully!');
@@ -681,7 +1321,7 @@
                     const newRole = prompt('Enter new role (Farmer, Admin, DA Admin):', user.role);
                     if (newRole && ['Farmer', 'Admin', 'DA Admin'].includes(newRole)) {
                         try {
-                            const response = await fetch(`/api/superadmin/users/${user.id}/role`, {
+                            const response = await fetch(`{{ url('/api/superadmin/users') }}/${user.id}/role`, {
                                 method: 'PATCH',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -692,6 +1332,7 @@
                             
                             if (response.ok) {
                                 await this.fetchUsers();
+                                await this.fetchRolesUsers();
                                 alert('Role updated successfully!');
                             }
                         } catch (error) {

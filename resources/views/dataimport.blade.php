@@ -13,61 +13,103 @@
         .sidebar-item.active { background-color: rgba(255, 255, 255, 0.15); border-left: 4px solid #fff; }
     </style>
 </head>
-<body class="bg-gray-50 flex" x-data="dataImportApp()">
-    <!-- Sidebar - Green Theme for DA Officer -->
-    <aside class="sidebar w-64 min-h-screen text-white flex-shrink-0">
-        <div class="p-6">
-            <div class="flex items-center space-x-2 mb-8">
-                <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                    <span class="text-xl">🌾</span>
+<body class="bg-gray-50">
+    <div class="flex h-screen overflow-hidden" x-data="dataImportApp()">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gradient-to-b from-green-700 to-green-900 text-white flex-shrink-0 overflow-y-auto">
+            <div class="p-6 border-b border-green-600">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+                        <span class="text-xl">🌾</span>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold">SmartHarvest</h1>
+                        <p class="text-xs text-green-200">DA Officer</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="text-xl font-bold">SmartHarvest</h1>
-                    <p class="text-xs text-green-200">DA Officer</p>
+            </div>
+
+            <nav class="p-4 space-y-2">
+                <div class="mb-4">
+                    <p class="text-xs uppercase text-green-300 mb-2 px-4">Overview</p>
+                    <a href="{{ route('admin.dashboard') }}" class="flex items-center space-x-3 px-4 py-3 rounded hover:bg-green-800 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="{{ route('admin.dashboard') }}#market-prices" class="flex items-center space-x-3 px-4 py-3 rounded hover:bg-green-800 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Market Prices</span>
+                    </a>
+                    <a href="{{ route('admin.dashboard') }}#announcements" class="flex items-center space-x-3 px-4 py-3 rounded hover:bg-green-800 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+                        </svg>
+                        <span>Announcements</span>
+                    </a>
+                    <a href="{{ route('admin.dashboard') }}#inbox" class="flex items-center space-x-3 px-4 py-3 rounded hover:bg-green-800 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        <span>Inbox</span>
+                    </a>
                 </div>
-            </div>
 
-            <!-- OVERVIEW Section -->
-            <div class="mb-6">
-                <p class="text-xs uppercase text-green-300 mb-2">OVERVIEW</p>
-                <a href="{{ route('admin.dashboard') }}" class="sidebar-item flex items-center space-x-3 px-4 py-2 rounded transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                    <span>Dashboard</span>
-                </a>
-            </div>
+                <div class="mb-4">
+                    <p class="text-xs uppercase text-green-300 mb-2 px-4">User Management</p>
+                    <a href="{{ route('admin.users') }}" class="flex items-center space-x-3 px-4 py-3 rounded hover:bg-green-800 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        <span>Users</span>
+                    </a>
+                </div>
 
-            <!-- DATA MANAGEMENT Section -->
-            <div class="mb-6">
-                <p class="text-xs uppercase text-green-300 mb-2">DATA MANAGEMENT</p>
-                <a href="{{ route('admin.datasets') }}" class="sidebar-item flex items-center space-x-3 px-4 py-2 rounded transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
-                    <span>Datasets</span>
-                </a>
-                <a href="{{ route('admin.dataimport') }}" class="sidebar-item active flex items-center space-x-3 px-4 py-2 rounded transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                    <span>Data Import</span>
-                </a>
-            </div>
+                <div class="mb-4">
+                    <p class="text-xs uppercase text-green-300 mb-2 px-4">Data Management</p>
+                    <a href="{{ route('admin.datasets') }}" class="flex items-center space-x-3 px-4 py-3 rounded hover:bg-green-800 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/>
+                        </svg>
+                        <span>Datasets</span>
+                    </a>
+                    <a href="{{ route('admin.dataimport') }}" class="flex items-center space-x-3 px-4 py-3 rounded bg-green-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                        </svg>
+                        <span>Data Import</span>
+                    </a>
+                </div>
 
-            <!-- SYSTEM Section -->
-            <div class="mb-6">
-                <p class="text-xs uppercase text-green-300 mb-2">SYSTEM</p>
-                <a href="{{ route('admin.monitoring') }}" class="sidebar-item flex items-center space-x-3 px-4 py-2 rounded transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                    <span>Monitoring</span>
-                </a>
-                <form method="POST" action="{{ route('logout') }}" class="sidebar-item" onsubmit="sessionStorage.setItem('isLoggedOut','true');">
-                    @csrf
-                    <button type="submit" class="flex items-center space-x-3 px-4 py-2 rounded w-full text-left hover:bg-white/10 transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                        <span>Logout</span>
-                    </button>
-                </form>
-            </div>
-        </div>
-    </aside>
+                <div class="mb-4">
+                    <p class="text-xs uppercase text-green-300 mb-2 px-4">Monitoring</p>
+                    <a href="{{ route('admin.monitoring') }}" class="flex items-center space-x-3 px-4 py-3 rounded hover:bg-green-800 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        <span>Provincial Monitoring</span>
+                    </a>
+                </div>
 
-    <!-- Main Content -->
+                <div class="mb-4">
+                    <p class="text-xs uppercase text-green-300 mb-2 px-4">System</p>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="w-full flex items-center space-x-3 px-4 py-3 rounded hover:bg-red-600 transition-colors text-left">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                            </svg>
+                            <span>Logout</span>
+                        </button>
+                    </form>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
     <div class="flex-1 flex flex-col">
         <!-- Top Header -->
         <header class="bg-white border-b px-8 py-4">
@@ -111,9 +153,45 @@
                 <h2 class="text-xl font-semibold text-gray-800 mb-6">Upload Dataset</h2>
                 
                 <form @submit.prevent="uploadFile" enctype="multipart/form-data">
+                    <!-- Dataset Type Selection -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Dataset Type *</label>
+                        <select x-model="selectedDatasetType" @change="updateDatasetInfo" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                            <option value="">Select a dataset type...</option>
+                            <template x-for="dataset in availableDatasets" :key="dataset.id">
+                                <option :value="dataset.id" x-text="dataset.name"></option>
+                            </template>
+                        </select>
+                        <template x-if="selectedDataset">
+                            <div class="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                <p class="text-sm text-blue-800" x-text="selectedDataset.description"></p>
+                                <div class="mt-2">
+                                    <p class="text-xs font-semibold text-blue-900 mb-1">Required Fields:</p>
+                                    <div class="flex flex-wrap gap-1">
+                                        <template x-for="field in selectedDataset.required_fields" :key="field">
+                                            <span class="text-xs px-2 py-1 bg-white rounded border border-blue-300 text-blue-700" x-text="field"></span>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Download Template Button -->
+                    <div class="mb-6" x-show="selectedDatasetType">
+                        <button type="button" @click="downloadTemplate" 
+                                class="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span>Download CSV Template</span>
+                        </button>
+                    </div>
+
                     <!-- File Upload Area -->
                     <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Select File</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select File *</label>
                         <div @drop.prevent="handleDrop" @dragover.prevent @dragenter.prevent 
                              class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition cursor-pointer"
                              :class="{'border-blue-500 bg-blue-50': isDragging}"
@@ -241,16 +319,56 @@
                 successMessage: '',
                 errorMessage: '',
                 recentUploads: [],
+                availableDatasets: [],
+                selectedDatasetType: '',
+                selectedDataset: null,
 
                 init() {
                     this.loadRecentUploads();
+                    this.loadAvailableDatasets();
+                },
+
+                async loadAvailableDatasets() {
+                    try {
+                        const response = await fetch("{{ route('admin.api.import.datasets') }}");
+                        const data = await response.json();
+                        if (data.success) {
+                            this.availableDatasets = data.datasets || [];
+                        }
+                    } catch (error) {
+                        console.error('Failed to load datasets:', error);
+                    }
+                },
+
+                updateDatasetInfo() {
+                    this.selectedDataset = this.availableDatasets.find(d => d.id === this.selectedDatasetType);
+                    if (this.selectedDataset) {
+                        this.datasetName = this.selectedDataset.name;
+                        this.description = this.selectedDataset.description;
+                    }
+                },
+
+                async downloadTemplate() {
+                    if (!this.selectedDatasetType) {
+                        this.showError('Please select a dataset type first');
+                        return;
+                    }
+
+                    try {
+                        const url = `{{ url('/admin/api/import/template') }}/${this.selectedDatasetType}`;
+                        window.location.href = url;
+                        this.showSuccess('Template download started');
+                    } catch (error) {
+                        console.error('Template download error:', error);
+                        this.showError('Failed to download template');
+                    }
                 },
 
                 handleFileSelect(event) {
                     const file = event.target.files[0];
                     if (file) {
                         this.selectedFile = file;
-                        if (!this.datasetName) {
+                        if (!this.datasetName && !this.selectedDatasetType) {
                             this.datasetName = file.name.replace(/\.[^/.]+$/, '');
                         }
                     }
@@ -261,7 +379,7 @@
                     const file = event.dataTransfer.files[0];
                     if (file && (file.name.endsWith('.csv') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
                         this.selectedFile = file;
-                        if (!this.datasetName) {
+                        if (!this.datasetName && !this.selectedDatasetType) {
                             this.datasetName = file.name.replace(/\.[^/.]+$/, '');
                         }
                     } else {
@@ -277,62 +395,46 @@
                 },
 
                 async uploadFile() {
-                    if (!this.selectedFile || !this.datasetName) {
-                        this.showError('Please fill in all required fields (file and dataset name)');
+                    if (!this.selectedFile || !this.selectedDatasetType) {
+                        this.showError('Please select a dataset type and file');
                         return;
                     }
 
                     this.uploading = true;
                     this.clearMessages();
 
-                    // Get CSRF token from meta tag
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]');
-                    if (!csrfToken) {
-                        this.showError('CSRF token not found. Please refresh the page.');
-                        this.uploading = false;
-                        return;
-                    }
-
                     const formData = new FormData();
                     formData.append('file', this.selectedFile);
-                    formData.append('dataset_name', this.datasetName);
-                    formData.append('description', this.description);
+                    formData.append('dataset_id', this.selectedDatasetType);
 
                     try {
-                        // Use Laravel route helper for correct URL
                         const uploadUrl = "{{ route('admin.api.import') }}";
-                        console.log('Uploading to:', uploadUrl);
                         
                         const response = await fetch(uploadUrl, {
                             method: 'POST',
                             body: formData,
-                            // DO NOT set Content-Type header - let browser set it with boundary for multipart/form-data
                             headers: {
-                                'Accept': 'application/json'
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                             },
                             credentials: 'same-origin'
                         });
 
-                        // Read response stream ONCE as text
                         const text = await response.text();
                         
-                        // Try to parse as JSON
                         let data;
                         try {
                             data = JSON.parse(text);
                         } catch (parseError) {
-                            // Server returned non-JSON (likely HTML error page)
                             console.error('Non-JSON response from server:', text.substring(0, 500));
                             throw new Error('Server returned HTML instead of JSON. Check console for full response.');
                         }
 
-                        // Check if request was successful
                         if (response.ok && data.success) {
-                            this.showSuccess(data.message || 'Dataset uploaded successfully! Import is processing in the background.');
+                            this.showSuccess(data.message || 'Dataset uploaded successfully!');
                             this.resetForm();
                             this.loadRecentUploads();
                         } else {
-                            // Handle validation errors or general errors
                             if (data.errors) {
                                 const errorMessages = Object.values(data.errors).flat().join(', ');
                                 this.showError(errorMessages);
@@ -363,6 +465,8 @@
                     this.selectedFile = null;
                     this.datasetName = '';
                     this.description = '';
+                    this.selectedDatasetType = '';
+                    this.selectedDataset = null;
                     this.$refs.fileInput.value = '';
                     this.clearMessages();
                 },

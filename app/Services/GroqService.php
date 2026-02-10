@@ -435,13 +435,13 @@ Each bullet ONE sentence, max 15 words, using EXACT numbers from data.";
     {
         $dataStr = json_encode($data, JSON_PRETTY_PRINT);
         
-        return "Analyze this 5-day temperature forecast for {$municipality}:
+        return "Analyze this 7-day temperature forecast for {$municipality}:
 {$dataStr}
 
 Generate EXACTLY 3 bullet points about temperature patterns for farmers:
 
 • First bullet: Identify the day with highest temperature and lowest temperature with exact values.
-• Second bullet: Calculate and state the average temperature range across the 5 days.
+• Second bullet: Calculate and state the average temperature range across the 7 days.
 • Third bullet: Provide one specific farming recommendation based on the temperature pattern.
 
 Each bullet ONE sentence, max 20 words, using EXACT numbers from data. Focus on practical farming implications.";

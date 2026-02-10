@@ -295,7 +295,7 @@
                     if (texts.length === 0) return;
                     
                     try {
-                        const response = await fetch('/api/translate/batch', {
+                        const response = await fetch('{{ url("/api/translate/batch") }}', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',

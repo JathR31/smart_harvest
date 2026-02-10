@@ -585,25 +585,9 @@ Route::get('/admin/api/dashboard', function () {
     ]);
 })->name('admin.api.dashboard');
 
-// Admin API - Yield & Planting Schedule Analysis
-Route::get('/admin/api/yield-analysis', [App\Http\Controllers\AdminController::class, 'getYieldPlantingAnalysis'])
-    ->name('admin.api.yield-analysis');
-
-// Admin API - Crop Performance by Variety
-Route::get('/admin/api/crop-performance', [App\Http\Controllers\AdminController::class, 'getCropPerformance'])
-    ->name('admin.api.crop-performance');
-
 // Admin API - System Overview
 Route::get('/admin/api/system-overview', [App\Http\Controllers\AdminController::class, 'getSystemOverview'])
     ->name('admin.api.system-overview');
-
-// Admin API - Market Prices (DA-CAR Dashboard)
-Route::get('/admin/api/market-prices', [App\Http\Controllers\AdminController::class, 'getMarketPrices'])
-    ->name('admin.api.market-prices');
-
-// Admin API - Data Validation Alerts (DA-CAR Dashboard)
-Route::get('/admin/api/validation-alerts', [App\Http\Controllers\AdminController::class, 'getValidationAlerts'])
-    ->name('admin.api.validation-alerts');
 
 // Admin API - Climate Hazard Alerts (Provincial Monitoring)
 Route::get('/admin/api/climate-alerts', [App\Http\Controllers\AdminController::class, 'getClimateAlerts'])
@@ -626,15 +610,62 @@ Route::get('/admin/users', function () {
     return view('users');
 })->name('admin.users');
 
-// Admin Datasets Page - Redirect to main DA Officer dashboard
+// Admin Market Prices Page
+Route::get('/admin/market-prices', function () {
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
+        return redirect()->route('login');
+    }
+    return redirect()->route('admin.dashboard');
+})->name('admin.market-prices');
+
+// Admin Announcements Page
+Route::get('/admin/announcements', function () {
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
+        return redirect()->route('login');
+    }
+    return redirect()->route('admin.dashboard');
+})->name('admin.announcements');
+
+// Admin Inbox Page
+Route::get('/admin/inbox', function () {
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
+        return redirect()->route('login');
+    }
+    return redirect()->route('admin.dashboard');
+})->name('admin.inbox');
+
+// Admin Datasets Page
 Route::get('/admin/datasets', function () {
     $user = Auth::user();
     if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
         return redirect()->route('login');
     }
-    // Redirect to main dashboard - datasets is handled via tabs in da_officer_dashboard
-    return redirect()->route('admin.dashboard');
+    return view('datasets');
 })->name('admin.datasets');
+
+// Admin API - Get Datasets
+Route::get('/admin/api/datasets', [App\Http\Controllers\Api\DatasetsApiController::class, 'getDatasets'])->name('admin.api.datasets');
+
+// Admin API - Delete Dataset
+Route::delete('/admin/api/datasets/{id}', [App\Http\Controllers\Api\DatasetsApiController::class, 'deleteDataset'])->name('admin.api.datasets.delete');
+
+// Admin API - Data Import: Get Available Datasets
+Route::get('/admin/api/import/datasets', [App\Http\Controllers\Api\DataImportApiController::class, 'getAvailableDatasets'])->name('admin.api.import.datasets');
+
+// Admin API - Data Import: Download Template
+Route::get('/admin/api/import/template/{datasetId}', [App\Http\Controllers\Api\DataImportApiController::class, 'downloadTemplate'])->name('admin.api.import.template');
+
+// Admin API - Data Import: Validate File
+Route::post('/admin/api/import/validate', [App\Http\Controllers\Api\DataImportApiController::class, 'validateFile'])->name('admin.api.import.validate');
+
+// Admin API - Data Import: Import Data
+Route::post('/admin/api/import', [App\Http\Controllers\Api\DataImportApiController::class, 'importData'])->name('admin.api.import');
+
+// Admin API - Data Import: Get Recent Uploads
+Route::get('/admin/api/recent-uploads', [App\Http\Controllers\Api\DataImportApiController::class, 'getRecentUploads'])->name('admin.api.recent-uploads');
 
 // Admin System Status Page
 Route::get('/admin/system-status', function () {
@@ -645,94 +676,35 @@ Route::get('/admin/system-status', function () {
     return view('system_status');
 })->name('admin.system-status');
 
-// Admin Data Import Page - Redirect to main DA Officer dashboard
+// Admin Data Import Page - Data Import Dashboard
 Route::get('/admin/dataimport', function () {
     $user = Auth::user();
     if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
         return redirect()->route('login');
     }
-    // Redirect to main dashboard - dataimport is handled via tabs in da_officer_dashboard
-    return redirect()->route('admin.dashboard');
+    return view('dataimport');
 })->name('admin.dataimport');
 
-// Admin Monitoring Page - Redirect to main DA Officer dashboard
+// Admin Users Page - User Management
+Route::get('/admin/users', function () {
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
+        return redirect()->route('login');
+    }
+    return view('admin_users');
+})->name('admin.users');
+
+// Admin Monitoring Page - Provincial Monitoring Dashboard
 Route::get('/admin/monitoring', function () {
     $user = Auth::user();
     if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
         return redirect()->route('login');
     }
-    // Redirect to main dashboard - monitoring is handled via tabs in da_officer_dashboard
-    return redirect()->route('admin.dashboard');
+    return view('monitoring');
 })->name('admin.monitoring');
 
 // Admin API - Monitoring Climate Alerts
-Route::get('/admin/api/monitoring/alerts', function () {
-    $user = Auth::user();
-    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
-        return response()->json(['error' => 'Unauthorized'], 401);
-    }
-
-    $climateAlerts = [];
-    $currentMonth = now()->month;
-    $currentYear = now()->year;
-    
-    // Get most recent climate data for current month
-    $recentClimate = \App\Models\ClimatePattern::where('year', $currentYear)
-        ->where('month', $currentMonth)
-        ->orderBy('rainfall', 'desc')
-        ->get();
-
-    // Check for heavy rainfall (>250mm = high risk, 150-250mm = medium risk)
-    $heavyRainAreas = $recentClimate->filter(function($climate) {
-        return $climate->rainfall > 150;
-    });
-
-    foreach ($heavyRainAreas as $climate) {
-        $severity = $climate->rainfall > 300 ? 'high' : ($climate->rainfall > 200 ? 'medium' : 'low');
-        $riskLabel = $climate->rainfall > 300 ? 'High Risk' : ($climate->rainfall > 200 ? 'Medium Risk' : 'Low Risk');
-        
-        $climateAlerts[] = [
-            'id' => 'rain_' . $climate->id,
-            'type' => 'heavy_rainfall',
-            'title' => $climate->rainfall > 300 ? 'Severe Rainfall Warning' : 'Heavy Rainfall Advisory',
-            'time' => $climate->updated_at->format('M d, g:i A'),
-            'description' => "Recorded {$climate->rainfall}mm rainfall in {$climate->municipality}. " . 
-                           ($climate->rainfall > 300 ? 'Flood risk and landslides possible.' : 'Monitor water levels and drainage systems.'),
-            'locations' => [$climate->municipality],
-            'severity' => $severity,
-            'riskLabel' => $riskLabel
-        ];
-    }
-
-    // Check for extreme temperature variance (may indicate severe weather)
-    $tempVarianceAreas = $recentClimate->filter(function($climate) {
-        return ($climate->max_temperature - $climate->min_temperature) > 12;
-    });
-
-    if ($tempVarianceAreas->count() > 3) {
-        $locations = $tempVarianceAreas->pluck('municipality')->take(3)->toArray();
-        array_unshift($climateAlerts, [
-            'id' => 'temp_variance_alert',
-            'type' => 'tropical_depression',
-            'title' => 'Unstable Weather Pattern Detected',
-            'time' => now()->format('M d, g:i A'),
-            'description' => "Large temperature fluctuations detected across multiple areas. Possible weather system approaching. Monitor for updates.",
-            'locations' => $locations,
-            'severity' => 'high',
-            'riskLabel' => 'High Risk'
-        ]);
-    }
-
-    // Sort by severity (high first)
-    usort($climateAlerts, function($a, $b) {
-        $severityOrder = ['high' => 3, 'medium' => 2, 'low' => 1];
-        return ($severityOrder[$b['severity']] ?? 0) - ($severityOrder[$a['severity']] ?? 0);
-    });
-
-    return response()->json([
-        'alerts' => array_slice($climateAlerts, 0, 5)
-    ]);
-})->name('admin.api.monitoring.alerts');
+Route::get('/admin/api/monitoring/alerts', [App\Http\Controllers\Api\MonitoringApiController::class, 'getAlerts'])->name('admin.api.monitoring.alerts');
 
 // Admin API - 7-Day Rainfall Forecast using OpenWeather API
 Route::get('/admin/api/monitoring/rainfall', function (Request $request) {
@@ -865,10 +837,16 @@ Route::get('/admin/api/monitoring/rainfall', function (Request $request) {
             'source' => 'Database (API unavailable)'
         ]);
     }
-})->name('admin.api.monitoring.rainfall');
+})->name('admin.api.monitoring.rainfall.legacy');
+
+// Admin API - 7-Day Rainfall Forecast (ML-Powered)
+Route::get('/admin/api/monitoring/rainfall', [App\Http\Controllers\Api\MonitoringApiController::class, 'getRainfallForecast'])->name('admin.api.monitoring.rainfall');
 
 // Admin API - Municipality Climate Status
-Route::get('/admin/api/monitoring/municipalities', function () {
+Route::get('/admin/api/monitoring/municipalities', [App\Http\Controllers\Api\MonitoringApiController::class, 'getMunicipalityStatus'])->name('admin.api.monitoring.municipalities');
+
+// Legacy Municipality Status Route
+Route::get('/admin/api/monitoring/municipalities/legacy', function () {
     $user = Auth::user();
     if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
         return response()->json(['error' => 'Unauthorized'], 401);
@@ -943,7 +921,7 @@ Route::get('/admin/api/monitoring/municipalities', function () {
     }
 
     return response()->json(['municipalities' => $statuses]);
-})->name('admin.api.monitoring.municipalities');
+})->name('admin.api.monitoring.municipalities.legacy');
 
 // Admin Roles & Permissions Page
 Route::get('/admin/roles-permissions', function () {
@@ -1523,86 +1501,110 @@ Route::get('/api/dashboard/stats', function (\Illuminate\Http\Request $request) 
         
         // Normalize municipality name for both ML API and database queries
         $mlMunicipality = strtoupper(str_replace(' ', '', $municipality));
-        $dbMunicipality = strtoupper(str_replace(' ', '', $municipality)); // Remove spaces for database
-        
-        // Get top crops predictions from ML API
-        $topCropsResult = $mlService->getTopCrops(['MUNICIPALITY' => $mlMunicipality]);
+        $dbMunicipality = strtoupper(str_replace(' ', '', $municipality));
         
         $expected_harvest = 0;
         $percentage_change = 0;
         $ml_confidence = 0;
         $mlConnected = false;
         
-        // Try to get ML predictions first
-        if ($topCropsResult['status'] === 'success' && isset($topCropsResult['data']['predicted_top5'])) {
-            $topCrops = $topCropsResult['data']['predicted_top5']['crops'] ?? [];
-            $mlConnected = true;
-            
-            // Sum up predicted production for current year (2025)
-            foreach ($topCrops as $crop) {
-                foreach ($crop['forecasts'] ?? [] as $forecast) {
-                    if ($forecast['year'] == 2025) {
-                        $expected_harvest += floatval($forecast['production']);
+        // Use working ML API endpoints: /api/predict for key crops
+        $keyCrops = ['CABBAGE', 'CARROTS', 'WHITE POTATO', 'LETTUCE', 'BROCCOLI'];
+        $currentYear = intval(date('Y'));
+        $previousYear = $currentYear - 1;
+        $currentMonth = strtoupper(date('M')); // e.g. "JUN"
+        
+        $totalCurrentPrediction = 0;
+        $totalPreviousPrediction = 0;
+        $confidenceScores = [];
+        $predictionsSucceeded = 0;
+        
+        foreach ($keyCrops as $crop) {
+            try {
+                // Predict current year production
+                $currentResult = $mlService->predict([
+                    'MUNICIPALITY' => $mlMunicipality,
+                    'CROP' => $crop,
+                    'FARM_TYPE' => 'IRRIGATED',
+                    'YEAR' => $currentYear,
+                    'Area_planted_ha' => 2.5,
+                    'MONTH' => $currentMonth
+                ]);
+                
+                if ($currentResult['status'] === 'success' && isset($currentResult['data']['prediction'])) {
+                    $prediction = $currentResult['data']['prediction'];
+                    $production = floatval($prediction['production_mt'] ?? 0);
+                    $confidence = floatval($prediction['confidence_score'] ?? 0);
+                    
+                    if ($production > 0) {
+                        $totalCurrentPrediction += $production;
+                        $confidenceScores[] = $confidence;
+                        $predictionsSucceeded++;
+                        $mlConnected = true;
+                        
+                        // Predict previous year for comparison
+                        $prevResult = $mlService->predict([
+                            'MUNICIPALITY' => $mlMunicipality,
+                            'CROP' => $crop,
+                            'FARM_TYPE' => 'IRRIGATED',
+                            'YEAR' => $previousYear,
+                            'Area_planted_ha' => 2.5,
+                            'MONTH' => $currentMonth
+                        ]);
+                        
+                        if ($prevResult['status'] === 'success' && isset($prevResult['data']['prediction'])) {
+                            $totalPreviousPrediction += floatval($prevResult['data']['prediction']['production_mt'] ?? 0);
+                        }
                     }
                 }
-            }
-            
-            // Calculate percentage change based on historical data
-            if (isset($topCropsResult['data']['historical_top5']['crops']) && $expected_harvest > 0) {
-                $historical_total = 0;
-                foreach ($topCropsResult['data']['historical_top5']['crops'] as $crop) {
-                    // Historical production is already in MT, sum it up
-                    $historical_total += floatval($crop['average_production'] ?? 0);
-                }
-                
-                if ($historical_total > 0) {
-                    $percentage_change = (($expected_harvest - $historical_total) / $historical_total) * 100;
-                }
-            }
-            
-            // Set ML confidence
-            if ($expected_harvest > 0) {
-                $ml_confidence = 85; // Random Forest model confidence
+            } catch (\Exception $cropErr) {
+                \Log::warning("Dashboard stats: predict failed for {$crop}: " . $cropErr->getMessage());
             }
         }
         
-        // Fallback: If ML API didn't return data or returned 0, calculate from database
+        if ($mlConnected && $totalCurrentPrediction > 0) {
+            $expected_harvest = $totalCurrentPrediction;
+            $ml_confidence = count($confidenceScores) > 0 
+                ? round(array_sum($confidenceScores) / count($confidenceScores) * 100) 
+                : 85;
+            
+            if ($totalPreviousPrediction > 0) {
+                $percentage_change = (($totalCurrentPrediction - $totalPreviousPrediction) / $totalPreviousPrediction) * 100;
+            }
+        }
+        
+        // Fallback: If ML API didn't return data, calculate from database
         if ($expected_harvest == 0) {
             $mlConnected = false;
             
-            // Get current year data (2025)
             $currentYearData = \App\Models\CropData::whereRaw('UPPER(municipality) = ?', [$dbMunicipality])
-                ->whereYear('planting_date', '>=', 2025)
+                ->whereYear('planting_date', '>=', $currentYear)
                 ->sum('yield_amount');
             
-            // Get previous year data (2024)
             $previousYearData = \App\Models\CropData::whereRaw('UPPER(municipality) = ?', [$dbMunicipality])
-                ->whereYear('planting_date', '=', 2024)
+                ->whereYear('planting_date', '=', $previousYear)
                 ->sum('yield_amount');
             
             $expected_harvest = floatval($currentYearData);
             
-            // If no 2025 data yet, use 2024 data as baseline
             if ($expected_harvest == 0 && $previousYearData > 0) {
                 $expected_harvest = floatval($previousYearData);
             }
             
-            // If still no data, use historical average
             if ($expected_harvest == 0) {
                 $avgYield = \App\Models\CropData::whereRaw('UPPER(municipality) = ?', [$dbMunicipality])
                     ->avg('yield_amount') ?? 0;
-                $expected_harvest = floatval($avgYield) * 10; // Estimate for 10 major crops
+                $expected_harvest = floatval($avgYield) * 10;
             }
             
-            // Calculate percentage change
             if ($previousYearData > 0 && $expected_harvest > 0) {
                 $percentage_change = (($expected_harvest - $previousYearData) / $previousYearData) * 100;
             }
             
-            $ml_confidence = 0; // No ML confidence when using database
+            $ml_confidence = 0;
         }
         
-        // Get recent harvests from database with case-insensitive match
+        // Get recent harvests from database
         $recentHarvests = \App\Models\CropData::whereRaw('UPPER(municipality) = ?', [$dbMunicipality])
             ->orderBy('planting_date', 'desc')
             ->limit(5)
@@ -1718,52 +1720,86 @@ Route::get('/api/planting/optimal', function (\Illuminate\Http\Request $request)
         
         $mlService = new \App\Services\MLApiService();
         
-        // Get top crops from ML API
-        $topCropsResult = $mlService->getTopCrops(['MUNICIPALITY' => $mlMunicipality]);
+        // Use working ML API endpoints to find the best crop
+        $allCrops = ['CABBAGE', 'CARROTS', 'WHITE POTATO', 'LETTUCE', 'BROCCOLI', 'CAULIFLOWER', 'CHINESE CABBAGE', 'SNAP BEANS', 'GARDEN PEAS', 'SWEET PEPPER'];
+        $currentYear = intval(date('Y'));
+        $currentMonth = strtoupper(date('M'));
         
-        $best_crop = 'Cabbage';
-        $best_variety = 'RAINFED';
+        $best_crop = 'CABBAGE';
+        $best_variety = 'IRRIGATED';
         $expected_yield = 22.5;
         $historical_yield = 20.1;
         $confidence_score = 85;
+        $mlConnected = false;
         
-        if ($topCropsResult['status'] === 'success' && isset($topCropsResult['data']['predicted_top5'])) {
-            $topCrops = $topCropsResult['data']['predicted_top5']['crops'] ?? [];
-            
-            if (!empty($topCrops)) {
-                // Get the top ranked crop from ML API
-                $topCrop = $topCrops[0];
-                $best_crop = $topCrop['crop'] ?? 'Cabbage';
+        // Predict production for each crop and find the best one
+        $cropPredictions = [];
+        foreach ($allCrops as $crop) {
+            try {
+                $result = $mlService->predict([
+                    'MUNICIPALITY' => $mlMunicipality,
+                    'CROP' => $crop,
+                    'FARM_TYPE' => 'IRRIGATED',
+                    'YEAR' => $currentYear,
+                    'Area_planted_ha' => 2.5,
+                    'MONTH' => $currentMonth
+                ]);
                 
-                // Get actual yield per hectare from database for this crop
-                // ML API provides total production, not yield per hectare
-                $dbYield = \App\Models\CropData::where('municipality', $dbMunicipality)
-                    ->where('crop_type', $best_crop)
-                    ->where('yield_amount', '>', 0)
-                    ->where('area_planted', '>', 0)
-                    ->select(\DB::raw('AVG(yield_amount / area_planted) as avg_yield'))
-                    ->first();
-                
-                $yield_per_ha = $dbYield ? floatval($dbYield->avg_yield) : 15.0;
-                $historical_yield = $yield_per_ha;
-                
-                // Apply 3% growth projection for 2025
-                $expected_yield = $yield_per_ha * 1.03;
-                
-                // Get most common variety
-                $varietyData = \App\Models\CropData::where('municipality', $dbMunicipality)
-                    ->where('crop_type', $best_crop)
-                    ->whereNotNull('variety')
-                    ->select('variety', \DB::raw('COUNT(*) as count'))
-                    ->groupBy('variety')
-                    ->orderBy('count', 'desc')
-                    ->first();
-                
-                $best_variety = $varietyData ? $varietyData->variety : 'IRRIGATED';
-                
-                // Calculate confidence based on ranking
-                $confidence_score = 85; // Top crop gets high confidence
+                if ($result['status'] === 'success' && isset($result['data']['prediction'])) {
+                    $prediction = $result['data']['prediction'];
+                    $cropPredictions[] = [
+                        'crop' => $crop,
+                        'production' => floatval($prediction['production_mt'] ?? 0),
+                        'confidence' => floatval($prediction['confidence_score'] ?? 0)
+                    ];
+                    $mlConnected = true;
+                }
+            } catch (\Exception $cropErr) {
+                // Skip failed predictions
             }
+        }
+        
+        if (!empty($cropPredictions)) {
+            // Sort by production descending to find the best crop
+            usort($cropPredictions, function($a, $b) {
+                return $b['production'] <=> $a['production'];
+            });
+            
+            $topPrediction = $cropPredictions[0];
+            $best_crop = $topPrediction['crop'];
+            $confidence_score = round($topPrediction['confidence'] * 100);
+            
+            // Get yield per hectare: production / area
+            $expected_yield = round($topPrediction['production'] / 2.5, 1);
+            
+            // Get previous year prediction for historical comparison
+            try {
+                $prevResult = $mlService->predict([
+                    'MUNICIPALITY' => $mlMunicipality,
+                    'CROP' => $best_crop,
+                    'FARM_TYPE' => 'IRRIGATED',
+                    'YEAR' => $currentYear - 1,
+                    'Area_planted_ha' => 2.5,
+                    'MONTH' => $currentMonth
+                ]);
+                
+                if ($prevResult['status'] === 'success' && isset($prevResult['data']['prediction'])) {
+                    $historical_yield = round(floatval($prevResult['data']['prediction']['production_mt'] ?? 0) / 2.5, 1);
+                }
+            } catch (\Exception $e) {
+                $historical_yield = $expected_yield * 0.95;
+            }
+            
+            // Get most common variety from database
+            $varietyData = \App\Models\CropData::whereRaw('UPPER(municipality) = ?', [$dbMunicipality])
+                ->where('crop_type', $best_crop)
+                ->whereNotNull('variety')
+                ->select('variety', \DB::raw('COUNT(*) as count'))
+                ->groupBy('variety')
+                ->orderBy('count', 'desc')
+                ->first();
+            
+            $best_variety = $varietyData ? $varietyData->variety : 'IRRIGATED';
         }
         
         // Determine optimal planting window based on Benguet climate and crop-specific schedules
@@ -2122,16 +2158,46 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
         
         $mlService = new \App\Services\MLApiService();
         
-        // Get top crops from ML API
-        $topCropsResult = $mlService->getTopCrops(['MUNICIPALITY' => $mlMunicipality]);
+        // Use working ML API endpoints: /api/predict for each crop
+        $allCrops = ['CABBAGE', 'CARROTS', 'WHITE POTATO', 'LETTUCE', 'BROCCOLI', 'CAULIFLOWER', 'CHINESE CABBAGE', 'SNAP BEANS', 'GARDEN PEAS', 'SWEET PEPPER'];
+        $currentYear = intval(date('Y'));
+        $currentMonth = strtoupper(date('M'));
         
         $schedules = [];
+        $cropPredictions = [];
+        $mlConnected = false;
         
-        if ($topCropsResult['status'] === 'success' && isset($topCropsResult['data']['predicted_top5'])) {
-            $topCrops = $topCropsResult['data']['predicted_top5']['crops'] ?? [];
-            $historical = $topCropsResult['data']['historical_top5']['crops'] ?? [];
-            
-            \Log::info('ML API returned data', ['crop_count' => count($topCrops)]);
+        // Get ML predictions for all crops
+        foreach ($allCrops as $crop) {
+            try {
+                $result = $mlService->predict([
+                    'MUNICIPALITY' => $mlMunicipality,
+                    'CROP' => $crop,
+                    'FARM_TYPE' => 'IRRIGATED',
+                    'YEAR' => $currentYear,
+                    'Area_planted_ha' => 2.5,
+                    'MONTH' => $currentMonth
+                ]);
+                
+                if ($result['status'] === 'success' && isset($result['data']['prediction'])) {
+                    $prediction = $result['data']['prediction'];
+                    $cropPredictions[] = [
+                        'crop' => $crop,
+                        'production' => floatval($prediction['production_mt'] ?? 0),
+                        'confidence' => floatval($prediction['confidence_score'] ?? 0)
+                    ];
+                    $mlConnected = true;
+                }
+            } catch (\Exception $cropErr) {
+                // Skip failed predictions
+            }
+        }
+        
+        if (!empty($cropPredictions)) {
+            // Sort by production descending - top producing crops first
+            usort($cropPredictions, function($a, $b) {
+                return $b['production'] <=> $a['production'];
+            });
             
             // Crop-specific planting schedules for Benguet highland vegetables
             $cropSchedules = [
@@ -2149,48 +2215,38 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
             
             $defaultSchedule = ['planting' => 'Oct-Dec', 'harvest' => 'Jan-Mar', 'duration' => '75-90 days'];
             
-            foreach ($topCrops as $index => $crop) {
-                if ($index >= 5) break;
+            // Take top 5 crops
+            $topCrops = array_slice($cropPredictions, 0, 5);
+            
+            foreach ($topCrops as $index => $cropData) {
+                $cropName = $cropData['crop'];
+                $production = $cropData['production'];
+                $confidence = $cropData['confidence'];
                 
-                $cropName = $crop['crop'] ?? '';
-                $predicted_production = 0;
-                $historical_production = 0;
+                // Calculate yield per hectare from ML prediction
+                $predicted_yield = $production / 2.5; // production per planted area
                 
-                // Get 2025 forecast (total production)
-                foreach ($crop['forecasts'] ?? [] as $forecast) {
-                    if ($forecast['year'] == 2025) {
-                        $predicted_production = floatval($forecast['production']);
-                        break;
+                // Get previous year prediction for historical comparison
+                $historical_yield = $predicted_yield * 0.97; // Default 3% growth assumption
+                try {
+                    $prevResult = $mlService->predict([
+                        'MUNICIPALITY' => $mlMunicipality,
+                        'CROP' => $cropName,
+                        'FARM_TYPE' => 'IRRIGATED',
+                        'YEAR' => $currentYear - 1,
+                        'Area_planted_ha' => 2.5,
+                        'MONTH' => $currentMonth
+                    ]);
+                    
+                    if ($prevResult['status'] === 'success' && isset($prevResult['data']['prediction'])) {
+                        $historical_yield = floatval($prevResult['data']['prediction']['production_mt'] ?? 0) / 2.5;
                     }
+                } catch (\Exception $e) {
+                    // Use default
                 }
-                
-                // Get historical average (total production)
-                foreach ($historical as $hCrop) {
-                    if (($hCrop['crop'] ?? '') === $cropName) {
-                        $historical_production = floatval($hCrop['average_production'] ?? 0);
-                        break;
-                    }
-                }
-                
-                // Get actual yield per hectare from database for this crop
-                // ML API provides total production, not yield per hectare
-                // Use database for accurate per-hectare yields, ML for crop ranking
-                $dbYield = \App\Models\CropData::where('municipality', $dbMunicipality)
-                    ->where('crop_type', $cropName)
-                    ->where('yield_amount', '>', 0)
-                    ->where('area_planted', '>', 0)
-                    ->select(\DB::raw('AVG(yield_amount / area_planted) as avg_yield'))
-                    ->first();
-                
-                $yield_per_ha = $dbYield ? floatval($dbYield->avg_yield) : 15.0;
-                
-                // Calculate a conservative 5-year growth projection (3-5% per year)
-                $years_ahead = 1; // 2025 is next year
-                $annual_growth = 0.03; // 3% conservative growth
-                $predicted_yield = $yield_per_ha * pow(1 + $annual_growth, $years_ahead);
                 
                 // Get most common variety from database
-                $variety = \App\Models\CropData::where('municipality', $dbMunicipality)
+                $variety = \App\Models\CropData::whereRaw('UPPER(municipality) = ?', [$dbMunicipality])
                     ->where('crop_type', $cropName)
                     ->whereNotNull('variety')
                     ->select('variety', \DB::raw('COUNT(*) as count'))
@@ -2200,9 +2256,9 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
                 
                 $schedule = $cropSchedules[$cropName] ?? $defaultSchedule;
                 
-                // Calculate confidence based on ML prediction and data availability
-                $base_confidence = 85;
-                $confidence_score = max(75, $base_confidence - ($index * 3));
+                // Calculate confidence score from ML
+                $confidence_score = round($confidence * 100);
+                $confidence_score = max(75, $confidence_score - ($index * 2));
                 
                 $schedules[] = [
                     'crop' => $cropName,
@@ -2211,7 +2267,7 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
                     'expected_harvest' => $schedule['harvest'],
                     'duration' => $schedule['duration'],
                     'yield_prediction' => round($predicted_yield, 1) . ' mt/ha',
-                    'historical_yield' => round($yield_per_ha, 1) . ' mt/ha',
+                    'historical_yield' => round($historical_yield, 1) . ' mt/ha',
                     'confidence' => $confidence_score >= 80 ? 'High' : ($confidence_score >= 65 ? 'Medium' : 'Low'),
                     'confidence_score' => $confidence_score,
                     'status' => $index < 2 ? 'Recommended' : 'Consider',
@@ -2224,7 +2280,6 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
         if (empty($schedules)) {
             \Log::info('No ML data, using database fallback for municipality: ' . $dbMunicipality);
             
-            // Crop-specific planting schedules for Benguet highland vegetables
             $cropSchedules = [
                 'CABBAGE' => ['planting' => 'Oct-Dec', 'harvest' => 'Jan-Mar', 'duration' => '65-90 days'],
                 'CHINESE CABBAGE' => ['planting' => 'Oct-Dec', 'harvest' => 'Dec-Feb', 'duration' => '60-75 days'],
@@ -2238,10 +2293,9 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
                 'SWEET PEPPER' => ['planting' => 'Nov-Jan', 'harvest' => 'Mar-Jun', 'duration' => '90-120 days'],
             ];
             
-            // Generic fallback for crops not in the list
             $defaultSchedule = ['planting' => 'Oct-Dec', 'harvest' => 'Jan-Mar', 'duration' => '75-90 days'];
             
-            $cropData = \App\Models\CropData::where('municipality', $dbMunicipality)
+            $cropData = \App\Models\CropData::whereRaw('UPPER(municipality) = ?', [$dbMunicipality])
                 ->where('yield_amount', '>', 0)
                 ->where('area_planted', '>', 0)
                 ->select('crop_type', 'variety', \DB::raw('AVG(yield_amount / area_planted) as avg_yield'), \DB::raw('COUNT(*) as record_count'))
@@ -2251,24 +2305,17 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
                 ->get();
             
             foreach ($cropData as $index => $data) {
-                // Get crop-specific schedule or use default
                 $schedule = $cropSchedules[$data->crop_type] ?? $defaultSchedule;
                 
-                // Calculate confidence based on data quantity and consistency
-                // More records = higher confidence, top ranked = higher confidence
                 $recordCount = $data->record_count;
                 $baseConfidence = 65;
                 
-                // Bonus for having many records (up to +20)
                 if ($recordCount >= 300) $baseConfidence += 20;
                 else if ($recordCount >= 200) $baseConfidence += 15;
                 else if ($recordCount >= 100) $baseConfidence += 10;
                 else if ($recordCount >= 50) $baseConfidence += 5;
                 
-                // Bonus for being top ranked (up to +10)
                 $baseConfidence += (5 - $index) * 2;
-                
-                // Cap at 95 for database predictions (ML can be higher)
                 $confidence_score = min(95, $baseConfidence);
                 
                 $schedules[] = [
@@ -2407,243 +2454,173 @@ Route::get('/api/ml/yield/analysis', function (\Illuminate\Http\Request $request
         $municipality = $request->query('municipality', 'La Trinidad');
         $year = intval($request->query('year', date('Y')));
         $mlService = new \App\Services\MLApiService();
-        
-        // Normalize municipality name for ML API
+
+        // Normalize municipality name for ML API (no spaces, uppercase)
         $mlMunicipality = strtoupper(str_replace(' ', '', $municipality));
-        
-        // Get top crops from ML API for this municipality
-        $topCropsResult = $mlService->getTopCrops(['MUNICIPALITY' => $mlMunicipality]);
-        
-        $response = [
-            'stats' => [
-                'avg_yield' => '0.0',
-                'best_crop' => null,
-                'total_production' => '0',
-                'total_area' => '0'
-            ],
-            'comparison' => [],
-            'crops' => [],
-            'monthly' => [],
-            'forecast' => [],
-            'ml_status' => 'no_data',
-            'ml_api_connected' => false
+
+        // All available crops in the ML model
+        $allCrops = ['CABBAGE', 'CARROTS', 'WHITE POTATO', 'LETTUCE', 'CAULIFLOWER',
+                     'BROCCOLI', 'SNAP BEANS', 'CHINESE CABBAGE', 'GARDEN PEAS', 'SWEET PEPPER'];
+
+        $emptyResponse = [
+            'stats' => ['avg_yield' => '0.0', 'best_crop' => null, 'total_production' => '0', 'total_area' => '0'],
+            'comparison' => [], 'crops' => [], 'monthly' => [], 'forecast' => [],
+            'ml_status' => 'no_data', 'ml_api_connected' => false
         ];
-        
-        if ($topCropsResult['status'] !== 'success') {
-            \Log::warning('ML Top Crops API failed: ' . json_encode($topCropsResult));
-            // Check if ML API is at least reachable
-            $healthCheck = $mlService->checkHealth();
-            $response['ml_api_connected'] = ($healthCheck['status'] === 'success');
-            $response['ml_status'] = ($healthCheck['status'] === 'success') ? 'api_connected_no_data' : 'api_offline';
-            return response()->json($response);
+
+        // 1) Health check
+        $healthCheck = $mlService->checkHealth();
+        if ($healthCheck['status'] !== 'success') {
+            $emptyResponse['ml_status'] = 'api_offline';
+            return response()->json($emptyResponse);
         }
-        
-        $topCropsData = $topCropsResult['data'];
-        $topCrops = $topCropsData['predicted_top5']['crops'] ?? $topCropsData['predicted_top_5'] ?? [];
-        
-        // Ensure we only return top 5 crops
-        $topCrops = array_slice($topCrops, 0, 5);
-        
-        if (empty($topCrops)) {
-            // Check ML API health even if no data
-            $healthCheck = $mlService->checkHealth();
-            $response['ml_api_connected'] = ($healthCheck['status'] === 'success');
-            $response['ml_status'] = ($healthCheck['status'] === 'success') ? 'api_connected_no_data' : 'no_data';
-            return response()->json($response);
+
+        // 2) Get forecasts for every crop in this municipality using /api/forecast
+        $cropResults = [];
+        foreach ($allCrops as $crop) {
+            $forecastResult = $mlService->getForecast([
+                'MUNICIPALITY'    => $mlMunicipality,
+                'CROP'            => $crop,
+                'FARM_TYPE'       => 'IRRIGATED',
+                'Area_planted_ha' => 10,
+                'years_ahead'     => 3,
+            ]);
+            if ($forecastResult['status'] === 'success' && ($forecastResult['data']['success'] ?? false)) {
+                $data = $forecastResult['data'];
+                // Find forecast for the requested year
+                $yearProduction = 0;
+                foreach ($data['forecast'] ?? [] as $f) {
+                    if (intval($f['year']) === $year) {
+                        $yearProduction = floatval($f['production']);
+                        break;
+                    }
+                }
+                if ($yearProduction <= 0) {
+                    $yearProduction = floatval($data['historical']['average'] ?? 0);
+                }
+                $cropResults[] = [
+                    'crop'       => $crop,
+                    'production' => $yearProduction,
+                    'historical' => $data['historical'] ?? [],
+                    'forecast'   => $data['forecast'] ?? [],
+                    'trend'      => $data['trend'] ?? [],
+                ];
+            }
         }
-        
-        // Extract best crop and calculate stats from top crops
+
+        if (empty($cropResults)) {
+            $emptyResponse['ml_api_connected'] = true;
+            $emptyResponse['ml_status'] = 'api_connected_no_data';
+            return response()->json($emptyResponse);
+        }
+
+        // Sort by production descending and take top 5
+        usort($cropResults, fn($a, $b) => $b['production'] <=> $a['production']);
+        $topCrops = array_slice($cropResults, 0, 5);
+
+        // 3) Build stats
         $bestCrop = null;
         $bestYield = 0;
         $totalProduction = 0;
         $totalYield = 0;
         $cropsPerformance = [];
-        
-        foreach ($topCrops as $idx => $crop) {
-            $cropName = $crop['crop'] ?? 'Unknown';
-            
-            // Get 2025 production from forecasts
-            $production2025 = 0;
-            foreach ($crop['forecasts'] ?? [] as $forecast) {
-                if ($forecast['year'] == $year) {
-                    $production2025 = floatval($forecast['production']);
-                    break;
-                }
-            }
-            
-            // If no forecast for selected year, use average forecast
-            if ($production2025 == 0) {
-                $production2025 = floatval($crop['average_forecast'] ?? 0);
-            }
-            
-            // Get historical average for yield per hectare calculation
-            $historicalProduction = 0;
-            if (isset($topCropsData['historical_top5']['crops'])) {
-                foreach ($topCropsData['historical_top5']['crops'] as $hCrop) {
-                    if (($hCrop['crop'] ?? '') === $cropName) {
-                        $historicalProduction = floatval($hCrop['average_production'] ?? 0);
-                        break;
-                    }
-                }
-            }
-            
-            // Calculate yield per hectare (using historical area estimate)
-            $area = 23.0; // Average area per crop in hectares (based on Benguet data)
-            $yieldPerHa = $production2025 / $area;
-            $historicalYield = $historicalProduction > 0 ? $historicalProduction / $area : $yieldPerHa;
-            
+        $area = 23.0; // Average area per crop in hectares (Benguet data)
+
+        foreach ($topCrops as $c) {
+            $yieldPerHa = $c['production'] / $area;
+            $historicalAvg = floatval($c['historical']['average'] ?? $c['production']);
+            $historicalYield = $historicalAvg / $area;
+
             if ($yieldPerHa > $bestYield) {
                 $bestYield = $yieldPerHa;
-                $bestCrop = [
-                    'crop_type' => $cropName,
-                    'avg_yield' => $yieldPerHa
-                ];
+                $bestCrop = ['crop_type' => $c['crop'], 'avg_yield' => round($yieldPerHa, 2)];
             }
-            
-            $totalProduction += $production2025;
+            $totalProduction += $c['production'];
             $totalYield += $yieldPerHa;
-            
             $cropsPerformance[] = [
-                'crop' => $cropName,
-                'yield' => round($historicalYield, 2),
-                'predicted' => round($yieldPerHa, 2),
-                'confidence' => 85
+                'crop'       => $c['crop'],
+                'yield'      => round($historicalYield, 2),
+                'predicted'  => round($yieldPerHa, 2),
+                'confidence' => 85,
             ];
         }
-        
-        // Calculate average yield per hectare from ML predictions
+
         $avgYield = count($topCrops) > 0 ? $totalYield / count($topCrops) : 0;
-        
-        // Get forecast data for the top crop
-        $forecastData = [];
-        if (!empty($topCrops)) {
-            $topCropName = $topCrops[0]['crop'] ?? 'Cabbage';
-            $forecastResult = $mlService->getForecast([
-                'MUNICIPALITY' => $mlMunicipality,
-                'CROP' => $topCropName
-            ]);
-            
-            if ($forecastResult['status'] === 'success' && isset($forecastResult['data']['forecast_data'])) {
-                $forecastData = $forecastResult['data']['forecast_data'];
-            }
-        }
-        
-        // Historical comparison with ML predictions (2020-2025)
+
+        // 4) Yearly comparison using the top crop's /api/predict endpoint (2020 → year)
         $comparison = [];
-        $baselineCrop = !empty($topCrops) ? $topCrops[0]['crop'] : 'Cabbage';
-        
+        $baselineCrop = $topCrops[0]['crop'];
         for ($y = 2020; $y <= $year; $y++) {
-            // Get historical data if available from top crops response
-            $historicalYield = 0;
-            if (isset($topCropsData['historical_top_5'])) {
-                foreach ($topCropsData['historical_top_5'] as $hCrop) {
-                    if (($hCrop['crop'] ?? '') === $baselineCrop) {
-                        $historicalYield = floatval($hCrop['production_mt'] ?? 0);
-                        break;
-                    }
-                }
-            }
-            
-            // Get ML prediction for this year
-            $predictionData = [
-                'MUNICIPALITY' => $mlMunicipality,
-                'CROP' => $baselineCrop,
-                'FARM_TYPE' => 'RAINFED',
-                'Area_planted_ha' => 1.0,
-                'MONTH' => 6,
-                'YEAR' => $y
-            ];
-            
-            $mlResult = $mlService->predict($predictionData);
-            $predicted = $historicalYield > 0 ? $historicalYield : ($avgYield * (1 + ($y - 2020) * 0.02));
+            $predictResult = $mlService->predict([
+                'MUNICIPALITY'    => $mlMunicipality,
+                'CROP'            => $baselineCrop,
+                'FARM_TYPE'       => 'IRRIGATED',
+                'MONTH'           => 'JUN',
+                'YEAR'            => $y,
+                'Area_planted_ha' => 10,
+            ]);
+            $predicted = $avgYield * (1 + ($y - 2020) * 0.02);
             $confidence = 85;
-            
-            if ($mlResult['status'] === 'success' && isset($mlResult['data']['prediction'])) {
-                $prediction = $mlResult['data']['prediction'];
-                $predicted = floatval($prediction['production_mt'] ?? $predicted);
-                $confidence = isset($prediction['confidence_score']) 
-                    ? round(floatval($prediction['confidence_score']) * 100) 
+            if ($predictResult['status'] === 'success' && ($predictResult['data']['success'] ?? false)) {
+                $predicted = floatval($predictResult['data']['prediction']['production_mt'] ?? $predicted);
+                $confidence = isset($predictResult['data']['prediction']['confidence_score'])
+                    ? round(floatval($predictResult['data']['prediction']['confidence_score']) * 100)
                     : 85;
             }
-            
             $comparison[] = [
-                'year' => $y,
-                'actual' => round($historicalYield > 0 ? $historicalYield : $predicted * 0.95, 2),
-                'predicted' => round($predicted, 2),
-                'confidence' => $confidence
+                'year'       => $y,
+                'actual'     => round($predicted * 0.97, 2),
+                'predicted'  => round($predicted, 2),
+                'confidence' => $confidence,
             ];
         }
-        
-        // Monthly data - simulate from available data (starting from 2025)
+
+        // 5) Monthly data (cool-season boost for Benguet)
         $monthlyData = [];
-        $baseMonthlyYield = $avgYield;
-        $monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        
-        // Only show predictions from 2025 onwards
+        $monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
         if ($year >= 2025) {
             for ($m = 1; $m <= 12; $m++) {
-                // Simulate seasonal variation for Benguet (higher yields in cool months)
-                $seasonalFactor = 1.0;
-                if ($m >= 10 || $m <= 3) { // Cool season Oct-Mar
-                    $seasonalFactor = 1.15;
-                } elseif ($m >= 4 && $m <= 6) { // Dry season
-                    $seasonalFactor = 0.85;
-                }
-                
+                $factor = ($m >= 10 || $m <= 3) ? 1.15 : (($m >= 4 && $m <= 6) ? 0.85 : 1.0);
                 $monthlyData[] = [
-                    'month' => $m,
-                    'month_name' => $monthNames[$m - 1],
-                    'year' => $year,
-                    'avg_yield' => round($baseMonthlyYield * $seasonalFactor, 2)
+                    'month' => $m, 'month_name' => $monthNames[$m - 1],
+                    'year' => $year, 'avg_yield' => round($avgYield * $factor, 2),
                 ];
             }
         }
-        
-        $response = [
+
+        // 6) Forecast data from the top crop
+        $forecastData = $topCrops[0]['forecast'] ?? [];
+
+        return response()->json([
             'stats' => [
-                'avg_yield' => number_format($avgYield, 1),
-                'best_crop' => $bestCrop,
+                'avg_yield'        => number_format($avgYield, 1),
+                'best_crop'        => $bestCrop,
                 'total_production' => number_format($totalProduction, 1),
-                'total_area' => number_format(count($topCrops), 1)
+                'total_area'       => number_format(count($topCrops), 1),
             ],
-            'comparison' => $comparison,
-            'crops' => $cropsPerformance,
-            'monthly' => $monthlyData,
-            'forecast' => $forecastData,
-            'ml_status' => 'success',
-            'ml_api_connected' => true
-        ];
-        
-        return response()->json($response);
-        
+            'comparison'       => $comparison,
+            'crops'            => $cropsPerformance,
+            'monthly'          => $monthlyData,
+            'forecast'         => $forecastData,
+            'ml_status'        => 'success',
+            'ml_api_connected' => true,
+        ]);
+
     } catch (\Exception $e) {
         \Log::error('ML Analysis Error: ' . $e->getMessage());
         \Log::error('Stack trace: ' . $e->getTraceAsString());
-        
-        // Try to check ML API health even in error case
+
         $mlConnected = false;
         try {
             $mlService = new \App\Services\MLApiService();
             $healthCheck = $mlService->checkHealth();
             $mlConnected = ($healthCheck['status'] === 'success');
-        } catch (\Exception $healthError) {
-            // Ignore health check errors
-        }
-        
+        } catch (\Exception $ignore) {}
+
         return response()->json([
-            'stats' => [
-                'avg_yield' => '0.0',
-                'best_crop' => null,
-                'total_production' => '0',
-                'total_area' => '0'
-            ],
-            'comparison' => [],
-            'crops' => [],
-            'monthly' => [],
-            'forecast' => [],
-            'ml_status' => 'error',
-            'ml_api_connected' => $mlConnected,
-            'error' => $e->getMessage()
+            'stats' => ['avg_yield' => '0.0', 'best_crop' => null, 'total_production' => '0', 'total_area' => '0'],
+            'comparison' => [], 'crops' => [], 'monthly' => [], 'forecast' => [],
+            'ml_status' => 'error', 'ml_api_connected' => $mlConnected, 'error' => $e->getMessage()
         ], 500);
     }
 })->name('api.ml.yield.analysis');
@@ -3453,9 +3430,11 @@ Route::post('/api/market-prices', function (Request $request) {
         'crop_name' => 'required|string|max:100',
         'variety' => 'nullable|string|max:100',
         'price_per_kg' => 'required|numeric|min:0',
-        'price_trend' => 'in:up,down,stable',
-        'demand_level' => 'in:low,moderate,high,very_high',
-        'price_date' => 'required|date',
+        'price_trend' => 'nullable|in:up,down,stable',
+        'demand_level' => 'nullable|in:low,moderate,high,very_high',
+        'market_location' => 'nullable|string|max:255',
+        'is_active' => 'nullable|boolean',
+        'price_date' => 'nullable|date',
         'notes' => 'nullable|string'
     ]);
     
@@ -3472,7 +3451,9 @@ Route::post('/api/market-prices', function (Request $request) {
         'previous_price' => $previousPrice ? $previousPrice->price_per_kg : null,
         'price_trend' => $validated['price_trend'] ?? 'stable',
         'demand_level' => $validated['demand_level'] ?? 'moderate',
-        'price_date' => $validated['price_date'],
+        'market_location' => $validated['market_location'] ?? 'La Trinidad Trading Post',
+        'is_active' => $validated['is_active'] ?? true,
+        'price_date' => $validated['price_date'] ?? now()->toDateString(),
         'notes' => $validated['notes'] ?? null,
     ]);
     
@@ -3491,24 +3472,36 @@ Route::put('/api/market-prices/{id}', function (Request $request, $id) {
         'crop_name' => 'required|string|max:100',
         'variety' => 'nullable|string|max:100',
         'price_per_kg' => 'required|numeric|min:0',
-        'price_trend' => 'in:up,down,stable',
-        'demand_level' => 'in:low,moderate,high,very_high',
-        'price_date' => 'required|date',
+        'price_trend' => 'nullable|in:up,down,stable',
+        'demand_level' => 'nullable|in:low,moderate,high,very_high',
+        'market_location' => 'nullable|string|max:255',
+        'is_active' => 'nullable|boolean',
+        'price_date' => 'nullable|date',
         'notes' => 'nullable|string'
     ]);
     
     // Store old price before updating
     $oldPrice = $price->price_per_kg;
     
+    // Calculate trend based on price change
+    $priceTrend = $validated['price_trend'] ?? 'stable';
+    if ($validated['price_per_kg'] > $oldPrice) {
+        $priceTrend = 'up';
+    } elseif ($validated['price_per_kg'] < $oldPrice) {
+        $priceTrend = 'down';
+    }
+    
     $price->update([
         'crop_name' => $validated['crop_name'],
-        'variety' => $validated['variety'] ?? null,
+        'variety' => $validated['variety'] ?? $price->variety,
         'price_per_kg' => $validated['price_per_kg'],
         'previous_price' => $oldPrice,
-        'price_trend' => $validated['price_trend'] ?? 'stable',
-        'demand_level' => $validated['demand_level'] ?? 'moderate',
-        'price_date' => $validated['price_date'],
-        'notes' => $validated['notes'] ?? null,
+        'price_trend' => $priceTrend,
+        'demand_level' => $validated['demand_level'] ?? $price->demand_level,
+        'market_location' => $validated['market_location'] ?? $price->market_location,
+        'is_active' => $validated['is_active'] ?? $price->is_active,
+        'price_date' => $validated['price_date'] ?? now()->toDateString(),
+        'notes' => $validated['notes'] ?? $price->notes,
     ]);
     
     return response()->json($price);
@@ -3693,6 +3686,21 @@ Route::get('/api/da-officer/dashboard', function (Illuminate\Http\Request $reque
         'recentActivity' => []
     ]);
 })->middleware('auth')->name('api.da-officer.dashboard');
+
+// DA Officer Dashboard - New ML-Powered Endpoints
+Route::middleware('auth')->group(function () {
+    Route::get('/api/admin/dashboard', [App\Http\Controllers\Api\DAOfficerApiController::class, 'getDashboardStats'])->name('admin.api.dashboard.new');
+    Route::get('/api/admin/yield-analysis', [App\Http\Controllers\Api\DAOfficerApiController::class, 'getYieldAnalysis'])->name('admin.api.yield-analysis.new');
+    Route::get('/api/admin/crop-performance', [App\Http\Controllers\Api\DAOfficerApiController::class, 'getCropPerformance'])->name('admin.api.crop-performance.new');
+    Route::get('/api/admin/market-prices', [App\Http\Controllers\Api\DAOfficerApiController::class, 'getMarketPrices'])->name('admin.api.market-prices.new');
+    Route::get('/api/admin/validation-alerts', [App\Http\Controllers\Api\DAOfficerApiController::class, 'getValidationAlerts'])->name('admin.api.validation-alerts.new');
+    Route::get('/api/admin/users', [App\Http\Controllers\Api\DAOfficerApiController::class, 'getUsers'])->name('admin.api.users');
+});
+
+// Test route to verify routing works
+Route::get('/api/admin/test', function () {
+    return response()->json(['status' => 'success', 'message' => 'API routing is working!', 'timestamp' => now()]);
+});
 
 // Superadmin Dashboard API
 Route::get('/api/superadmin/dashboard', function () {
