@@ -80,6 +80,22 @@
                 </div>
 
                 <div class="mb-4">
+                    <p class="text-xs uppercase text-green-300 mb-2 px-4">Weather</p>
+                    <a href="{{ route('admin.forecast') }}" class="flex items-center space-x-3 px-4 py-3 rounded hover:bg-green-800 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/>
+                        </svg>
+                        <span>Forecast</span>
+                    </a>
+                    <a href="{{ route('pagasa.dashboard') }}" class="flex items-center space-x-3 px-4 py-3 rounded hover:bg-green-800 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <span>PAGASA Data</span>
+                    </a>
+                </div>
+
+                <div class="mb-4">
                     <p class="text-xs uppercase text-green-300 mb-2 px-4">User Management</p>
                     <a href="{{ route('admin.users') }}" class="flex items-center space-x-3 px-4 py-3 rounded hover:bg-green-800 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,7 +133,7 @@
 
                 <div class="mb-4">
                     <p class="text-xs uppercase text-green-300 mb-2 px-4">System</p>
-                    <form method="POST" action="{{ route('logout') }}">
+                    <form method="POST" action="{{ route('logout') }}" onsubmit="return handleLogout(event);">
                         @csrf
                         <button type="submit" class="sidebar-item w-full flex items-center space-x-3 px-4 py-3 rounded hover:bg-red-600 transition-colors text-left">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -169,7 +185,7 @@
                                 <span x-show="pendingActions > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold" x-text="pendingActions"></span>
                             </button>
                         </div>
-                        <form method="POST" action="{{ route('logout') }}" class="inline" onsubmit="sessionStorage.setItem('isLoggedOut','true');">
+                        <form method="POST" action="{{ route('logout') }}" class="inline" onsubmit="return handleLogout(event);">
                             @csrf
                             <button type="submit" class="flex items-center space-x-2 text-gray-600 hover:text-gray-800 px-3 py-2 rounded-lg hover:bg-gray-100">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -191,75 +207,6 @@
 
                 <!-- DASHBOARD SECTION -->
                 <div x-show="!loading && currentSection === 'dashboard'">
-                    <!-- Stats Cards Row - Agriculture Focus -->
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                        <!-- Registered Farmers -->
-                        <div class="stat-card bg-green-50 border border-green-200 rounded-xl p-5">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <p class="text-xs text-gray-500 mb-1">Registered Farmers</p>
-                                    <h3 class="text-2xl font-bold text-gray-800" x-text="(stats.registeredFarmers || 0).toLocaleString()">0</h3>
-                                    <p class="text-xs text-green-600 mt-1" x-text="'+' + (stats.newFarmersThisMonth || 0) + ' this month'">+0 this month</p>
-                                </div>
-                                <div class="bg-green-500 p-2 rounded-lg">
-                                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Data Records -->
-                        <div class="stat-card bg-blue-50 border border-blue-200 rounded-xl p-5">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <p class="text-xs text-gray-500 mb-1">Data Records</p>
-                                    <h3 class="text-2xl font-bold text-gray-800" x-text="(stats.dataRecords || 0).toLocaleString()">0</h3>
-                                    <p class="text-xs text-blue-600 mt-1" x-text="'+' + (stats.newRecords || 0) + ' new'">+0 new</p>
-                                </div>
-                                <div class="bg-blue-500 p-2 rounded-lg">
-                                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z"/>
-                                        <path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z"/>
-                                        <path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z"/>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Total Farms -->
-                        <div class="stat-card bg-yellow-50 border border-yellow-200 rounded-xl p-5">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <p class="text-xs text-gray-500 mb-1">Total Farms</p>
-                                    <h3 class="text-2xl font-bold text-gray-800" x-text="(stats.totalFarms || 0).toLocaleString()">0</h3>
-                                    <p class="text-xs text-yellow-600 mt-1" x-text="'Across ' + (stats.municipalitiesCount || 0) + ' municipalities'">Across 0 municipalities</p>
-                                </div>
-                                <div class="bg-yellow-500 p-2 rounded-lg">
-                                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Pending Actions -->
-                        <div class="stat-card bg-red-50 border border-red-200 rounded-xl p-5">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <p class="text-xs text-gray-500 mb-1">Pending Actions</p>
-                                    <h3 class="text-2xl font-bold text-gray-800" x-text="pendingActions || '12'">12</h3>
-                                    <p class="text-xs text-red-600 mt-1" x-text="(stats.urgentActions || 3) + ' urgent'">3 urgent</p>
-                                </div>
-                                <div class="bg-red-500 p-2 rounded-lg">
-                                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Yield & Planting Schedule Analysis -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
                         <div class="mb-6 flex items-center justify-between">
@@ -367,61 +314,12 @@
                         </div>
                     </div>
 
-                    <!-- Current Market Prices & Crop Performance -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <!-- Current Market Prices -->
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                            <div class="flex items-center justify-between mb-4">
-                                <div>
-                                    <h3 class="text-lg font-bold text-green-700">Current Market Prices</h3>
-                                    <p class="text-sm text-gray-500">Latest prices for major Cordillera crops (Updated: <span x-text="marketPrices.lastUpdated"></span>)</p>
-                                </div>
-                                <div class="bg-green-100 p-2 rounded-full">
-                                    <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/>
-                                    </svg>
-                                </div>
-                            </div>
-                            
-                            <div class="grid grid-cols-2 gap-4">
-                                <template x-for="crop in marketPrices.crops" :key="crop.name">
-                                    <div class="price-card border border-gray-200 rounded-lg p-4">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <span class="font-semibold text-gray-800" x-text="crop.name"></span>
-                                            <span :class="crop.change >= 0 ? 'text-green-600' : 'text-red-600'" class="text-xs font-medium flex items-center">
-                                                <svg x-show="crop.change >= 0" class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
-                                                </svg>
-                                                <svg x-show="crop.change < 0" class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                                                </svg>
-                                                <span x-text="(crop.change >= 0 ? '+' : '') + crop.change + '%'"></span>
-                                            </span>
-                                        </div>
-                                        <div class="mb-2">
-                                            <span class="text-2xl font-bold text-green-700">₱<span x-text="parseFloat(crop.price).toFixed(2)"></span></span>
-                                            <span class="text-sm text-gray-500" x-text="'/' + crop.unit"></span>
-                                        </div>
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-xs text-gray-500">Market Demand:</span>
-                                            <span :class="{
-                                                'bg-red-100 text-red-700': crop.demand === 'High',
-                                                'bg-yellow-100 text-yellow-700': crop.demand === 'Medium',
-                                                'bg-gray-100 text-gray-700': crop.demand === 'Low'
-                                            }" class="px-2 py-1 rounded text-xs font-medium" x-text="crop.demand"></span>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-
                         <!-- Crop Performance by Variety (TOP 5) -->
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                             <div class="mb-4">
                                 <div class="flex items-center justify-between mb-3">
                                     <div class="flex items-center gap-3">
-                                        <h3 class="text-lg font-bold text-gray-800">Crop Performance by Variety (TOP 5)</h3>
+                                        <h3 class="text-lg font-bold text-green-700">Crop Performance by Variety (TOP 5)</h3>
                                         <span x-show="mlStatus.cropPerformance" class="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full flex items-center gap-1">
                                             <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                                 <path d="M13 7H7v6h6V7z"/>
@@ -430,50 +328,108 @@
                                             ML
                                         </span>
                                     </div>
-                                    <div>
-                                        <select x-model="selectedMunicipality" @change="onMunicipalityChange()" class="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-500">
-                                            <option value="">All Municipalities</option>
-                                            <option value="La Trinidad">La Trinidad</option>
-                                            <option value="Baguio City">Baguio City</option>
-                                            <option value="Tublay">Tublay</option>
-                                            <option value="Sablan">Sablan</option>
-                                            <option value="Tuba">Tuba</option>
-                                            <option value="Itogon">Itogon</option>
-                                            <option value="Atok">Atok</option>
-                                            <option value="Bokod">Bokod</option>
-                                            <option value="Kabayan">Kabayan</option>
-                                            <option value="Kapangan">Kapangan</option>
-                                            <option value="Kibungan">Kibungan</option>
-                                            <option value="Mankayan">Mankayan</option>
-                                            <option value="Buguias">Buguias</option>
-                                        </select>
-                                    </div>
                                 </div>
-                                <p class="text-sm text-gray-500">Average yield per hectare in <span x-text="new Date().getFullYear()"></span> <span x-show="selectedMunicipality" class="font-semibold" x-text="'- ' + selectedMunicipality"></span></p>
+                                <p class="text-sm text-gray-500">Average yield per hectare in <span x-text="enhancedCropPerformance.year || new Date().getFullYear()"></span></p>
                             </div>
                             
-                            <div class="space-y-4">
-                                <template x-for="(crop, index) in cropPerformance" :key="crop.variety">
-                                    <div>
-                                        <div class="flex items-center justify-between mb-1">
-                                            <span class="text-sm font-medium text-gray-700" x-text="crop.variety"></span>
-                                            <span class="text-sm text-gray-600" x-text="crop.yield + ' t/ha'"></span>
-                                        </div>
-                                        <div class="w-full bg-gray-200 rounded-full h-6">
-                                            <div class="bg-green-500 h-6 rounded-full flex items-center justify-end pr-2 transition-all duration-500"
-                                                 :style="'width: ' + (crop.yield / maxYield * 100) + '%'">
-                                            </div>
-                                        </div>
+                            <!-- Horizontal Bar Chart -->
+                            <div class="h-64 mb-6">
+                                <canvas id="cropPerformanceChart"></canvas>
+                            </div>
+                            
+                            <!-- Chart Legend -->
+                            <div class="flex gap-6 justify-center mb-6">
+                                <div class="flex items-center">
+                                    <div class="w-4 h-4 bg-green-500 rounded mr-2"></div>
+                                    <span class="text-sm text-gray-600">Current Yield</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-4 h-4 bg-green-200 rounded mr-2"></div>
+                                    <span class="text-sm text-gray-600">Target Yield</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Achievement Percentages Grid -->
+                            <div class="grid grid-cols-5 gap-4 pt-4 border-t border-gray-200">
+                                <template x-for="crop in enhancedCropPerformance.crops" :key="crop.variety">
+                                    <div class="text-center border-r border-gray-100 last:border-r-0">
+                                        <p class="text-sm font-medium text-gray-700" x-text="crop.variety"></p>
+                                        <p class="text-2xl font-bold" :class="{
+                                            'text-green-600': crop.achievement >= 90,
+                                            'text-yellow-600': crop.achievement >= 70 && crop.achievement < 90,
+                                            'text-red-600': crop.achievement < 70
+                                        }"><span x-text="crop.achievement"></span>%</p>
+                                        <p class="text-xs flex items-center justify-center" :class="crop.yoyChange >= 0 ? 'text-green-600' : 'text-red-600'">
+                                            <svg x-show="crop.yoyChange >= 0" class="w-3 h-3 mr-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                                            </svg>
+                                            <svg x-show="crop.yoyChange < 0" class="w-3 h-3 mr-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                            </svg>
+                                            <span x-text="(crop.yoyChange >= 0 ? '+' : '') + crop.yoyChange + '% YoY'"></span>
+                                        </p>
                                     </div>
                                 </template>
                             </div>
-                            
-                            <div class="mt-4 pt-4 border-t border-gray-200">
-                                <div class="flex justify-between text-xs text-gray-500">
-                                    <span>0</span>
-                                    <span x-text="(maxYield / 2).toFixed(1)"></span>
-                                    <span x-text="maxYield.toFixed(1)"></span>
+                        </div>
+                    </div>
+
+                    <!-- Current Market Prices Section (Full Width) -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-8">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-800">Current Market Prices</h3>
+                                <p class="text-sm text-gray-500">Latest prices for major Cordillera crops (Updated: <span x-text="marketPrices.lastUpdated"></span>)</p>
+                            </div>
+                            <div class="bg-yellow-100 p-3 rounded-xl">
+                                <span class="text-2xl">₱</span>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                            <template x-for="crop in marketPrices.crops.slice(0, 6)" :key="crop.name">
+                                <div class="price-card border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="font-semibold text-gray-800 text-sm" x-text="crop.name"></span>
+                                        <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="{
+                                            'bg-red-100 text-red-700': crop.demand === 'High',
+                                            'bg-yellow-100 text-yellow-700': crop.demand === 'Medium',
+                                            'bg-gray-100 text-gray-700': crop.demand === 'Low'
+                                        }" x-text="crop.demand"></span>
+                                    </div>
+                                    <p class="text-xs text-gray-400 mb-1">Market Demand</p>
+                                    <div class="mb-2">
+                                        <span class="text-2xl font-bold text-gray-800">₱<span x-text="parseFloat(crop.price).toFixed(0)"></span></span>
+                                        <span class="text-sm text-gray-500">/kg</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span :class="crop.change >= 0 ? 'text-green-600' : 'text-red-600'" class="text-xs font-medium flex items-center">
+                                            <svg x-show="crop.change >= 0" class="w-3 h-3 mr-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                                            </svg>
+                                            <svg x-show="crop.change < 0" class="w-3 h-3 mr-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                            </svg>
+                                            <span x-text="(crop.change >= 0 ? '+' : '') + crop.change + '%'"></span>
+                                        </span>
+                                        <span class="text-xs text-gray-400">vs last week</span>
+                                    </div>
                                 </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Price Insights Section -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mt-6">
+                        <div class="flex items-start gap-3">
+                            <div class="bg-blue-100 p-2 rounded-full">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-blue-800 mb-1">Price Insights</h4>
+                                <p class="text-sm text-blue-700" x-text="priceInsights.insight || 'Loading price insights...'"></p>
                             </div>
                         </div>
                     </div>
@@ -609,6 +565,13 @@
                                 body: JSON.stringify(payload)
                             });
                             
+                            if (response.status === 419) {
+                                // CSRF token expired - refresh and retry once
+                                alert('Session expired. Refreshing page...');
+                                window.location.reload();
+                                return;
+                            }
+                            
                             if (response.ok) {
                                 await this.loadAllPrices();
                                 this.showEditModal = false;
@@ -649,6 +612,13 @@
                                 credentials: 'same-origin',
                                 body: JSON.stringify(payload)
                             });
+                            
+                            if (response.status === 419) {
+                                // CSRF token expired - refresh and retry once
+                                alert('Session expired. Refreshing page...');
+                                window.location.reload();
+                                return;
+                            }
                             
                             if (response.ok) {
                                 await this.loadAllPrices();
@@ -847,10 +817,30 @@
                 <div x-show="!loading && currentSection === 'announcements'" x-data="{
                     announcementsList: [],
                     showCreateModal: false,
-                    newAnnouncement: { title: '', message: '', priority: 'normal', target_group: 'all', municipality: 'all' },
+                    newAnnouncement: { title: '', content: '', priority: 'normal', target_group: 'all', municipality: 'all', sendSMS: false },
+                    priorityFilter: 'all',
+                    sortOrder: 'newest',
                     
                     init() {
                         this.loadAnnouncementsList();
+                    },
+                    
+                    get filteredAnnouncements() {
+                        let filtered = [...this.announcementsList];
+                        
+                        // Filter by priority
+                        if (this.priorityFilter !== 'all') {
+                            filtered = filtered.filter(a => a.priority === this.priorityFilter);
+                        }
+                        
+                        // Sort by date
+                        filtered.sort((a, b) => {
+                            const dateA = new Date(a.created_at);
+                            const dateB = new Date(b.created_at);
+                            return this.sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+                        });
+                        
+                        return filtered;
                     },
                     
                     async loadAnnouncementsList() {
@@ -866,24 +856,52 @@
                     
                     async createAnnouncement() {
                         try {
+                            // Validate fields
+                            if (!this.newAnnouncement.title || !this.newAnnouncement.content) {
+                                alert('Please fill in both Title and Message fields');
+                                return;
+                            }
+
+                            const payload = {
+                                title: this.newAnnouncement.title,
+                                content: this.newAnnouncement.content,
+                                priority: this.newAnnouncement.priority,
+                                type: 'general',
+                                target_group: this.newAnnouncement.target_group,
+                                municipality: this.newAnnouncement.municipality,
+                                sendSMS: this.newAnnouncement.sendSMS
+                            };
+
                             const response = await fetch('{{ url("/api/announcements") }}', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
                                     'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
                                 },
-                                body: JSON.stringify(this.newAnnouncement)
+                                body: JSON.stringify(payload)
                             });
+                            
+                            const data = await response.json();
                             
                             if (response.ok) {
                                 await this.loadAnnouncementsList();
                                 this.showCreateModal = false;
-                                this.newAnnouncement = { title: '', message: '', priority: 'normal', target_group: 'all', municipality: 'all' };
-                                alert('Announcement sent successfully!');
+                                this.newAnnouncement = { title: '', content: '', priority: 'normal', target_group: 'all', municipality: 'all', sendSMS: false };
+                                alert('Announcement sent successfully' + (payload.sendSMS ? ' with SMS notifications!' : '!'));
+                            } else {
+                                // Handle validation errors
+                                if (data.errors) {
+                                    const errorMessages = Object.values(data.errors).flat().join('\n');
+                                    alert('Validation Error:\n' + errorMessages);
+                                } else if (data.message) {
+                                    alert('Error: ' + data.message);
+                                } else {
+                                    alert('Failed to send announcement. Please try again.');
+                                }
                             }
                         } catch (error) {
                             console.error('Error creating announcement:', error);
-                            alert('Error sending announcement');
+                            alert('Network error. Please check your connection and try again.');
                         }
                     }
                 }">
@@ -900,9 +918,40 @@
                         </button>
                     </div>
 
+                    <!-- Filters -->
+                    <div class="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+                        <div class="flex flex-wrap items-center gap-4">
+                            <!-- Priority Filter -->
+                            <div class="flex items-center gap-2">
+                                <label class="text-sm font-medium text-gray-700">Priority:</label>
+                                <select x-model="priorityFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 min-w-[140px]">
+                                    <option value="all">All Priorities</option>
+                                    <option value="urgent">🔴 Urgent</option>
+                                    <option value="high">🟡 High</option>
+                                    <option value="normal">🔵 Normal</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Sort Order -->
+                            <div class="flex items-center gap-2">
+                                <label class="text-sm font-medium text-gray-700">Sort:</label>
+                                <select x-model="sortOrder" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 min-w-[140px]">
+                                    <option value="newest">Newest First</option>
+                                    <option value="oldest">Oldest First</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Results Count -->
+                            <div class="ml-auto text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
+                                <span class="font-semibold" x-text="filteredAnnouncements.length"></span>
+                                <span x-text="filteredAnnouncements.length === 1 ? ' announcement' : ' announcements'"></span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Announcements List -->
                     <div class="space-y-4">
-                        <template x-for="announcement in announcementsList" :key="announcement.id">
+                        <template x-for="announcement in filteredAnnouncements" :key="announcement.id">
                             <div class="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition">
                                 <div class="flex items-start justify-between mb-3">
                                     <div class="flex items-center gap-3">
@@ -932,9 +981,27 @@
                                           }"
                                           x-text="announcement.priority"></span>
                                 </div>
-                                <p class="text-gray-700 text-sm" x-text="announcement.message"></p>
+                                <p class="text-gray-700 text-sm" x-text="announcement.content"></p>
                             </div>
                         </template>
+                        
+                        <!-- Empty State -->
+                        <div x-show="filteredAnnouncements.length === 0" class="bg-white rounded-xl border border-gray-200 p-12 text-center">
+                            <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                            </svg>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">No announcements found</h3>
+                            <p class="text-gray-600 text-sm mb-4" x-show="priorityFilter !== 'all' || announcementsList.length === 0">
+                                <span x-show="priorityFilter !== 'all'">Try changing the filter or </span>
+                                <span x-show="announcementsList.length === 0">Create your first announcement to get started</span>
+                            </p>
+                            <button @click="showCreateModal = true; priorityFilter = 'all'" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 inline-flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                <span>Create Announcement</span>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Create Modal -->
@@ -948,7 +1015,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                                    <textarea x-model="newAnnouncement.message" rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2"></textarea>
+                                    <textarea x-model="newAnnouncement.content" rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2"></textarea>
                                 </div>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
@@ -977,8 +1044,22 @@
                                         <option value="Baguio">Baguio</option>
                                     </select>
                                 </div>
+                                <div class="border-t pt-4 mt-2">
+                                    <label class="flex items-center space-x-3 cursor-pointer">
+                                        <input type="checkbox" x-model="newAnnouncement.sendSMS" class="w-5 h-5 text-green-600 rounded focus:ring-green-500">
+                                        <div>
+                                            <span class="text-sm font-medium text-gray-700">Send SMS Notifications</span>
+                                            <p class="text-xs text-gray-500">Notify farmers via SMS in addition to in-app announcement</p>
+                                        </div>
+                                    </label>
+                                </div>
                                 <div class="flex gap-2">
-                                    <button @click="createAnnouncement()" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Send Announcement</button>
+                                    <button @click="createAnnouncement()" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center justify-center gap-2">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                                        </svg>
+                                        Send Announcement
+                                    </button>
                                     <button @click="showCreateModal = false" class="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">Cancel</button>
                                 </div>
                             </div>
@@ -992,9 +1073,20 @@
                     messagesList: { received: [], sent: [] },
                     showComposeModal: false,
                     showMessageModal: false,
+                    showReplyModal: false,
                     selectedMessage: null,
-                    newMessage: { recipient_id: '', recipient_name: '', subject: '', content: '' },
+                    replyContent: '',
+                    sendSMS: false,
+                    newMessage: { receiver_id: '', subject: '', content: '', send_sms: false },
                     farmers: [],
+                    
+                    get unreadMessages() {
+                        return this.messagesList.received.filter(m => !m.is_read);
+                    },
+                    
+                    get readMessages() {
+                        return this.messagesList.received.filter(m => m.is_read);
+                    },
                     
                     init() {
                         this.loadMessages();
@@ -1038,8 +1130,12 @@
                             if (response.ok) {
                                 await this.loadMessages();
                                 this.showComposeModal = false;
-                                this.newMessage = { recipient_id: '', recipient_name: '', subject: '', content: '' };
-                                alert('Message sent successfully!');
+                                this.newMessage = { receiver_id: '', subject: '', content: '', send_sms: false };
+                                const result = await response.json();
+                                alert(result.message || 'Message sent successfully!');
+                            } else {
+                                const error = await response.json();
+                                alert(error.errors ? JSON.stringify(error.errors) : 'Error sending message');
                             }
                         } catch (error) {
                             console.error('Error sending message:', error);
@@ -1047,8 +1143,53 @@
                         }
                     },
                     
-                    viewMessage(message) {
-                        this.selectedMessage = message;
+                    async viewMessage(message) {
+                        try {
+                            const response = await fetch(`{{ url('/api/messages') }}/${message.id}`);
+                            if (response.ok) {
+                                const data = await response.json();
+                                this.selectedMessage = data;
+                                this.showMessageModal = true;
+                                await this.loadMessages();
+                            }
+                        } catch (error) {
+                            console.error('Error loading message:', error);
+                        }
+                    },
+                    
+                    async submitReply() {
+                        if (!this.replyContent.trim()) {
+                            alert('Please enter a message');
+                            return;
+                        }
+                        
+                        try {
+                            const response = await fetch(`{{ url('/api/messages') }}/${this.selectedMessage.message.id}/reply`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                                },
+                                body: JSON.stringify({
+                                    content: this.replyContent,
+                                    send_sms: this.sendSMS
+                                })
+                            });
+                            
+                            if (response.ok) {
+                                this.replyContent = '';
+                                this.sendSMS = false;
+                                this.showReplyModal = false;
+                                alert('Reply sent successfully!' + (this.sendSMS ? ' SMS sent.' : ''));
+                                await this.viewMessage(this.selectedMessage.message);
+                                await this.loadMessages();
+                            }
+                        } catch (error) {
+                            console.error('Error sending reply:', error);
+                            alert('Error sending reply');
+                        }
+                    }
+                }">
                         this.showMessageModal = true;
                     }
                 }">
@@ -1079,35 +1220,70 @@
                     <div class="space-y-3">
                         <template x-if="inboxTab === 'received'">
                             <div>
-                                <template x-for="message in messagesList.received" :key="message.id">
-                                    <div @click="viewMessage(message)" class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer">
-                                        <div class="flex items-start justify-between">
-                                            <div class="flex items-center gap-3 flex-1">
-                                                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                                                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                                    </svg>
-                                                </div>
-                                                <div class="flex-1">
-                                                    <div class="flex items-center gap-2">
-                                                        <h4 class="font-semibold text-gray-800" x-text="message.sender_name || 'Farmer'"></h4>
-                                                        <span x-show="!message.is_read" class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                <!-- Unread Messages Section -->
+                                <div x-show="unreadMessages.length > 0" class="mb-6">
+                                    <div class="flex items-center justify-between mb-3 pb-2 border-b-2 border-green-500">
+                                        <h3 class="text-sm font-bold text-green-700 uppercase tracking-wide flex items-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                                            </svg>
+                                            New Messages
+                                        </h3>
+                                        <span class="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full" x-text="unreadMessages.length"></span>
+                                    </div>
+                                    <template x-for="message in unreadMessages" :key="message.id">
+                                        <div @click="viewMessage(message)" class="bg-green-50 border-2 border-green-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer mb-2">
+                                            <div class="flex items-start justify-between">
+                                                <div class="flex items-center gap-3 flex-1">
+                                                    <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
+                                                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                                        </svg>
                                                     </div>
-                                                    <p class="text-sm text-gray-600 font-medium" x-text="message.subject"></p>
-                                                    <p class="text-xs text-gray-500 mt-1" x-text="(message.content || '').substring(0, 100) + '...'"></p>
+                                                    <div class="flex-1">
+                                                        <div class="flex items-center gap-2 mb-1">
+                                                            <span class="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                                            <h4 class="font-bold text-gray-800" x-text="message.sender_name || 'Farmer'"></h4>
+                                                        </div>
+                                                        <p class="text-sm text-gray-800 font-semibold" x-text="message.subject"></p>
+                                                        <p class="text-xs text-gray-600 mt-1 line-clamp-2" x-text="(message.content || '')"></p>
+                                                        <template x-if="message.reply_count > 0">
+                                                            <div class="mt-2 flex items-center text-xs text-green-600">
+                                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                                                                </svg>
+                                                                <span x-text="message.reply_count + ' ' + (message.reply_count === 1 ? 'reply' : 'replies')"></span>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                                <div class="text-right ml-4">
+                                                    <span class="text-xs text-gray-500" x-text="message.created_at"></span>
+                                                    <div class="mt-2">
+                                                        <span class="inline-block px-2 py-1 bg-green-500 text-white text-xs rounded-full font-medium">NEW</span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <span class="text-xs text-gray-400" x-text="message.created_at"></span>
                                         </div>
+                                    </template>
+                                </div>
+                                
+                                <!-- Divider -->
+                                <div x-show="unreadMessages.length > 0 && readMessages.length > 0" class="my-6">
+                                    <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-300">
+                                        <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide flex items-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+                                            </svg>
+                                            Previous Messages
+                                        </h3>
+                                        <span class="text-xs text-gray-500" x-text="readMessages.length + ' read'"></span>
                                     </div>
-                                </template>
-                            </div>
-                        </template>
-
-                        <template x-if="inboxTab === 'sent'">
-                            <div>
-                                <template x-for="message in messagesList.sent" :key="message.id">
-                                    <div @click="viewMessage(message)" class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer">
+                                </div>
+                                
+                                <!-- Read Messages Section -->
+                                <template x-for="message in readMessages" :key="message.id">
+                                    <div @click="viewMessage(message)" class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer mb-2">
                                         <div class="flex items-start justify-between">
                                             <div class="flex items-center gap-3 flex-1">
                                                 <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
@@ -1116,15 +1292,84 @@
                                                     </svg>
                                                 </div>
                                                 <div class="flex-1">
-                                                    <h4 class="font-semibold text-gray-800">To: <span x-text="message.recipient_name || 'Farmer'"></span></h4>
+                                                    <h4 class="font-medium text-gray-700" x-text="message.sender_name || 'Farmer'"></h4>
                                                     <p class="text-sm text-gray-600 font-medium" x-text="message.subject"></p>
-                                                    <p class="text-xs text-gray-500 mt-1" x-text="(message.content || '').substring(0, 100) + '...'"></p>
+                                                    <p class="text-xs text-gray-500 mt-1 line-clamp-2" x-text="(message.content || '')"></p>
+                                                    <template x-if="message.reply_count > 0">
+                                                        <div class="mt-2 flex items-center text-xs text-gray-600">
+                                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                                                            </svg>
+                                                            <span x-text="message.reply_count + ' ' + (message.reply_count === 1 ? 'reply' : 'replies')"></span>
+                                                        </div>
+                                                    </template>
                                                 </div>
                                             </div>
                                             <span class="text-xs text-gray-400" x-text="message.created_at"></span>
                                         </div>
                                     </div>
                                 </template>
+                                            </div>
+                                            <span class="text-xs text-gray-400" x-text="message.created_at"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                                
+                                <!-- Empty State -->
+                                <div x-show="messagesList.received.length === 0" class="bg-white rounded-lg border border-gray-200 p-12 text-center">
+                                    <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                    </svg>
+                                    <p class="text-gray-500">No messages received yet.</p>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template x-if="inboxTab === 'sent'">
+                            <div>
+                                <template x-for="message in messagesList.sent" :key="message.id">
+                                    <div @click="viewMessage(message)" class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer mb-2">
+                                        <div class="flex items-start justify-between">
+                                            <div class="flex items-center gap-3 flex-1">
+                                                <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                                                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                                    </svg>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <h4 class="font-semibold text-gray-800">To: <span x-text="message.receiver_name || 'Farmer'"></span></h4>
+                                                    <p class="text-sm text-gray-600 font-medium" x-text="message.subject"></p>
+                                                    <p class="text-xs text-gray-500 mt-1 line-clamp-2" x-text="(message.content || '')"></p>
+                                                    <div class="mt-2 flex items-center gap-3">
+                                                        <template x-if="message.sent_as_sms">
+                                                            <span class="inline-flex items-center text-xs text-blue-600">
+                                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                                                </svg>
+                                                                SMS sent
+                                                            </span>
+                                                        </template>
+                                                        <template x-if="message.reply_count > 0">
+                                                            <span class="inline-flex items-center text-xs text-gray-600">
+                                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                                                                </svg>
+                                                                <span x-text="message.reply_count + ' ' + (message.reply_count === 1 ? 'reply' : 'replies')"></span>
+                                                            </span>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <span class="text-xs text-gray-400" x-text="message.created_at"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                                <div x-show="messagesList.sent.length === 0" class="bg-white rounded-lg border border-gray-200 p-12 text-center">
+                                    <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                    </svg>
+                                    <p class="text-gray-500">No messages sent yet.</p>
+                                </div>
                             </div>
                         </template>
                     </div>
@@ -1136,7 +1381,7 @@
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">To (Farmer)</label>
-                                    <select x-model="newMessage.recipient_id" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                    <select x-model="newMessage.receiver_id" class="w-full border border-gray-300 rounded-lg px-3 py-2">
                                         <option value="">Select farmer...</option>
                                         <template x-for="farmer in farmers" :key="farmer.id">
                                             <option :value="farmer.id" x-text="farmer.name"></option>
@@ -1151,6 +1396,18 @@
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
                                     <textarea x-model="newMessage.content" rows="6" class="w-full border border-gray-300 rounded-lg px-3 py-2"></textarea>
                                 </div>
+                                <div class="flex items-center space-x-2 bg-blue-50 p-3 rounded-lg">
+                                    <input type="checkbox" x-model="newMessage.send_sms" id="send-sms-da-compose" class="w-5 h-5 text-green-600 rounded focus:ring-green-500">
+                                    <label for="send-sms-da-compose" class="flex-1">
+                                        <span class="text-sm font-medium text-gray-700 flex items-center">
+                                            <svg class="w-4 h-4 mr-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                            </svg>
+                                            Send as SMS
+                                        </span>
+                                        <p class="text-xs text-gray-500 ml-5">Also send this message via text message</p>
+                                    </label>
+                                </div>
                                 <div class="flex gap-2">
                                     <button @click="sendMessage()" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Send</button>
                                     <button @click="showComposeModal = false" class="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">Cancel</button>
@@ -1160,25 +1417,99 @@
                     </div>
 
                     <!-- View Message Modal -->
-                    <div x-show="showMessageModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="showMessageModal = false">
-                        <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-bold" x-text="selectedMessage?.subject"></h3>
-                                <button @click="showMessageModal = false" class="text-gray-400 hover:text-gray-600">
+                    <div x-show="showMessageModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="showMessageModal = false">
+                        <div class="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+                            <div class="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-xl">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <h3 class="text-xl font-bold text-gray-800" x-text="selectedMessage?.message?.subject"></h3>
+                                        <p class="text-sm text-gray-500 mt-1" x-text="selectedMessage?.message?.created_at"></p>
+                                    </div>
+                                    <button @click="showMessageModal = false" class="text-gray-400 hover:text-gray-600">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="p-6">
+                                <!-- Conversation Thread -->
+                                <div class="space-y-4">
+                                    <template x-for="msg in selectedMessage?.conversation" :key="msg.id">
+                                        <div class="border-l-4 pl-4 py-3" :class="msg.is_mine ? 'border-green-500 bg-green-50' : 'border-blue-500 bg-blue-50'">
+                                            <div class="flex items-start justify-between mb-2">
+                                                <div>
+                                                    <p class="font-semibold text-gray-800" x-text="msg.is_mine ? 'You' : msg.sender_name"></p>
+                                                    <p class="text-xs text-gray-500">To: <span x-text="msg.receiver_name"></span></p>
+                                                </div>
+                                                <div class="text-right">
+                                                    <p class="text-xs text-gray-500" x-text="msg.created_at"></p>
+                                                    <template x-if="msg.sent_as_sms">
+                                                        <span class="inline-flex items-center text-xs text-blue-600 mt-1">
+                                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                                            </svg>
+                                                            SMS
+                                                        </span>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                            <p class="text-gray-700 whitespace-pre-wrap" x-text="msg.content"></p>
+                                        </div>
+                                    </template>
+                                </div>
+                                
+                                <!-- Reply Section -->
+                                <div class="mt-6 pt-6 border-t border-gray-200">
+                                    <button @click="showReplyModal = true" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg flex items-center justify-center space-x-2">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                                        </svg>
+                                        <span>Reply to this conversation</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Reply Modal -->
+                    <div x-show="showReplyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]" @click.self="showReplyModal = false">
+                        <div class="bg-white rounded-xl p-6 w-full max-w-lg mx-4">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Reply to Message</h3>
+                                <button @click="showReplyModal = false" class="text-gray-500 hover:text-gray-700">
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                     </svg>
                                 </button>
                             </div>
-                            <div class="mb-4">
-                                <p class="text-sm text-gray-600">
-                                    <span class="font-medium">From:</span> <span x-text="selectedMessage?.sender_name || 'Farmer'"></span>
-                                </p>
-                                <p class="text-xs text-gray-500" x-text="selectedMessage?.created_at"></p>
-                            </div>
-                            <div class="border-t pt-4">
-                                <p class="text-gray-700" x-text="selectedMessage?.content"></p>
-                            </div>
+                            
+                            <form @submit.prevent="submitReply">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Your Reply</label>
+                                        <textarea x-model="replyContent" rows="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Write your reply..." required></textarea>
+                                    </div>
+                                    <div class="flex items-center space-x-2 bg-blue-50 p-3 rounded-lg">
+                                        <input type="checkbox" x-model="sendSMS" id="send-sms-da-reply" class="w-5 h-5 text-green-600 rounded focus:ring-green-500">
+                                        <label for="send-sms-da-reply" class="flex-1">
+                                            <span class="text-sm font-medium text-gray-700 flex items-center">
+                                                <svg class="w-4 h-4 mr-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                                </svg>
+                                                Send as SMS
+                                            </span>
+                                            <p class="text-xs text-gray-500 ml-5">Also send this reply via text message</p>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex space-x-3 mt-6">
+                                    <button type="button" @click="showReplyModal = false" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
+                                    <button type="submit" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Send Reply</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -1221,6 +1552,20 @@
                 cropPerformance: [],
                 maxYield: 15,
                 yieldChart: null,
+                cropPerformanceChart: null,
+                
+                // Enhanced dashboard data structures
+                enhancedCropPerformance: {
+                    crops: [],
+                    year: new Date().getFullYear(),
+                    ml_connected: false
+                },
+                priceInsights: {
+                    insight: 'Loading price insights...',
+                    highDemandCrops: [],
+                    highGrowthCrops: [],
+                    seasonalAdjustment: []
+                },
 
                 async init() {
                     console.log('===== DA OFFICER DASHBOARD INITIALIZING =====');
@@ -1239,9 +1584,185 @@
                     await this.loadMarketPrices();
                     await this.loadValidationAlerts();
                     await this.loadCropPerformance();
+                    await this.loadEnhancedCropPerformance();
+                    await this.loadPriceInsights();
                     this.loading = false;
                     
                     console.log('===== DASHBOARD INITIALIZATION COMPLETE =====');
+                },
+
+                async loadEnhancedCropPerformance() {
+                    try {
+                        console.log('Fetching enhanced crop performance from', this.baseUrl + '/api/admin/enhanced-crop-performance');
+                        const response = await fetch(this.baseUrl + '/api/admin/enhanced-crop-performance');
+                        
+                        if (!response.ok) {
+                            throw new Error(`API returned ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+                        console.log('Enhanced crop performance loaded:', data);
+                        
+                        this.enhancedCropPerformance = {
+                            crops: data.crops || [],
+                            year: data.year || new Date().getFullYear(),
+                            ml_connected: data.ml_connected || false
+                        };
+                        
+                        this.mlStatus.cropPerformance = data.ml_connected || false;
+                        
+                        // Render horizontal bar chart
+                        this.renderCropPerformanceChart();
+                    } catch (error) {
+                        console.error('Error loading enhanced crop performance:', error);
+                        // Use fallback data
+                        this.enhancedCropPerformance = {
+                            crops: [
+                                { variety: 'Cabbage', currentYield: 7.8, targetYield: 8.0, achievement: 97, activeFarms: 487, estRevenue: 18500000, yoyChange: 12 },
+                                { variety: 'Carrots', currentYield: 5.5, targetYield: 6.5, achievement: 84, activeFarms: 356, estRevenue: 12300000, yoyChange: 8 },
+                                { variety: 'Tomato', currentYield: 4.8, targetYield: 5.5, achievement: 87, activeFarms: 298, estRevenue: 11800000, yoyChange: -3 },
+                                { variety: 'White Potato', currentYield: 6.4, targetYield: 7.0, achievement: 92, activeFarms: 412, estRevenue: 15200000, yoyChange: 15 },
+                                { variety: 'Beans', currentYield: 4.1, targetYield: 4.5, achievement: 91, activeFarms: 245, estRevenue: 9800000, yoyChange: 5 }
+                            ],
+                            year: new Date().getFullYear(),
+                            ml_connected: false
+                        };
+                        this.renderCropPerformanceChart();
+                    }
+                },
+
+                async loadPriceInsights() {
+                    try {
+                        console.log('Fetching price insights from', this.baseUrl + '/api/admin/price-insights');
+                        const response = await fetch(this.baseUrl + '/api/admin/price-insights');
+                        
+                        if (!response.ok) {
+                            throw new Error(`API returned ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+                        console.log('Price insights loaded:', data);
+                        
+                        this.priceInsights = {
+                            insight: data.insight || 'No insights available.',
+                            highDemandCrops: data.highDemandCrops || [],
+                            highGrowthCrops: data.highGrowthCrops || [],
+                            seasonalAdjustment: data.seasonalAdjustment || []
+                        };
+                    } catch (error) {
+                        console.error('Error loading price insights:', error);
+                        this.priceInsights.insight = 'Highland cabbage and potatoes show strong price growth due to increased demand. Strawberries experiencing seasonal price adjustment. Farmers are advised to time harvests during high-demand periods for maximum profit.';
+                    }
+                },
+
+                renderCropPerformanceChart() {
+                    const ctx = document.getElementById('cropPerformanceChart');
+                    
+                    if (!ctx) {
+                        console.error('Canvas element cropPerformanceChart not found!');
+                        return;
+                    }
+                    
+                    if (this.cropPerformanceChart) {
+                        this.cropPerformanceChart.destroy();
+                    }
+                    
+                    const crops = this.enhancedCropPerformance.crops;
+                    const labels = crops.map(c => c.variety);
+                    const currentYield = crops.map(c => c.currentYield);
+                    const targetYield = crops.map(c => c.targetYield);
+                    
+                    this.cropPerformanceChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Current Yield',
+                                    data: currentYield,
+                                    backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                                    borderColor: 'rgba(34, 197, 94, 1)',
+                                    borderWidth: 1
+                                },
+                                {
+                                    label: 'Target Yield',
+                                    data: targetYield,
+                                    backgroundColor: 'rgba(187, 247, 208, 0.8)',
+                                    borderColor: 'rgba(134, 239, 172, 1)',
+                                    borderWidth: 1
+                                }
+                            ]
+                        },
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    backgroundColor: 'white',
+                                    titleColor: '#1f2937',
+                                    bodyColor: '#4b5563',
+                                    borderColor: '#e5e7eb',
+                                    borderWidth: 1,
+                                    padding: 12,
+                                    displayColors: true,
+                                    callbacks: {
+                                        title: function(context) {
+                                            return context[0].label;
+                                        },
+                                        label: function(context) {
+                                            const idx = context.dataIndex;
+                                            const crop = crops[idx];
+                                            if (context.datasetIndex === 0) {
+                                                return `Current Yield: ${crop.currentYield} MT/HA`;
+                                            } else {
+                                                return `Target: ${crop.targetYield} MT/HA`;
+                                            }
+                                        },
+                                        afterLabel: function(context) {
+                                            if (context.datasetIndex === 0) {
+                                                const idx = context.dataIndex;
+                                                const crop = crops[idx];
+                                                return [
+                                                    `Achievement: ${crop.achievement}%`,
+                                                    `Active Farms: ${crop.activeFarms}`,
+                                                    `Est. Revenue: ₱${(crop.estRevenue / 1000000).toFixed(1)}M`
+                                                ];
+                                            }
+                                            return [];
+                                        },
+                                        footer: function(context) {
+                                            const idx = context[0].dataIndex;
+                                            const crop = crops[idx];
+                                            const changeStr = crop.yoyChange >= 0 ? `+${crop.yoyChange}%` : `${crop.yoyChange}%`;
+                                            const status = crop.yoyChange >= 0 ? 'Positive Growth' : 'Negative Growth';
+                                            return `${changeStr} vs last year - ${status}`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    max: 10,
+                                    title: {
+                                        display: true,
+                                        text: 'Yield (MT/HA)'
+                                    }
+                                },
+                                y: {
+                                    grid: {
+                                        display: false
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    
+                    console.log('Crop performance chart rendered successfully');
                 },
 
                 async loadDashboardData() {
@@ -1521,13 +2042,40 @@
                                     display: false
                                 },
                                 tooltip: {
+                                    backgroundColor: 'white',
+                                    titleColor: '#1f2937',
+                                    bodyColor: '#4b5563',
+                                    borderColor: '#e5e7eb',
+                                    borderWidth: 1,
+                                    cornerRadius: 8,
+                                    padding: 16,
+                                    displayColors: true,
                                     callbacks: {
-                                        afterBody: function(context) {
+                                        title: function(context) {
+                                            return context[0].label;
+                                        },
+                                        label: function(context) {
+                                            const idx = context.dataIndex;
+                                            const dataset = context.dataset;
+                                            const value = context.parsed.y;
+                                            
+                                            if (dataset.label.includes('Actual Yield')) {
+                                                return `● Actual Yield:    ${value.toFixed(1)} MT/HA`;
+                                            } else if (dataset.label.includes('Optimal Yield')) {
+                                                return `● Optimal Yield:   ${value.toFixed(1)} MT/HA`;
+                                            } else if (dataset.label.includes('Rainfall')) {
+                                                return `● Rainfall (mm):   ${Math.round(value)} mm`;
+                                            } else if (dataset.label.includes('Temperature')) {
+                                                return `● Temperature (°C): ${Math.round(value)}°C`;
+                                            }
+                                            return `${dataset.label}: ${value}`;
+                                        },
+                                        footer: function(context) {
                                             const idx = context[0].dataIndex;
                                             if (isOptimal[idx]) {
-                                                return ['', '✓ Optimal Planting Period'];
+                                                return 'State: Peak Season (' + context[0].label + ')';
                                             }
-                                            return [];
+                                            return 'State: Off Season (' + context[0].label + ')';
                                         }
                                     }
                                 }
@@ -1598,6 +2146,32 @@
                     this.renderYieldChart(fallbackData);
                 }
             };
+        }
+
+        // Handle logout with CSRF token expiration fallback
+        function handleLogout(event) {
+            sessionStorage.setItem('isLoggedOut','true');
+            event.preventDefault();
+            
+            fetch('{{ route("logout") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin'
+            }).then(response => {
+                if (response.status === 419) {
+                    window.location.href = '{{ route("logout.expired") }}';
+                } else {
+                    window.location.href = '{{ route("login") }}';
+                }
+            }).catch(error => {
+                window.location.href = '{{ route("logout.expired") }}';
+            });
+            
+            return false;
         }
     </script>
 </body>

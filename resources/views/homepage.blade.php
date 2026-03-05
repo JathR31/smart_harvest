@@ -7,7 +7,7 @@
     <title>SmartHarvest</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="{{ asset('js/translation.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/translation-v2.js') }}?v={{ time() }}"></script>
     <style>
         .dropdown-menu {
             min-width: 160px;
@@ -16,17 +16,16 @@
         }
     </style>
     <script>
-        // Simple dropdown functionality
+        // Language dropdown functionality
         function toggleDropdown() {
             const menu = document.getElementById('languageDropdownMenu');
             if (menu) {
                 menu.classList.toggle('hidden');
-                console.log('Dropdown toggled, hidden:', menu.classList.contains('hidden'));
             }
         }
 
         function selectLanguage(code, name) {
-            console.log('🌐 Language selected:', name, code);
+            console.log('Language selected:', name, code);
             
             // Update button text
             const btn = document.getElementById('languageDropdownBtn');
@@ -40,131 +39,14 @@
                 menu.classList.add('hidden');
             }
             
-            // Save language preference
-            localStorage.setItem('preferredLanguage', code);
-            localStorage.setItem('preferredLanguageName', name);
-            
-            // Translate page
+            // Use SmartHarvestTranslation system
             if (typeof SmartHarvestTranslation !== 'undefined') {
-                console.log('✅ Using SmartHarvestTranslation system');
-                SmartHarvestTranslation.changeLanguage(code, name);
-            } else {
-                console.log('⚠️ SmartHarvestTranslation not available, using manual translation');
-                translatePageManually(code);
+                SmartHarvestTranslation.changeLanguage(code);
             }
-        }
-
-        async function translatePageManually(targetLang) {
-            if (targetLang === 'en') {
-                restoreOriginalTexts();
-                return;
-            }
-            
-            console.log('🔄 Starting manual translation to:', targetLang);
-            
-            try {
-                // Get all translatable elements
-                const elements = document.querySelectorAll('[data-translate]');
-                console.log('📝 Found', elements.length, 'translatable elements');
-                
-                if (elements.length === 0) {
-                    console.warn('⚠️ No translatable elements found!');
-                    return;
-                }
-                
-                // Save original texts and collect them for translation
-                const texts = Array.from(elements).map(el => {
-                    const id = el.getAttribute('data-translate-id');
-                    if (!window.originalTexts) window.originalTexts = {};
-                    if (!window.originalTexts[id]) {
-                        window.originalTexts[id] = el.textContent.trim();
-                    }
-                    return window.originalTexts[id];
-                });
-                
-                console.log('📤 Sending', texts.length, 'texts for translation');
-                
-                // Call translation API
-                const response = await fetch('{{ url("/api/translate/batch") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        texts: texts,
-                        target_language: targetLang
-                    })
-                });
-                
-                console.log('📥 Response status:', response.status);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                console.log('📦 Response data:', data);
-                
-                if (data.status === 'success') {
-                    // Apply translations
-                    let successCount = 0;
-                    elements.forEach((el, index) => {
-                        if (data.translations[index]?.translatedText) {
-                            const original = el.textContent.trim();
-                            const translated = data.translations[index].translatedText;
-                            
-                            if (original !== translated) {
-                                el.textContent = translated;
-                                successCount++;
-                                console.log(`✅ ${index + 1}. "${original}" → "${translated}"`);
-                            }
-                        }
-                    });
-                    console.log('🎉 Translation complete!', successCount, 'elements translated');
-                } else {
-                    throw new Error(data.message || 'Translation failed');
-                }
-                
-            } catch (error) {
-                console.error('💥 Translation error:', error);
-                alert('Translation failed: ' + error.message);
-            }
-        }
-        
-        function restoreOriginalTexts() {
-            if (!window.originalTexts) return;
-            
-            const elements = document.querySelectorAll('[data-translate]');
-            elements.forEach(el => {
-                const id = el.getAttribute('data-translate-id');
-                if (window.originalTexts[id]) {
-                    el.textContent = window.originalTexts[id];
-                }
-            });
-            console.log('🔄 Restored original texts');
         }
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('📄 Page loaded, setting up translation system');
-            
-            // Initialize original texts storage
-            window.originalTexts = {};
-            document.querySelectorAll('[data-translate]').forEach(el => {
-                const id = el.getAttribute('data-translate-id');
-                window.originalTexts[id] = el.textContent.trim();
-            });
-            console.log('💾 Saved', Object.keys(window.originalTexts).length, 'original texts');
-            
-            // Load saved language preference
-            const savedLang = localStorage.getItem('preferredLanguage');
-            const savedName = localStorage.getItem('preferredLanguageName');
-            if (savedLang && savedName && savedLang !== 'en') {
-                console.log('🔄 Auto-translating to saved preference:', savedName, '(' + savedLang + ')');
-                setTimeout(() => translatePageManually(savedLang), 500);
-            }
-            
             // Close dropdown when clicking outside
             document.addEventListener('click', function(e) {
                 const btn = document.getElementById('languageDropdownBtn');
@@ -175,12 +57,17 @@
                 }
             });
             
-            // Initialize SmartHarvestTranslation if available
+            // Initialize SmartHarvestTranslation and restore saved language
             if (typeof SmartHarvestTranslation !== 'undefined') {
-                console.log('🌐 SmartHarvestTranslation available, initializing...');
-                SmartHarvestTranslation.init();
-            } else {
-                console.log('⚠️ SmartHarvestTranslation not available, using manual system');
+                SmartHarvestTranslation.init().then(() => {
+                    // Update button to reflect saved language
+                    const savedLang = localStorage.getItem('sh_language') || 'en';
+                    const langNames = { 'en': 'English', 'tl': 'Tagalog', 'ilo': 'Ilocano' };
+                    const btn = document.getElementById('languageDropdownBtn');
+                    if (btn && langNames[savedLang]) {
+                        btn.innerHTML = langNames[savedLang] + ' <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>';
+                    }
+                });
             }
         });
     </script>

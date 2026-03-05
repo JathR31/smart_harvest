@@ -1,0 +1,274 @@
+{
+  "_meta": {
+    "language": "Ilokano",
+    "code": "ilo",
+    "direction": "ltr"
+  },
+  
+  "welcome-msg": "Naimbag nga Isasangbay",
+  "header-dashboard": "DASHBOARD",
+  "profile-settings": "Pannakaikeddeng ti Profile",
+  "dropdown-dashboard": "Dashboard",
+  "logout-btn": "Rummuar",
+  "login-btn": "SUMREK",
+  "hero-title": "Palagdaen ti Panagmulaak babaen ti Datos",
+  "hero-subtitle": "Usaren ti SmartHarvest dagiti napalabas a datos ti apit ken klima tapno tulongan dagiti mannalon a mangpili iti umno a tiempo ti panagmula para iti kasayaatan nga apit.",
+  "dashboard-btn": "Mapan iti Dashboard",
+  "getstarted-btn": "Mangrugi Ditoy",
+  "features-title": "Dagiti Features",
+  "feature-0-title": "Iskedyul ti Panagmula",
+  "feature-0-desc": "Palagdaen ti tiempo ti panagmula para iti kasayaatan nga apit",
+  "feature-1-title": "Pakaammo ti Tiempo",
+  "feature-1-desc": "Real-time a datos ken panagtaripnong ti tiempo",
+  "feature-2-title": "Panagsukimat ti Apit",
+  "feature-2-desc": "Sukimaten ken analisaren dagiti apit iti panaglabas ti tiempo",
+  "mission-title": "Ti Misyon Mi",
+  "mission-text": "Mangted iti bileg kadagiti mannalon babaen ti data-driven insights ken predictive analytics a mangpalagda ti apit, mangkissay kadagiti peggad, ken mangitandudo iti sustainable a wagas ti panagtalon.",
+  "about-title": "Maipapan iti SmartHarvest",
+  "about-subtitle": "Sino Kami",
+  "about-p1": "Ti SmartHarvest ket maysa a naikeddeng a web-based Decision Support System (DSS) a naidisino tapno mangted iti bileg kadagiti mannalon iti intero a munisipalidad ti Benguet. Ti kangrunaan a misyon mi ket ti mangitandudo iti sustainable a wagas ti panagtalon ken dakkel a mangpasayaat iti panagdesisyon iti talon iti sangoanan dagiti agtultuloy a karit ti ekonomiya.",
+  "about-p2": "Maaramid mi daytoy babaen ti panagusar kadagiti naaramid a napalabas a datos maipapan kadagiti lokal nga apit ken pattern ti klima. Babaen ti nauneg a panagsukimat, mailassin ti SmartHarvest dagiti napateg a relasyon ken trend iti nagbaetan dagiti napalabas a pasamak ti tiempo ken resulta ti talon.",
+  "about-p3": "Daytoy a proseso ket mangpalubos kadakami a mangpataud kadagiti data-driven a rekomendasyon, a mangted kadagiti mannalon iti komprehensibo a report maipapan iti kasayaatan a tiempo ti panagmula para iti kangatuan nga apit, giya para iti nasaysayaat a panagusar kadagiti rekurso, ken dagiti maipatungpal nga insight tapno makissay dagiti peggad ti klima iti pagbiagan da ken rehiyonal nga ekonomiya.",
+  "value-0-title": "Desisyon Naibatay iti Datos",
+  "value-0-text": "Agaramid kadagiti matalged a desisyon babaen ti napalabas a datos ti apit ken panagsukimat ti klima",
+  "value-1-title": "Pokus iti Lokal",
+  "value-1-text": "Dagiti insight a naituon para kadagiti munisipalidad ti Benguet ken dagiti mula iti kabambantayan",
+  "value-2-title": "Real-Time nga Insight",
+  "value-2-text": "Agtalinaed nga updated kadagiti agdama a tiempo ken pakaammo ti merkado",
+  "weather-title": "Live a Pakaammo ti Tiempo",
+  "weather-desc": "Real-time a panagmonitor ti tiempo para kadagiti matalged a desisyon iti agrikultura",
+  "municipality-label": "Piliin ti Munisipalidad",
+  "temp-label": "Temperatura",
+  "humidity-label": "Umedo",
+  "wind-label": "Kapaspas ti Angin",
+  "rain-label": "Tudo (24 oras)",
+  "current-conditions": "Agdama a Kasasaad",
+  "select-municipality": "Piliin ti munisipalidad",
+  "weather-info": "Ag-update ti datos ti tiempo tunggal 5 segundo. Ti sistema mi ket mangitipon iti real-time a pakaammo ti tiempo kadagiti napalabas a pattern tapno mangted iti umno a rekomendasyon iti panagmula.",
+  "weather-btn": "Kitaen ti Detalyado a Panagtaripnong",
+  "team-title": "Ammoen ti Team Mi",
+  "team-desc": "Ti multidisciplinary a team mi ket mangitipon iti expertise iti agronomy, climate science, data analytics, ken agricultural engineering.",
+  
+  "menu-main": "Kangrunaan",
+  "menu-dashboard": "Dashboard",
+  "menu-analysis": "Panagsukimat",
+  "menu-planting-schedule": "Iskedyul ti Panagmula",
+  "menu-yield-analysis": "Panagsukimat ti Apit",
+  "menu-weather": "Tiempo",
+  "menu-forecast": "Panagtaripnong",
+  "menu-info": "Pakaammo",
+  "menu-market-prices": "Presyo iti Tiendaan",
+  "menu-announcements": "Dagiti Pakaammuan",
+  "menu-inbox": "Inbox",
+  "menu-account": "Account",
+  "menu-settings": "Pannakaikeddeng",
+  "menu-logout": "Rummuar",
+  "menu-language": "Pagsasao",
+  "back-to-home": "Agsubli iti Home",
+  "dashboard-title": "Dashboard",
+  "ml-active": "Aktibo",
+  
+  "language": "Pagsasao",
+  "login-subtitle": "Sumrek tapno maaccessmo ti dashboard",
+  "login-for-all": "Para kadagiti Mannalon ken Admin",
+  "email-or-phone": "Email wenno Numero ti Telepono:",
+  "email-phone-help": "Mabalinmo nga usaren ti email wenno numero ti teleponom tapno makasumrek",
+  "password": "Password",
+  "remember-me": "Laglagipendak",
+  "forgot-password": "Nalipatan ti password?",
+  "sign-in": "Sumrek",
+  "back-to-main": "Agsubli iti kangrunaan a panid",
+  
+  "welcome-smartharvest": "Naimbag nga Isasangbay iti SmartHarvest",
+  "tagline": "Agmula a Nasayaat, Agapit iti Ad-adu",
+  "register-intro": "Makikaduakayon iti komunidad dagiti mannalon ken makagun-od kadagiti data-driven nga insight.",
+  "note": "Laglagipen:",
+  "password-note": "I-set mo ti password mo kalpasan a ma-verify ti email address mo.",
+  "full-name": "Kompleto a Nagan",
+  "municipality": "Munisipalidad / Siudad",
+  "verification-method": "Pinili a Wagas ti Panagpasingked",
+  "email-verification": "Panagpasingked iti Email",
+  "email-verification-desc": "Mangipatulodkami iti verification link iti email mo",
+  "sms-verification": "Panagpasingked iti SMS",
+  "sms-verification-desc": "Mangipatulodkami iti OTP code iti mobile number mo",
+  "agree-to": "Umanamongak iti",
+  "terms-of-service": "Dagiti Kondisyon ti Serbisyo",
+  "and": "ken",
+  "privacy-policy": "Polisiya iti Privacy",
+  "create-account": "Agaramid iti Account",
+  "already-have-account": "Addaan metten iti account?",
+  "login": "Sumrek",
+  
+  "header": {
+    "login": "SUMREK",
+    "dashboard": "DASHBOARD",
+    "welcome": "Naimbag nga Isasangbay",
+    "profileSettings": "Pannakaikeddeng ti Profile",
+    "logout": "Rummuar"
+  },
+  
+  "hero": {
+    "title": "Palagdaen ti Panagmulaak babaen ti Datos",
+    "subtitle": "Usaren ti SmartHarvest dagiti napalabas a datos ti apit ken klima tapno tulongan dagiti mannalon a mangpili iti umno a tiempo ti panagmula para iti kasayaatan nga apit.",
+    "getStarted": "Mangrugi Ditoy",
+    "goToDashboard": "Mapan iti Dashboard"
+  },
+  
+  "features": {
+    "title": "Dagiti Features",
+    "plantingSchedule": {
+      "title": "Iskedyul ti Panagmula",
+      "description": "Palagdaen ti tiempo ti panagmula para iti kasayaatan nga apit"
+    },
+    "weatherInsights": {
+      "title": "Pakaammo ti Tiempo",
+      "description": "Real-time a datos ken panagtaripnong ti tiempo"
+    },
+    "yieldAnalysis": {
+      "title": "Panagsukimat ti Apit",
+      "description": "Sukimaten ken analisaren dagiti apit iti panaglabas ti tiempo"
+    }
+  },
+  
+  "mission": {
+    "title": "Ti Misyon Mi",
+    "text": "Mangted iti bileg kadagiti mannalon babaen ti data-driven insights ken predictive analytics a mangpalagda ti apit, mangkissay kadagiti peggad, ken mangitandudo iti sustainable a wagas ti panagtalon."
+  },
+  
+  "about": {
+    "title": "Maipapan iti SmartHarvest",
+    "subtitle": "Sino Kami",
+    "paragraph1": "Ti SmartHarvest ket maysa a naikeddeng a web-based Decision Support System (DSS) a naidisino tapno mangted iti bileg kadagiti mannalon iti intero a munisipalidad ti Benguet. Ti kangrunaan a misyon mi ket ti mangitandudo iti sustainable a wagas ti panagtalon ken dakkel a mangpasayaat iti panagdesisyon iti talon iti sangoanan dagiti agtultuloy a karit ti ekonomiya.",
+    "paragraph2": "Maaramid mi daytoy babaen ti panagusar kadagiti naaramid a napalabas a datos maipapan kadagiti lokal nga apit ken pattern ti klima. Babaen ti nauneg a panagsukimat, mailassin ti SmartHarvest dagiti napateg a relasyon ken trend iti nagbaetan dagiti napalabas a pasamak ti tiempo ken resulta ti talon.",
+    "paragraph3": "Daytoy a proseso ket mangpalubos kadakami a mangpataud kadagiti data-driven a rekomendasyon, a mangted kadagiti mannalon iti komprehensibo a report maipapan iti kasayaatan a tiempo ti panagmula para iti kangatuan nga apit, giya para iti nasaysayaat a panagusar kadagiti rekurso, ken dagiti maipatungpal nga insight tapno makissay dagiti peggad ti klima iti pagbiagan da ken rehiyonal nga ekonomiya."
+  },
+  
+  "menu": {
+    "main": "Kangrunaan",
+    "dashboard": "Dashboard",
+    "analysis": "Panagsukimat",
+    "plantingSchedule": "Iskedyul ti Panagmula",
+    "yieldAnalysis": "Panagsukimat ti Apit",
+    "weather": "Tiempo",
+    "forecast": "Panagtaripnong",
+    "information": "Pakaammo",
+    "marketPrices": "Presyo iti Tiendaan",
+    "announcements": "Dagiti Pakaammoan",
+    "inbox": "Inbox",
+    "account": "Account",
+    "settings": "Dagiti Setting",
+    "logout": "Rummuar",
+    "backToHome": "Agsubli iti Home"
+  },
+  
+  "dashboard": {
+    "title": "Dashboard",
+    "overview": "Pakabuklan",
+    "mlActive": "ML Aktibo",
+    "mlPowered": "ML POWERED",
+    "selectMunicipality": "Pilien ti Munisipalidad",
+    "allMunicipalities": "Amin a Munisipalidad",
+    "loading": "Agkarkarga...",
+    "noData": "Awan ti mabasa a datos"
+  },
+  
+  "stats": {
+    "totalYield": "Dagup ti Apit",
+    "avgYield": "Average nga Apit",
+    "totalFarms": "Dagup ti Talon",
+    "activeCrops": "Dagiti Aktibo a Mula",
+    "metricTons": "metric tons",
+    "perHectare": "tunggal ektarya",
+    "farms": "dagiti talon",
+    "varieties": "dagiti uri"
+  },
+  
+  "crops": {
+    "rice": "Irik",
+    "corn": "Mais",
+    "vegetables": "Nateng",
+    "cabbage": "Repolyo",
+    "carrots": "Karot",
+    "potato": "Patatas",
+    "sweetPotato": "Kamote",
+    "beans": "Utong",
+    "tomato": "Kamatis",
+    "lettuce": "Letsugas",
+    "broccoli": "Broccoli",
+    "chayote": "Sayote",
+    "sayote": "Sayote"
+  },
+  
+  "agriculture": {
+    "yield": "Apit",
+    "crop": "Mula",
+    "harvest": "Apit",
+    "planting": "Panagmula",
+    "fertilizer": "Abono",
+    "irrigation": "Padanum",
+    "pesticide": "Pestisidyo",
+    "soil": "Daga",
+    "rainfall": "Tudo",
+    "temperature": "Temperatura",
+    "humidity": "Halumigmig",
+    "hectare": "Ektarya",
+    "season": "Tiempo",
+    "wetSeason": "Tiempo ti Tudo",
+    "drySeason": "Tiempo ti Init"
+  },
+  
+  "marketPrices": {
+    "title": "Agdama a Presyo iti Tiendaan",
+    "lastUpdated": "Naudi a Na-update",
+    "pricePerKg": "tunggal kilo",
+    "highDemand": "Nangato ti Demand",
+    "mediumDemand": "Kalalainganna a Demand",
+    "lowDemand": "Nababa ti Demand",
+    "priceUp": "Timmubo ti Presyo",
+    "priceDown": "Naikkat ti Presyo",
+    "stable": "Natalna"
+  },
+  
+  "weather": {
+    "title": "Panagtaripnong ti Tiempo",
+    "today": "Ita nga Aldaw",
+    "tomorrow": "Inton Bigat",
+    "weekly": "Linggaan a Panagtaripnong",
+    "temperature": "Temperatura",
+    "humidity": "Halumigmig",
+    "rainfall": "Tudo",
+    "sunny": "Naintan",
+    "cloudy": "Naulep",
+    "rainy": "Agtutudon",
+    "advisory": "Pakdaar iti Tiempo"
+  },
+  
+  "announcements": {
+    "title": "Dagiti Pakaammoan",
+    "latest": "Kabarbaro a Updates",
+    "readMore": "Agbasa Pay",
+    "noAnnouncements": "Awan dagiti pakaammoan ita"
+  },
+  
+  "common": {
+    "viewAll": "Kitaen Amin",
+    "seeMore": "Kitaen Pay",
+    "close": "Irikep",
+    "save": "I-save",
+    "cancel": "Ibabawi",
+    "confirm": "Pasingkedan",
+    "loading": "Agkarkarga...",
+    "error": "Biddut",
+    "success": "Naballigi",
+    "today": "Ita nga Aldaw",
+    "thisWeek": "Daytoy a Lawas",
+    "thisMonth": "Daytoy a Bulan"
+  },
+  
+  "footer": {
+    "copyright": "© 2026 SmartHarvest. Amin a karbengan ket naisalakan.",
+    "contact": "Kontakon Kami",
+    "privacy": "Pagannurotan iti Privacy",
+    "terms": "Dagiti Kondisyon ti Serbisyo"
+  }
+}

@@ -6,19 +6,27 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Dashboard - SmartHarvest</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="{{ asset('js/translation.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/translation-v2.js') }}?v={{ time() }}"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         [x-cloak] { display: none !important; }
         .sidebar { background: linear-gradient(180deg, #047857 0%, #065f46 100%); }
         .sidebar-item:hover { background-color: rgba(255, 255, 255, 0.1); }
         .sidebar-item.active { background-color: rgba(255, 255, 255, 0.15); border-left: 4px solid #fff; }
+        
+        /* Fixed layout styles */
+        body { height: 100vh; overflow: hidden; }
+        .sidebar-container { position: fixed; top: 0; left: 0; bottom: 0; width: 16rem; overflow-y: auto; z-index: 40; }
+        .main-container { margin-left: 16rem; height: 100vh; display: flex; flex-direction: column; }
+        .content-scrollable { overflow-y: auto; flex: 1; }
+        .da-banner { position: fixed; top: 0; left: 16rem; right: 0; z-index: 50; }
+        .main-container-with-banner { padding-top: 3.5rem; }
     </style>
 </head>
-<body class="bg-gray-50 flex flex-col" x-data="farmerDashboard()">
+<body class="bg-gray-50" x-data="farmerDashboard()">
     @if(isset($viewingAsFarmer) && $viewingAsFarmer)
     <!-- DA Officer View Banner -->
-    <div class="bg-gradient-to-r from-green-700 to-green-600 text-white py-3 px-6 flex items-center justify-between w-full z-50">
+    <div class="da-banner bg-gradient-to-r from-green-700 to-green-600 text-white py-3 px-6 flex items-center justify-between">
         <div class="flex items-center space-x-3">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -35,9 +43,8 @@
     </div>
     @endif
     
-    <div class="flex flex-1">
     <!-- Sidebar -->
-    <aside class="sidebar w-64 min-h-screen text-white flex-shrink-0">
+    <aside class="sidebar sidebar-container w-64 text-white">
         <div class="p-6">
             <div class="flex items-center space-x-2 mb-8">
                 <span class="text-2xl">🌱</span>
@@ -96,7 +103,7 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                     <span data-translate data-translate-id="menu-settings">Settings</span>
                 </a>
-                <form method="POST" action="{{ route('logout') }}" onsubmit="sessionStorage.setItem('isLoggedOut','true');">
+                <form method="POST" action="{{ route('logout') }}" id="logoutForm" onsubmit="return handleLogout(event);">
                     @csrf
                     <button type="submit" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition w-full text-left">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
@@ -112,7 +119,7 @@
     </aside>
 
     <!-- Main Content -->
-    <div class="flex-1 flex flex-col">
+    <div class="main-container {{ isset($viewingAsFarmer) && $viewingAsFarmer ? 'main-container-with-banner' : '' }}">
         <!-- Top Header -->
         <header class="bg-white border-b px-8 py-4">
             <div class="flex items-center justify-between">
@@ -150,9 +157,15 @@
                             <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
                         <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-50" style="display: none;">
-                            <button @click="changeLanguage('en', 'English'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'en'}">English</button>
-                            <button @click="changeLanguage('tl', 'Tagalog'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'tl'}">Tagalog</button>
-                            <button @click="changeLanguage('ilo', 'Ilocano'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'ilo'}">Ilocano</button>
+                            <button @click="changeLanguage('en', 'English'); open = false" class="flex items-center w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'en'}">
+                                <span class="mr-2">🇺🇸</span> English
+                            </button>
+                            <button @click="changeLanguage('tl', 'Tagalog'); open = false" class="flex items-center w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'tl'}">
+                                <span class="mr-2">🇵🇭</span> Tagalog
+                            </button>
+                            <button @click="changeLanguage('ilo', 'Ilokano'); open = false" class="flex items-center w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'ilo'}">
+                                <span class="mr-2">🇵🇭</span> Ilokano
+                            </button>
                         </div>
                     </div>
                     <div class="relative">
@@ -167,7 +180,7 @@
         </header>
 
         <!-- Dashboard Content -->
-        <main class="flex-1 p-8 overflow-y-auto bg-gray-50">
+        <main class="content-scrollable p-8 bg-gray-50">
             
             <!-- Main Dashboard Section -->
             <div x-show="showSection === 'dashboard'">
@@ -711,10 +724,41 @@
             <!-- Announcements Section -->
             <div x-show="showSection === 'announcements'" x-cloak>
                 <h2 class="text-2xl font-bold text-gray-800 mb-6">Announcements</h2>
-                <p class="text-gray-600 mb-6">Important updates and announcements from the Department of Agriculture.</p>
+                <p class="text-gray-600 mb-4">Important updates and announcements from the Department of Agriculture.</p>
+                
+                <!-- Filters -->
+                <div class="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+                    <div class="flex flex-wrap items-center gap-4">
+                        <!-- Priority Filter -->
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm font-medium text-gray-700">Priority:</label>
+                            <select x-model="priorityFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 min-w-[140px]">
+                                <option value="all">All Priorities</option>
+                                <option value="urgent">🔴 Urgent</option>
+                                <option value="high">🟡 High</option>
+                                <option value="normal">🔵 Normal</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Sort Order -->
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm font-medium text-gray-700">Sort:</label>
+                            <select x-model="sortOrder" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 min-w-[140px]">
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Results Count -->
+                        <div class="ml-auto text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
+                            <span class="font-semibold" x-text="filteredAnnouncements.length"></span>
+                            <span x-text="filteredAnnouncements.length === 1 ? ' announcement' : ' announcements'"></span>
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="space-y-4">
-                    <template x-for="(announcement, index) in announcements" :key="index">
+                    <template x-for="(announcement, index) in filteredAnnouncements" :key="index">
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
                             <div class="flex items-start justify-between mb-3">
                                 <div class="flex items-center space-x-3">
@@ -749,19 +793,75 @@
                             <p class="text-gray-700" x-text="announcement.content"></p>
                         </div>
                     </template>
-                    <template x-if="announcements.length === 0">
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-                            <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
-                            </svg>
-                            <p class="text-gray-500">No announcements at this time.</p>
-                        </div>
-                    </template>
+                    <!-- Empty State -->
+                    <div x-show="filteredAnnouncements.length === 0" class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+                        </svg>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">No announcements found</h3>
+                        <p class="text-gray-500 text-sm">
+                            <span x-show="priorityFilter !== 'all'">Try changing the filter to see more announcements</span>
+                            <span x-show="priorityFilter === 'all' && announcements.length === 0">No announcements at this time.</span>
+                        </p>
+                    </div>
                 </div>
             </div>
 
             <!-- Inbox Section -->
-            <div x-show="showSection === 'inbox'" x-cloak>
+            <div x-show="showSection === 'inbox'" x-cloak x-data="{
+                selectedMessage: null,
+                showMessageModal: false,
+                showReplyModal: false,
+                replyContent: '',
+                sendSMS: false,
+                
+                async viewMessage(message) {
+                    try {
+                        const response = await fetch(`{{ url('/api/messages') }}/${message.id}`);
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.selectedMessage = data;
+                            this.showMessageModal = true;
+                            await this.loadMessages();
+                        }
+                    } catch (error) {
+                        console.error('Error loading message:', error);
+                    }
+                },
+                
+                async submitReply() {
+                    if (!this.replyContent.trim()) {
+                        alert('Please enter a message');
+                        return;
+                    }
+                    
+                    try {
+                        const response = await fetch(`{{ url('/api/messages') }}/${this.selectedMessage.message.id}/reply`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content
+                            },
+                            body: JSON.stringify({
+                                content: this.replyContent,
+                                send_sms: this.sendSMS
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            this.replyContent = '';
+                            this.sendSMS = false;
+                            this.showReplyModal = false;
+                            alert('Reply sent successfully!' + (this.sendSMS ? ' SMS sent.' : ''));
+                            await this.viewMessage(this.selectedMessage.message);
+                            await this.loadMessages();
+                        }
+                    } catch (error) {
+                        console.error('Error sending reply:', error);
+                        alert('Error sending reply');
+                    }
+                }
+            }">
                 <div class="flex justify-between items-center mb-6">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-800">Inbox</h2>
@@ -790,21 +890,82 @@
                     
                     <!-- Received Messages -->
                     <div x-show="inboxTab === 'received'" class="p-4">
-                        <template x-for="msg in messages.received" :key="msg.id">
-                            <div @click="markAsRead(msg.id)" class="p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer" :class="{'bg-green-50': !msg.is_read}">
-                                <div class="flex items-start justify-between">
-                                    <div>
-                                        <p class="font-medium text-gray-800" :class="{'font-bold': !msg.is_read}" x-text="msg.subject"></p>
-                                        <p class="text-sm text-gray-500">From: <span x-text="msg.sender_name"></span></p>
-                                        <p class="text-sm text-gray-600 mt-1" x-text="msg.content.substring(0, 100) + '...'"></p>
+                        <!-- Unread Messages Section -->
+                        <div x-show="unreadMessages.length > 0">
+                            <div class="flex items-center justify-between mb-3 pb-2 border-b-2 border-green-500">
+                                <h3 class="text-sm font-bold text-green-700 uppercase tracking-wide flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                                    </svg>
+                                    New Messages
+                                </h3>
+                                <span class="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full" x-text="unreadMessages.length"></span>
+                            </div>
+                            <template x-for="msg in unreadMessages" :key="msg.id">
+                                <div @click="viewMessage(msg)" class="p-4 mb-2 border-b border-gray-100 hover:bg-gray-50 cursor-pointer bg-green-50 rounded-lg">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <span class="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                                <p class="font-bold text-gray-800" x-text="msg.subject"></p>
+                                            </div>
+                                            <p class="text-sm text-gray-500">From: <span class="font-medium" x-text="msg.sender_name"></span></p>
+                                            <p class="text-sm text-gray-600 mt-2 line-clamp-2" x-text="msg.content"></p>
+                                            <template x-if="msg.reply_count > 0">
+                                                <div class="mt-2 flex items-center text-xs text-green-600">
+                                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                                                    </svg>
+                                                    <span x-text="msg.reply_count + ' ' + (msg.reply_count === 1 ? 'reply' : 'replies')"></span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <div class="text-right ml-4">
+                                            <p class="text-xs text-gray-400" x-text="msg.created_at"></p>
+                                            <span class="inline-block mt-2 px-2 py-1 bg-green-500 text-white text-xs rounded-full font-medium">NEW</span>
+                                        </div>
                                     </div>
-                                    <div class="text-right">
+                                </div>
+                            </template>
+                        </div>
+                        
+                        <!-- Divider between new and previous messages -->
+                        <div x-show="unreadMessages.length > 0 && readMessages.length > 0" class="my-6">
+                            <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-300">
+                                <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+                                    </svg>
+                                    Previous Messages
+                                </h3>
+                                <span class="text-xs text-gray-500" x-text="readMessages.length + ' read'"></span>
+                            </div>
+                        </div>
+                        
+                        <!-- Read Messages Section -->
+                        <template x-for="msg in readMessages" :key="msg.id">
+                            <div @click="viewMessage(msg)" class="p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-700" x-text="msg.subject"></p>
+                                        <p class="text-sm text-gray-500">From: <span x-text="msg.sender_name"></span></p>
+                                        <p class="text-sm text-gray-600 mt-1 line-clamp-2" x-text="msg.content"></p>
+                                        <template x-if="msg.reply_count > 0">
+                                            <div class="mt-2 flex items-center text-xs text-gray-600">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                                                </svg>
+                                                <span x-text="msg.reply_count + ' ' + (msg.reply_count === 1 ? 'reply' : 'replies')"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                    <div class="text-right ml-4">
                                         <p class="text-xs text-gray-400" x-text="msg.created_at"></p>
-                                        <span x-show="!msg.is_read" class="inline-block mt-1 w-2 h-2 bg-green-500 rounded-full"></span>
                                     </div>
                                 </div>
                             </div>
                         </template>
+                        
                         <template x-if="messages.received.length === 0">
                             <div class="text-center py-12 text-gray-500">
                                 <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -818,12 +979,30 @@
                     <!-- Sent Messages -->
                     <div x-show="inboxTab === 'sent'" x-cloak class="p-4">
                         <template x-for="msg in messages.sent" :key="msg.id">
-                            <div class="p-4 border-b border-gray-100 hover:bg-gray-50">
+                            <div @click="viewMessage(msg)" class="p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
                                 <div class="flex items-start justify-between">
-                                    <div>
+                                    <div class="flex-1">
                                         <p class="font-medium text-gray-800" x-text="msg.subject"></p>
                                         <p class="text-sm text-gray-500">To: <span x-text="msg.receiver_name"></span></p>
-                                        <p class="text-sm text-gray-600 mt-1" x-text="msg.content.substring(0, 100) + '...'"></p>
+                                        <p class="text-sm text-gray-600 mt-1 line-clamp-2" x-text="msg.content"></p>
+                                        <div class="mt-2 flex items-center gap-3">
+                                            <template x-if="msg.sent_as_sms">
+                                                <span class="inline-flex items-center text-xs text-blue-600">
+                                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                                    </svg>
+                                                    SMS sent
+                                                </span>
+                                            </template>
+                                            <template x-if="msg.reply_count > 0">
+                                                <span class="inline-flex items-center text-xs text-gray-600">
+                                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                                                    </svg>
+                                                    <span x-text="msg.reply_count + ' ' + (msg.reply_count === 1 ? 'reply' : 'replies')"></span>
+                                                </span>
+                                            </template>
+                                        </div>
                                     </div>
                                     <p class="text-xs text-gray-400" x-text="msg.created_at"></p>
                                 </div>
@@ -875,6 +1054,18 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
                                 <textarea x-model="newMessage.content" rows="5" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Write your message here..." required></textarea>
                             </div>
+                            <div class="flex items-center space-x-2 bg-blue-50 p-3 rounded-lg">
+                                <input type="checkbox" x-model="newMessage.send_sms" id="send-sms-compose" class="w-5 h-5 text-green-600 rounded focus:ring-green-500">
+                                <label for="send-sms-compose" class="flex-1">
+                                    <span class="text-sm font-medium text-gray-700 flex items-center">
+                                        <svg class="w-4 h-4 mr-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                        </svg>
+                                        Send as SMS
+                                    </span>
+                                    <p class="text-xs text-gray-500 ml-5">Also send this message via text message</p>
+                                </label>
+                            </div>
                         </div>
                         
                         <div class="flex space-x-3 mt-6">
@@ -884,24 +1075,155 @@
                     </form>
                 </div>
             </div>
+            
+            <!-- Message View Modal -->
+            <div x-show="showMessageModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" x-cloak>
+                <div class="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto" @click.away="showMessageModal = false">
+                    <div class="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-xl">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <h3 class="text-xl font-bold text-gray-800" x-text="selectedMessage?.message?.subject"></h3>
+                                <p class="text-sm text-gray-500 mt-1" x-text="selectedMessage?.message?.created_at"></p>
+                            </div>
+                            <button @click="showMessageModal = false" class="text-gray-400 hover:text-gray-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6">
+                        <!-- Conversation Thread -->
+                        <div class="space-y-4">
+                            <template x-for="msg in selectedMessage?.conversation" :key="msg.id">
+                                <div class="border-l-4 pl-4 py-3" :class="msg.is_mine ? 'border-green-500 bg-green-50' : 'border-blue-500 bg-blue-50'">
+                                    <div class="flex items-start justify-between mb-2">
+                                        <div>
+                                            <p class="font-semibold text-gray-800" x-text="msg.is_mine ? 'You' : msg.sender_name"></p>
+                                            <p class="text-xs text-gray-500">To: <span x-text="msg.receiver_name"></span></p>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-xs text-gray-500" x-text="msg.created_at"></p>
+                                            <template x-if="msg.sent_as_sms">
+                                                <span class="inline-flex items-center text-xs text-blue-600 mt-1">
+                                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                                    </svg>
+                                                    SMS
+                                                </span>
+                                            </template>
+                                        </div>
+                                    </div>
+                                    <p class="text-gray-700 whitespace-pre-wrap" x-text="msg.content"></p>
+                                </div>
+                            </template>
+                        </div>
+                        
+                        <!-- Reply Section -->
+                        <div class="mt-6 pt-6 border-t border-gray-200">
+                            <button @click="showReplyModal = true" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg flex items-center justify-center space-x-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                                </svg>
+                                <span>Reply to this conversation</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reply Modal -->
+            <div x-show="showReplyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]" x-cloak>
+                <div class="bg-white rounded-xl p-6 w-full max-w-lg mx-4" @click.away="showReplyModal = false">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">Reply to Message</h3>
+                        <button @click="showReplyModal = false" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <form @submit.prevent="submitReply">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Your Reply</label>
+                                <textarea x-model="replyContent" rows="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Write your reply..." required></textarea>
+                            </div>
+                            <div class="flex items-center space-x-2 bg-blue-50 p-3 rounded-lg">
+                                <input type="checkbox" x-model="sendSMS" id="send-sms-reply" class="w-5 h-5 text-green-600 rounded focus:ring-green-500">
+                                <label for="send-sms-reply" class="flex-1">
+                                    <span class="text-sm font-medium text-gray-700 flex items-center">
+                                        <svg class="w-4 h-4 mr-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                        </svg>
+                                        Send as SMS
+                                    </span>
+                                    <p class="text-xs text-gray-500 ml-5">Also send this reply via text message</p>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="flex space-x-3 mt-6">
+                            <button type="button" @click="showReplyModal = false" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
+                            <button type="submit" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Send Reply</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            </div>
+
         </main>
     </div>
 
     <script>
         function farmerDashboard() {
             return {
-                selectedLanguage: localStorage.getItem('preferredLanguage') || 'en',
-                selectedLanguageName: localStorage.getItem('preferredLanguageName') || 'English',
+                selectedLanguage: localStorage.getItem('sh_language') || 'en',
+                selectedLanguageName: {
+                    'en': 'English',
+                    'tl': 'Tagalog',
+                    'ilo': 'Ilokano'
+                }[localStorage.getItem('sh_language')] || 'English',
                 originalTexts: {},
                 selectedMunicipality: '{{ $userMunicipality ?? "La Trinidad" }}',
                 showSection: new URLSearchParams(window.location.search).get('tab') || 'dashboard',
                 unreadAnnouncements: 0,
                 unreadMessages: 0,
                 announcements: [],
+                priorityFilter: 'all',
+                sortOrder: 'newest',
+                
+                get filteredAnnouncements() {
+                    let filtered = [...this.announcements];
+                    
+                    // Filter by priority
+                    if (this.priorityFilter !== 'all') {
+                        filtered = filtered.filter(a => a.priority === this.priorityFilter);
+                    }
+                    
+                    // Sort by date
+                    filtered.sort((a, b) => {
+                        const dateA = new Date(a.created_at);
+                        const dateB = new Date(b.created_at);
+                        return this.sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+                    });
+                    
+                    return filtered;
+                },
+                
+                get unreadMessages() {
+                    return this.messages.received.filter(m => !m.is_read);
+                },
+                
+                get readMessages() {
+                    return this.messages.received.filter(m => m.is_read);
+                },
                 messages: { received: [], sent: [] },
                 daOfficers: [],
                 showComposeModal: false,
-                newMessage: { receiver_id: '', subject: '', content: '' },
+                newMessage: { receiver_id: '', subject: '', content: '', send_sms: false },
                 municipalities: [
                     'Atok', 'Bakun', 'Bokod', 'Buguias', 'Itogon', 
                     'Kabayan', 'Kapangan', 'Kibungan', 'La Trinidad', 'Mankayan', 
@@ -942,9 +1264,10 @@
                     this.loadMarketPrices();
                     this.loadAnnouncements();
                     this.loadMessages();
-                    SmartHarvestTranslation.init();
-                    if (this.selectedLanguage !== 'en') {
-                        this.translatePage(this.selectedLanguage);
+                    
+                    // Initialize translation system
+                    if (typeof SmartHarvestTranslation !== 'undefined') {
+                        SmartHarvestTranslation.init();
                     }
                 },
 
@@ -1010,77 +1333,34 @@
                         });
                         if (response.ok) {
                             this.showComposeModal = false;
-                            this.newMessage = { receiver_id: '', subject: '', content: '' };
+                            this.newMessage = { receiver_id: '', subject: '', content: '', send_sms: false };
                             await this.loadMessages();
-                            alert('Message sent successfully!');
+                            const result = await response.json();
+                            alert(result.message || 'Message sent successfully!');
+                        } else {
+                            const error = await response.json();
+                            alert(error.errors ? JSON.stringify(error.errors) : 'Error sending message');
                         }
                     } catch (error) {
                         console.error('Error sending message:', error);
                         alert('Error sending message');
                     }
                 },
-
-                async markAsRead(messageId) {
-                    try {
-                        await fetch(`{{ url('/api/messages') }}/${messageId}/read`, {
-                            method: 'PATCH',
-                            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
-                        });
-                        await this.loadMessages();
-                    } catch (error) {
-                        console.error('Error marking message as read:', error);
-                    }
-                },
                 
                 async changeLanguage(code, name) {
                     this.selectedLanguage = code;
                     this.selectedLanguageName = name;
-                    localStorage.setItem('preferredLanguage', code);
-                    localStorage.setItem('preferredLanguageName', name);
                     
-                    if (code !== 'en') {
-                        await this.translatePage(code);
-                    } else {
-                        location.reload();
+                    // Use the static translation system
+                    if (typeof SmartHarvestTranslation !== 'undefined') {
+                        SmartHarvestTranslation.changeLanguage(code);
                     }
                 },
                 
+                // Legacy translatePage method - kept for compatibility but now uses static translations
                 async translatePage(targetLang) {
-                    const elements = document.querySelectorAll('[data-translate]');
-                    const texts = Array.from(elements).map(el => {
-                        const id = el.getAttribute('data-translate-id');
-                        if (!this.originalTexts[id]) {
-                            this.originalTexts[id] = el.textContent.trim();
-                        }
-                        return this.originalTexts[id];
-                    });
-                    
-                    if (texts.length === 0) return;
-                    
-                    try {
-                        const response = await fetch(`{{ url('/api/translate/batch') }}`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            },
-                            body: JSON.stringify({
-                                texts: texts,
-                                target_language: targetLang
-                            })
-                        });
-                        
-                        const data = await response.json();
-                        
-                        if (data.status === 'success') {
-                            elements.forEach((el, index) => {
-                                if (data.translations[index]?.translatedText) {
-                                    el.textContent = data.translations[index].translatedText;
-                                }
-                            });
-                        }
-                    } catch (error) {
-                        console.error('Translation error:', error);
+                    if (typeof SmartHarvestTranslation !== 'undefined') {
+                        SmartHarvestTranslation.changeLanguage(targetLang);
                     }
                 },
 
@@ -1253,6 +1533,36 @@
     </script>
 
     <script>
+        // Handle logout with CSRF token expiration fallback
+        function handleLogout(event) {
+            sessionStorage.setItem('isLoggedOut','true');
+            
+            // Try POST logout, fallback to GET if CSRF fails
+            event.preventDefault();
+            
+            fetch('{{ route("logout") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin'
+            }).then(response => {
+                if (response.status === 419) {
+                    // CSRF token expired, use fallback GET logout
+                    window.location.href = '{{ route("logout.expired") }}';
+                } else {
+                    window.location.href = '{{ route("login") }}';
+                }
+            }).catch(error => {
+                // Network error or other issue, use fallback
+                window.location.href = '{{ route("logout.expired") }}';
+            });
+            
+            return false;
+        }
+
         // Prevent back button after logout
         if (typeof(Storage) !== 'undefined') {
             if (sessionStorage.getItem('isLoggedOut') === 'true') {
@@ -1268,6 +1578,5 @@
         };
     </script>
 
-    </div><!-- End of flex wrapper -->
 </body>
 </html>

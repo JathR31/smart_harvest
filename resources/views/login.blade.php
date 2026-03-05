@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>SmartHarvest - Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="{{ asset('js/translation.js') }}"></script>
+    <script src="{{ asset('js/translation-v2.js') }}?v={{ time() }}"></script>
     <style>
         /* Custom light green background to match the image */
         body {

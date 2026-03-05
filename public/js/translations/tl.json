@@ -1,0 +1,274 @@
+{
+  "_meta": {
+    "language": "Tagalog",
+    "code": "tl",
+    "direction": "ltr"
+  },
+  
+  "welcome-msg": "Maligayang pagdating",
+  "header-dashboard": "DASHBOARD",
+  "profile-settings": "Mga Setting ng Profile",
+  "dropdown-dashboard": "Dashboard",
+  "logout-btn": "Mag-logout",
+  "login-btn": "MAG-LOGIN",
+  "hero-title": "Palakasin ang Iyong Pagtatanim gamit ang Data",
+  "hero-subtitle": "Ginagamit ng SmartHarvest ang makasaysayang datos ng ani at klima upang matulungan ang mga magsasaka na gumawa ng matalinong desisyon sa pagtatanim para sa pinakamataas na produktibidad.",
+  "dashboard-btn": "Pumunta sa Dashboard",
+  "getstarted-btn": "Magsimula Na",
+  "features-title": "Mga Tampok",
+  "feature-0-title": "Iskedyul ng Pagtatanim",
+  "feature-0-desc": "I-optimize ang oras ng pagtatanim para sa pinakamataas na ani",
+  "feature-1-title": "Impormasyon sa Panahon",
+  "feature-1-desc": "Real-time na datos at pagtataya ng panahon",
+  "feature-2-title": "Pagsusuri ng Ani",
+  "feature-2-desc": "Subaybayan at suriin ang mga ani sa paglipas ng panahon",
+  "mission-title": "Ang Aming Misyon",
+  "mission-text": "Bigyang kapangyarihan ang mga magsasaka sa pamamagitan ng data-driven insights at predictive analytics na nag-o-optimize ng ani, nagpapababa ng mga panganib, at nagpo-promote ng sustainable na mga gawain sa agrikultura.",
+  "about-title": "Tungkol sa SmartHarvest",
+  "about-subtitle": "Sino Kami",
+  "about-p1": "Ang SmartHarvest ay isang nakatuong web-based Decision Support System (DSS) na idinisenyo upang bigyang kapangyarihan ang mga magsasaka sa buong munisipalidad ng Benguet. Ang aming pangunahing misyon ay itaguyod ang sustainable na pamamaraan ng pagsasaka at malaki ang pagpapabuti sa paggawa ng desisyon sa bukid sa harap ng patuloy na mga hamon sa ekonomiya.",
+  "about-p2": "Nakakamit namin ito sa pamamagitan ng paggamit ng nakalap na makasaysayang datos tungkol sa lokal na ani at mga pattern ng klima. Sa masusing pagsusuri, tinutukoy ng SmartHarvest ang mahahalagang korelasyon at trend sa pagitan ng makasaysayang kaganapan ng panahon at resulta ng bukid.",
+  "about-p3": "Ang prosesong ito ay nagpapahintulot sa amin na bumuo ng data-driven na mga rekomendasyon, na nagbibigay sa mga magsasaka ng komprehensibong ulat tungkol sa pinakamainam na oras ng pagtatanim para sa pinakamataas na ani, gabay para sa mas mahusay na paggamit ng mapagkukunan, at mga aksyunable na insight upang mabawasan ang mga panganib sa klima sa kanilang kabuhayan at rehiyonal na ekonomiya.",
+  "value-0-title": "Mga Desisyon Batay sa Data",
+  "value-0-text": "Gumawa ng matalinong mga pagpapasya batay sa makasaysayang datos ng ani at pagsusuri ng klima",
+  "value-1-title": "Pokus sa Lokal",
+  "value-1-text": "Mga insight na nakatuon para sa mga munisipalidad ng Benguet at mga pananim sa kabundukan",
+  "value-2-title": "Real-Time na Insight",
+  "value-2-text": "Manatiling updated sa kasalukuyang panahon at impormasyon sa palengke",
+  "weather-title": "Live na Impormasyon sa Panahon",
+  "weather-desc": "Real-time na pagsubaybay sa panahon para sa matalinong mga desisyon sa agrikultura",
+  "municipality-label": "Piliin ang Munisipalidad",
+  "temp-label": "Temperatura",
+  "humidity-label": "Halumigmig",
+  "wind-label": "Bilis ng Hangin",
+  "rain-label": "Ulan (24 oras)",
+  "current-conditions": "Kasalukuyang Kondisyon",
+  "select-municipality": "Pumili ng munisipalidad",
+  "weather-info": "Nag-a-update ang datos ng panahon tuwing 5 segundo. Ini-integrate ng aming sistema ang real-time na impormasyon ng panahon kasama ang makasaysayang mga pattern upang magbigay ng tumpak na mga rekomendasyon sa pagtatanim.",
+  "weather-btn": "Tingnan ang Detalyadong Pagtataya",
+  "team-title": "Kilalanin ang Aming Team",
+  "team-desc": "Pinagsasama ng aming multidisciplinary na team ang ekspertong kaalaman sa agronomy, climate science, data analytics, at agricultural engineering.",
+  
+  "menu-main": "Pangunahin",
+  "menu-dashboard": "Dashboard",
+  "menu-analysis": "Pagsusuri",
+  "menu-planting-schedule": "Iskedyul ng Pagtatanim",
+  "menu-yield-analysis": "Pagsusuri ng Ani",
+  "menu-weather": "Panahon",
+  "menu-forecast": "Pagtataya",
+  "menu-info": "Impormasyon",
+  "menu-market-prices": "Presyo sa Palengke",
+  "menu-announcements": "Mga Anunsyo",
+  "menu-inbox": "Inbox",
+  "menu-account": "Account",
+  "menu-settings": "Mga Setting",
+  "menu-logout": "Mag-logout",
+  "menu-language": "Wika",
+  "back-to-home": "Bumalik sa Home",
+  "dashboard-title": "Dashboard",
+  "ml-active": "Aktibo",
+  
+  "language": "Wika",
+  "login-subtitle": "Mag-sign in upang ma-access ang iyong dashboard",
+  "login-for-all": "Para sa mga Magsasaka at Admin",
+  "email-or-phone": "Email o Numero ng Telepono:",
+  "email-phone-help": "Maaari mong gamitin ang iyong email o numero ng telepono upang mag-sign in",
+  "password": "Password",
+  "remember-me": "Tandaan ako",
+  "forgot-password": "Nakalimutan ang password?",
+  "sign-in": "Mag-sign In",
+  "back-to-main": "Bumalik sa pangunahing pahina",
+  
+  "welcome-smartharvest": "Maligayang pagdating sa SmartHarvest",
+  "tagline": "Magtanim ng Mas Matalino, Mag-ani ng Mas Mabuti",
+  "register-intro": "Sumali sa aming komunidad ng magsasaka at makakuha ng mga data-driven na insight.",
+  "note": "Tandaan:",
+  "password-note": "Ise-set mo ang iyong password pagkatapos i-verify ang iyong email address.",
+  "full-name": "Buong Pangalan",
+  "municipality": "Munisipalidad / Lungsod",
+  "verification-method": "Piniling Paraan ng Pagpapatunay",
+  "email-verification": "Pagpapatunay sa Email",
+  "email-verification-desc": "Magpapadala kami ng verification link sa iyong email",
+  "sms-verification": "Pagpapatunay sa SMS",
+  "sms-verification-desc": "Magpapadala kami ng OTP code sa iyong mobile number",
+  "agree-to": "Sumasang-ayon ako sa",
+  "terms-of-service": "Mga Tuntunin ng Serbisyo",
+  "and": "at",
+  "privacy-policy": "Patakaran sa Privacy",
+  "create-account": "Gumawa ng Account",
+  "already-have-account": "Mayroon nang account?",
+  "login": "Mag-login",
+  
+  "header": {
+    "login": "MAG-LOGIN",
+    "dashboard": "DASHBOARD",
+    "welcome": "Maligayang pagdating",
+    "profileSettings": "Mga Setting ng Profile",
+    "logout": "Mag-logout"
+  },
+  
+  "hero": {
+    "title": "Palakasin ang Iyong Pagtatanim gamit ang Data",
+    "subtitle": "Ginagamit ng SmartHarvest ang makasaysayang datos ng ani at klima upang matulungan ang mga magsasaka na gumawa ng matalinong desisyon sa pagtatanim para sa pinakamataas na produktibidad.",
+    "getStarted": "Magsimula Na",
+    "goToDashboard": "Pumunta sa Dashboard"
+  },
+  
+  "features": {
+    "title": "Mga Tampok",
+    "plantingSchedule": {
+      "title": "Iskedyul ng Pagtatanim",
+      "description": "I-optimize ang oras ng pagtatanim para sa pinakamataas na ani"
+    },
+    "weatherInsights": {
+      "title": "Impormasyon sa Panahon",
+      "description": "Real-time na datos at pagtataya ng panahon"
+    },
+    "yieldAnalysis": {
+      "title": "Pagsusuri ng Ani",
+      "description": "Subaybayan at suriin ang mga ani sa paglipas ng panahon"
+    }
+  },
+  
+  "mission": {
+    "title": "Ang Aming Misyon",
+    "text": "Bigyang kapangyarihan ang mga magsasaka sa pamamagitan ng data-driven insights at predictive analytics na nag-o-optimize ng ani, nagpapababa ng mga panganib, at nagpo-promote ng sustainable na mga gawain sa agrikultura."
+  },
+  
+  "about": {
+    "title": "Tungkol sa SmartHarvest",
+    "subtitle": "Sino Kami",
+    "paragraph1": "Ang SmartHarvest ay isang nakatuong web-based Decision Support System (DSS) na idinisenyo upang bigyang kapangyarihan ang mga magsasaka sa buong munisipalidad ng Benguet. Ang aming pangunahing misyon ay itaguyod ang sustainable na pamamaraan ng pagsasaka at malaki ang pagpapabuti sa paggawa ng desisyon sa bukid sa harap ng patuloy na mga hamon sa ekonomiya.",
+    "paragraph2": "Nakakamit namin ito sa pamamagitan ng paggamit ng nakalap na makasaysayang datos tungkol sa lokal na ani at mga pattern ng klima. Sa masusing pagsusuri, tinutukoy ng SmartHarvest ang mahahalagang korelasyon at trend sa pagitan ng makasaysayang kaganapan ng panahon at resulta ng bukid.",
+    "paragraph3": "Ang prosesong ito ay nagpapahintulot sa amin na bumuo ng data-driven na mga rekomendasyon, na nagbibigay sa mga magsasaka ng komprehensibong ulat tungkol sa pinakamainam na oras ng pagtatanim para sa pinakamataas na ani, gabay para sa mas mahusay na paggamit ng mapagkukunan, at mga aksyunable na insight upang mabawasan ang mga panganib sa klima sa kanilang kabuhayan at rehiyonal na ekonomiya."
+  },
+  
+  "menu": {
+    "main": "Pangunahin",
+    "dashboard": "Dashboard",
+    "analysis": "Pagsusuri",
+    "plantingSchedule": "Iskedyul ng Pagtatanim",
+    "yieldAnalysis": "Pagsusuri ng Ani",
+    "weather": "Panahon",
+    "forecast": "Pagtataya",
+    "information": "Impormasyon",
+    "marketPrices": "Presyo sa Palengke",
+    "announcements": "Mga Anunsyo",
+    "inbox": "Inbox",
+    "account": "Account",
+    "settings": "Mga Setting",
+    "logout": "Mag-logout",
+    "backToHome": "Bumalik sa Home"
+  },
+  
+  "dashboard": {
+    "title": "Dashboard",
+    "overview": "Pangkalahatang-tanaw",
+    "mlActive": "ML Aktibo",
+    "mlPowered": "PINAPAGANA NG ML",
+    "selectMunicipality": "Piliin ang Munisipalidad",
+    "allMunicipalities": "Lahat ng Munisipalidad",
+    "loading": "Naglo-load...",
+    "noData": "Walang available na datos"
+  },
+  
+  "stats": {
+    "totalYield": "Kabuuang Ani",
+    "avgYield": "Average na Ani",
+    "totalFarms": "Kabuuang Bukid",
+    "activeCrops": "Mga Aktibong Pananim",
+    "metricTons": "metric tons",
+    "perHectare": "bawat ektarya",
+    "farms": "mga bukid",
+    "varieties": "mga uri"
+  },
+  
+  "crops": {
+    "rice": "Bigas",
+    "corn": "Mais",
+    "vegetables": "Gulay",
+    "cabbage": "Repolyo",
+    "carrots": "Karot",
+    "potato": "Patatas",
+    "sweetPotato": "Kamote",
+    "beans": "Sitaw",
+    "tomato": "Kamatis",
+    "lettuce": "Litsugas",
+    "broccoli": "Broccoli",
+    "chayote": "Sayote",
+    "sayote": "Sayote"
+  },
+  
+  "agriculture": {
+    "yield": "Ani",
+    "crop": "Pananim",
+    "harvest": "Ani",
+    "planting": "Pagtatanim",
+    "fertilizer": "Pataba",
+    "irrigation": "Irigasyon",
+    "pesticide": "Pestisidyo",
+    "soil": "Lupa",
+    "rainfall": "Pag-ulan",
+    "temperature": "Temperatura",
+    "humidity": "Halumigmig",
+    "hectare": "Ektarya",
+    "season": "Panahon",
+    "wetSeason": "Tag-ulan",
+    "drySeason": "Tag-init"
+  },
+  
+  "marketPrices": {
+    "title": "Kasalukuyang Presyo sa Palengke",
+    "lastUpdated": "Huling Na-update",
+    "pricePerKg": "bawat kilo",
+    "highDemand": "Mataas na Demand",
+    "mediumDemand": "Katamtamang Demand",
+    "lowDemand": "Mababang Demand",
+    "priceUp": "Tumaas ang Presyo",
+    "priceDown": "Bumaba ang Presyo",
+    "stable": "Stable"
+  },
+  
+  "weather": {
+    "title": "Pagtataya ng Panahon",
+    "today": "Ngayong Araw",
+    "tomorrow": "Bukas",
+    "weekly": "Lingguhang Pagtataya",
+    "temperature": "Temperatura",
+    "humidity": "Halumigmig",
+    "rainfall": "Pag-ulan",
+    "sunny": "Maaraw",
+    "cloudy": "Maulap",
+    "rainy": "Maulan",
+    "advisory": "Abiso sa Panahon"
+  },
+  
+  "announcements": {
+    "title": "Mga Anunsyo",
+    "latest": "Pinakabagong Updates",
+    "readMore": "Magbasa Pa",
+    "noAnnouncements": "Walang mga anunsyo sa ngayon"
+  },
+  
+  "common": {
+    "viewAll": "Tingnan Lahat",
+    "seeMore": "Tingnan Pa",
+    "close": "Isara",
+    "save": "I-save",
+    "cancel": "Kanselahin",
+    "confirm": "Kumpirmahin",
+    "loading": "Naglo-load...",
+    "error": "Error",
+    "success": "Tagumpay",
+    "today": "Ngayong Araw",
+    "thisWeek": "Ngayong Linggo",
+    "thisMonth": "Ngayong Buwan"
+  },
+  
+  "footer": {
+    "copyright": "© 2026 SmartHarvest. Lahat ng karapatan ay nakalaan.",
+    "contact": "Makipag-ugnayan sa Amin",
+    "privacy": "Patakaran sa Privacy",
+    "terms": "Mga Tuntunin ng Serbisyo"
+  }
+}

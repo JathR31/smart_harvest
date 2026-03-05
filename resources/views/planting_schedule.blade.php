@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Planting Schedule - SmartHarvest</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{{ asset('js/translation-v2.js') }}?v={{ time() }}"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         .sidebar { background: linear-gradient(180deg, #047857 0%, #065f46 100%); }
@@ -36,7 +37,7 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     <span>Planting Schedule</span>
                 </a>
-                <a href="#" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition">
+                <a href="{{ route('yield.analysis') }}" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                     <span>Yield Analysis</span>
                 </a>
@@ -123,11 +124,15 @@
                             <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
                         <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-50" style="display: none;">
-                            <button @click="changeLanguage('en', 'English'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'en'}">English</button>
-                            <button @click="changeLanguage('tl', 'Tagalog'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'tl'}">Tagalog</button>
-                            <button @click="changeLanguage('ilo', 'Ilocano'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'ilo'}">Ilocano</button>
-                            <button @click="changeLanguage('kan', 'Kankanaey'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'kan'}">Kankanaey</button>
-                            <button @click="changeLanguage('ibl', 'Ibaloi'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'ibl'}">Ibaloi</button>
+                            <button @click="changeLanguage('en', 'English'); open = false" class="flex items-center w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'en'}">
+                                <span class="mr-2">🇺🇸</span> English
+                            </button>
+                            <button @click="changeLanguage('tl', 'Tagalog'); open = false" class="flex items-center w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'tl'}">
+                                <span class="mr-2">🇵🇭</span> Tagalog
+                            </button>
+                            <button @click="changeLanguage('ilo', 'Ilokano'); open = false" class="flex items-center w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'ilo'}">
+                                <span class="mr-2">🇵🇭</span> Ilokano
+                            </button>
                         </div>
                     </div>
                     <div class="relative">
@@ -180,7 +185,7 @@
             <div class="bg-white rounded-lg shadow p-6 mb-8">
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="text-xl font-semibold text-green-700">Recommended Planting Schedule</h2>
-                    <button class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center space-x-2">
+                    <button @click="exportSchedule()" :disabled="schedules.length === 0" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                         <span>Export Schedule</span>
                     </button>
@@ -242,8 +247,12 @@
     <script>
         function plantingSchedule() {
             return {
-                selectedLanguage: localStorage.getItem('preferredLanguage') || 'en',
-                selectedLanguageName: localStorage.getItem('preferredLanguageName') || 'English',
+                selectedLanguage: localStorage.getItem('sh_language') || 'en',
+                selectedLanguageName: {
+                    'en': 'English',
+                    'tl': 'Tagalog',
+                    'ilo': 'Ilokano'
+                }[localStorage.getItem('sh_language')] || 'English',
                 originalTexts: {},
                 selectedMunicipality: '{{ $userMunicipality ?? "La Trinidad" }}',
                 municipalities: [
@@ -264,60 +273,29 @@
 
                 init() {
                     this.loadPlantingData();
-                    if (this.selectedLanguage !== 'en') {
-                        setTimeout(() => this.translatePage(this.selectedLanguage), 1000);
+                    
+                    // Initialize global translation system
+                    if (typeof SmartHarvestTranslation !== 'undefined') {
+                        SmartHarvestTranslation.init();
                     }
                 },
                 
                 async changeLanguage(code, name) {
                     this.selectedLanguage = code;
                     this.selectedLanguageName = name;
-                    localStorage.setItem('preferredLanguage', code);
-                    localStorage.setItem('preferredLanguageName', name);
                     
-                    if (code !== 'en') {
-                        await this.translatePage(code);
-                    } else {
-                        location.reload();
+                    // Use global translation system
+                    if (typeof SmartHarvestTranslation !== 'undefined') {
+                        SmartHarvestTranslation.changeLanguage(code);
                     }
                 },
                 
+                // Legacy translatePage - now uses global system
                 async translatePage(targetLang) {
-                    const elements = document.querySelectorAll('[data-translate]');
-                    const texts = Array.from(elements).map(el => {
-                        const id = el.getAttribute('data-translate-id');
-                        if (!this.originalTexts[id]) {
-                            this.originalTexts[id] = el.textContent.trim();
-                        }
-                        return this.originalTexts[id];
-                    });
-                    
-                    if (texts.length === 0) return;
-                    
-                    try {
-                        const response = await fetch('{{ url("/api/translate/batch") }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            },
-                            body: JSON.stringify({
-                                texts: texts,
-                                target_language: targetLang
-                            })
-                        });
-                        
-                        const data = await response.json();
-                        
-                        if (data.status === 'success') {
-                            elements.forEach((el, index) => {
-                                if (data.translations[index]?.translatedText) {
-                                    el.textContent = data.translations[index].translatedText;
-                                }
-                            });
-                        }
-                    } catch (error) {
-                        console.error('Translation error:', error);
+                    if (typeof SmartHarvestTranslation !== 'undefined') {
+                        SmartHarvestTranslation.changeLanguage(targetLang);
+                    }
+                },
                     }
                 },
 
@@ -397,6 +375,87 @@
                 formatMonth(month) {
                     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                     return months[month - 1] || '';
+                },
+
+                exportSchedule() {
+                    if (this.schedules.length === 0) {
+                        alert('No planting schedule data to export');
+                        return;
+                    }
+
+                    // Create CSV content
+                    let csvContent = '';
+                    
+                    // Add header information
+                    csvContent += 'SmartHarvest - Planting Schedule Report\n';
+                    csvContent += `Municipality: ${this.selectedMunicipality}\n`;
+                    csvContent += `Generated: ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}\n\n`;
+                    
+                    // Add optimal recommendation section
+                    if (this.optimal.crop) {
+                        csvContent += 'TOP RECOMMENDATION\n';
+                        csvContent += `Crop: ${this.optimal.crop}\n`;
+                        csvContent += `Variety: ${this.optimal.variety || 'N/A'}\n`;
+                        csvContent += `Next Planting Date: ${this.optimal.next_date || 'N/A'}\n`;
+                        csvContent += `Expected Yield: ${this.optimal.expected_yield} mt/ha\n`;
+                        csvContent += `Confidence: ${this.optimal.confidence}\n\n`;
+                    }
+                    
+                    // Add column headers
+                    csvContent += 'PLANTING SCHEDULE\n';
+                    csvContent += 'Crop,Variety,Planting Window,Harvest Window,Duration,Yield Forecast,Historical Yield,Confidence,Confidence Score,Status,Source\n';
+                    
+                    // Add schedule data rows
+                    this.schedules.forEach(schedule => {
+                        const row = [
+                            this.escapeCsvField(schedule.crop),
+                            this.escapeCsvField(schedule.variety),
+                            this.escapeCsvField(schedule.optimal_planting),
+                            this.escapeCsvField(schedule.expected_harvest),
+                            this.escapeCsvField(schedule.duration),
+                            this.escapeCsvField(schedule.yield_prediction),
+                            this.escapeCsvField(schedule.historical_yield),
+                            this.escapeCsvField(schedule.confidence),
+                            this.escapeCsvField(schedule.confidence_score ? schedule.confidence_score + '%' : ''),
+                            this.escapeCsvField(schedule.status),
+                            schedule.ml_prediction ? 'ML Prediction' : 'Database'
+                        ].join(',');
+                        csvContent += row + '\n';
+                    });
+                    
+                    // Add footer
+                    csvContent += '\n';
+                    csvContent += '---\n';
+                    csvContent += `Total Crops: ${this.schedules.length}\n`;
+                    csvContent += `ML Predictions: ${this.schedules.filter(s => s.ml_prediction).length}\n`;
+                    csvContent += `Database Records: ${this.schedules.filter(s => !s.ml_prediction).length}\n`;
+                    csvContent += '\nGenerated by SmartHarvest - Agricultural Decision Support System\n';
+                    
+                    // Create blob and download
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    const url = URL.createObjectURL(blob);
+                    
+                    const fileName = `planting_schedule_${this.selectedMunicipality.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+                    
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', fileName);
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // Show success message
+                    alert(`Schedule exported successfully as ${fileName}`);
+                },
+
+                escapeCsvField(field) {
+                    if (field === null || field === undefined) return '';
+                    const str = String(field);
+                    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                        return '"' + str.replace(/"/g, '""') + '"';
+                    }
+                    return str;
                 }
             }
         }

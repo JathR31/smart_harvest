@@ -28,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Register middleware aliases
         $middleware->alias([
             'prevent.back' => \App\Http\Middleware\PreventBackHistory::class,
+            'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
         
         // Apply prevent back middleware to web routes

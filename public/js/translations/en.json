@@ -1,0 +1,274 @@
+{
+  "_meta": {
+    "language": "English",
+    "code": "en",
+    "direction": "ltr"
+  },
+  
+  "welcome-msg": "Welcome",
+  "header-dashboard": "DASHBOARD",
+  "profile-settings": "Profile Settings",
+  "dropdown-dashboard": "Dashboard",
+  "logout-btn": "Logout",
+  "login-btn": "LOGIN",
+  "hero-title": "Optimize Your Planting with Data",
+  "hero-subtitle": "SmartHarvest uses historical yield and climate patterns to help farmers make informed planting decisions for maximum productivity.",
+  "dashboard-btn": "Go to Dashboard",
+  "getstarted-btn": "Get Started",
+  "features-title": "Features",
+  "feature-0-title": "Planting Schedule",
+  "feature-0-desc": "Optimize planting times for maximum yield",
+  "feature-1-title": "Weather Insights",
+  "feature-1-desc": "Real-time weather data and forecasts",
+  "feature-2-title": "Yield Analysis",
+  "feature-2-desc": "Track and analyze crop yields over time",
+  "mission-title": "Our Mission",
+  "mission-text": "To empower farmers with data-driven insights and predictive analytics that optimize crop yields, reduce risks, and promote sustainable agricultural practices.",
+  "about-title": "About SmartHarvest",
+  "about-subtitle": "Who We Are",
+  "about-p1": "SmartHarvest is a dedicated web-based Decision Support System (DSS) designed to empower farmers across the municipalities of Benguet. Our core mission is to promote sustainable farming methods and drastically improve farm decision-making in the face of persistent economic challenges.",
+  "about-p2": "We achieve this by utilizing gathered historical data on local crop yields and climate patterns. Through rigorous analysis, SmartHarvest identifies crucial correlations and trends between historical weather events and farm outcomes.",
+  "about-p3": "This process allows us to generate data-driven recommendations, providing farmers with a comprehensive report on the optimal planting times to maximize yield, guidance for better resource utilization, and actionable insights to reduce climate risks to their livelihoods and the regional economy. We're here to turn data into smarter harvests.",
+  "value-0-title": "Data-Driven Decisions",
+  "value-0-text": "Make informed choices based on historical yield data and climate analysis",
+  "value-1-title": "Local Focus",
+  "value-1-text": "Tailored insights for Benguet municipalities and Highland crops",
+  "value-2-title": "Real-Time Insights",
+  "value-2-text": "Stay updated with current weather and market information",
+  "weather-title": "Live Weather Insights",
+  "weather-desc": "Real-time weather monitoring for informed agricultural decisions",
+  "municipality-label": "Select Municipality",
+  "temp-label": "Temperature",
+  "humidity-label": "Humidity",
+  "wind-label": "Wind Speed",
+  "rain-label": "Rainfall (24h)",
+  "current-conditions": "Current Conditions",
+  "select-municipality": "Select a municipality",
+  "weather-info": "Weather data updates every 5 seconds. Our system integrates real-time weather information with historical patterns to provide accurate planting recommendations.",
+  "weather-btn": "View Detailed Forecast",
+  "team-title": "Meet Our Team",
+  "team-desc": "Our multidisciplinary team brings together expertise in agronomy, climate science, data analytics, and agricultural engineering.",
+  
+  "menu-main": "Main",
+  "menu-dashboard": "Dashboard",
+  "menu-analysis": "Analysis",
+  "menu-planting-schedule": "Planting Schedule",
+  "menu-yield-analysis": "Yield Analysis",
+  "menu-weather": "Weather",
+  "menu-forecast": "Forecast",
+  "menu-info": "Information",
+  "menu-market-prices": "Market Prices",
+  "menu-announcements": "Announcements",
+  "menu-inbox": "Inbox",
+  "menu-account": "Account",
+  "menu-settings": "Settings",
+  "menu-logout": "Logout",
+  "menu-language": "Language",
+  "back-to-home": "Back to Home",
+  "dashboard-title": "Dashboard",
+  "ml-active": "Active",
+  
+  "language": "Language",
+  "login-subtitle": "Sign in to access your dashboard",
+  "login-for-all": "For both Farmers and Admin",
+  "email-or-phone": "Email or Phone Number:",
+  "email-phone-help": "You can use your email or phone number to sign in",
+  "password": "Password",
+  "remember-me": "Remember me",
+  "forgot-password": "Forgot password?",
+  "sign-in": "Sign In",
+  "back-to-main": "Back to main page",
+  
+  "welcome-smartharvest": "Welcome SmartHarvest",
+  "tagline": "Grow Smarter, Harvest Better",
+  "register-intro": "Join our farming community and get access to data-driven insights.",
+  "note": "Note:",
+  "password-note": "You'll set your password after verifying your email address.",
+  "full-name": "Full Name",
+  "municipality": "Municipality / City",
+  "verification-method": "Preferred Verification Method",
+  "email-verification": "Email Verification",
+  "email-verification-desc": "We'll send a verification link to your email",
+  "sms-verification": "SMS Verification",
+  "sms-verification-desc": "We'll send an OTP code to your mobile number",
+  "agree-to": "I agree to SmartHarvest's",
+  "terms-of-service": "Terms of Service",
+  "and": "and",
+  "privacy-policy": "Privacy Policy",
+  "create-account": "Create Account",
+  "already-have-account": "Already have an account?",
+  "login": "Login",
+  
+  "header": {
+    "login": "LOGIN",
+    "dashboard": "DASHBOARD",
+    "welcome": "Welcome",
+    "profileSettings": "Profile Settings",
+    "logout": "Logout"
+  },
+  
+  "hero": {
+    "title": "Optimize Your Planting with Data",
+    "subtitle": "SmartHarvest uses historical yield and climate patterns to help farmers make informed planting decisions for maximum productivity.",
+    "getStarted": "Get Started",
+    "goToDashboard": "Go to Dashboard"
+  },
+  
+  "features": {
+    "title": "Features",
+    "plantingSchedule": {
+      "title": "Planting Schedule",
+      "description": "Optimize planting times for maximum yield"
+    },
+    "weatherInsights": {
+      "title": "Weather Insights",
+      "description": "Real-time weather data and forecasts"
+    },
+    "yieldAnalysis": {
+      "title": "Yield Analysis",
+      "description": "Track and analyze crop yields over time"
+    }
+  },
+  
+  "mission": {
+    "title": "Our Mission",
+    "text": "To empower farmers with data-driven insights and predictive analytics that optimize crop yields, reduce risks, and promote sustainable agricultural practices."
+  },
+  
+  "about": {
+    "title": "About SmartHarvest",
+    "subtitle": "Who We Are",
+    "paragraph1": "SmartHarvest is a dedicated web-based Decision Support System (DSS) designed to empower farmers across the municipalities of Benguet. Our core mission is to promote sustainable farming methods and drastically improve farm decision-making in the face of persistent economic challenges.",
+    "paragraph2": "We achieve this by utilizing gathered historical data on local crop yields and climate patterns. Through rigorous analysis, SmartHarvest identifies crucial correlations and trends between historical weather events and farm outcomes.",
+    "paragraph3": "This process allows us to generate data-driven recommendations, providing farmers with a comprehensive report on the optimal planting times to maximize yield, guidance for better resource utilization, and actionable insights to reduce climate risks to their livelihoods and the regional economy. We're here to turn data into smarter harvests."
+  },
+  
+  "menu": {
+    "main": "Main",
+    "dashboard": "Dashboard",
+    "analysis": "Analysis",
+    "plantingSchedule": "Planting Schedule",
+    "yieldAnalysis": "Yield Analysis",
+    "weather": "Weather",
+    "forecast": "Forecast",
+    "information": "Information",
+    "marketPrices": "Market Prices",
+    "announcements": "Announcements",
+    "inbox": "Inbox",
+    "account": "Account",
+    "settings": "Settings",
+    "logout": "Logout",
+    "backToHome": "Back to Home"
+  },
+  
+  "dashboard": {
+    "title": "Dashboard",
+    "overview": "Overview",
+    "mlActive": "ML Active",
+    "mlPowered": "ML POWERED",
+    "selectMunicipality": "Select Municipality",
+    "allMunicipalities": "All Municipalities",
+    "loading": "Loading...",
+    "noData": "No data available"
+  },
+  
+  "stats": {
+    "totalYield": "Total Yield",
+    "avgYield": "Average Yield",
+    "totalFarms": "Total Farms",
+    "activeCrops": "Active Crops",
+    "metricTons": "metric tons",
+    "perHectare": "per hectare",
+    "farms": "farms",
+    "varieties": "varieties"
+  },
+  
+  "crops": {
+    "rice": "Rice",
+    "corn": "Corn",
+    "vegetables": "Vegetables",
+    "cabbage": "Cabbage",
+    "carrots": "Carrots",
+    "potato": "Potato",
+    "sweetPotato": "Sweet Potato",
+    "beans": "Beans",
+    "tomato": "Tomato",
+    "lettuce": "Lettuce",
+    "broccoli": "Broccoli",
+    "chayote": "Chayote",
+    "sayote": "Sayote"
+  },
+  
+  "agriculture": {
+    "yield": "Yield",
+    "crop": "Crop",
+    "harvest": "Harvest",
+    "planting": "Planting",
+    "fertilizer": "Fertilizer",
+    "irrigation": "Irrigation",
+    "pesticide": "Pesticide",
+    "soil": "Soil",
+    "rainfall": "Rainfall",
+    "temperature": "Temperature",
+    "humidity": "Humidity",
+    "hectare": "Hectare",
+    "season": "Season",
+    "wetSeason": "Wet Season",
+    "drySeason": "Dry Season"
+  },
+  
+  "marketPrices": {
+    "title": "Current Market Prices",
+    "lastUpdated": "Last Updated",
+    "pricePerKg": "per kg",
+    "highDemand": "High Demand",
+    "mediumDemand": "Medium Demand",
+    "lowDemand": "Low Demand",
+    "priceUp": "Price Up",
+    "priceDown": "Price Down",
+    "stable": "Stable"
+  },
+  
+  "weather": {
+    "title": "Weather Forecast",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "weekly": "Weekly Forecast",
+    "temperature": "Temperature",
+    "humidity": "Humidity",
+    "rainfall": "Rainfall",
+    "sunny": "Sunny",
+    "cloudy": "Cloudy",
+    "rainy": "Rainy",
+    "advisory": "Weather Advisory"
+  },
+  
+  "announcements": {
+    "title": "Announcements",
+    "latest": "Latest Updates",
+    "readMore": "Read More",
+    "noAnnouncements": "No announcements at this time"
+  },
+  
+  "common": {
+    "viewAll": "View All",
+    "seeMore": "See More",
+    "close": "Close",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "today": "Today",
+    "thisWeek": "This Week",
+    "thisMonth": "This Month"
+  },
+  
+  "footer": {
+    "copyright": "© 2026 SmartHarvest. All rights reserved.",
+    "contact": "Contact Us",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  }
+}

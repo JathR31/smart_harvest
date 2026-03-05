@@ -146,6 +146,29 @@ Route::get('/api/check-verification-status', function () {
     ]);
 })->middleware('auth');
 
+// =============================================================================
+// SMS VERIFICATION ROUTES
+// =============================================================================
+Route::get('/sms/verify', [App\Http\Controllers\SMSVerificationController::class, 'show'])
+    ->middleware('auth')
+    ->name('sms.verify');
+
+Route::post('/api/sms/send-otp', [App\Http\Controllers\SMSVerificationController::class, 'sendOTP'])
+    ->middleware('auth')
+    ->name('sms.send-otp');
+
+Route::post('/api/sms/verify-otp', [App\Http\Controllers\SMSVerificationController::class, 'verifyOTP'])
+    ->middleware('auth')
+    ->name('sms.verify-otp');
+
+Route::post('/api/sms/resend-otp', [App\Http\Controllers\SMSVerificationController::class, 'resendOTP'])
+    ->middleware('auth')
+    ->name('sms.resend-otp');
+
+Route::post('/api/sms/switch-to-email', [App\Http\Controllers\SMSVerificationController::class, 'switchToEmail'])
+    ->middleware('auth')
+    ->name('sms.switch-to-email');
+
 // Password Setup Routes (After Email Verification)
 Route::get('/setup-password', function () {
     // If user already has a real password (not temporary), redirect to dashboard
@@ -371,6 +394,29 @@ Route::get('/admin/da-officer-dashboard', function () {
     }
     return view('admin_dacar');
 })->name('admin.dacar.dashboard');
+
+// =============================================================================
+// ADMIN SMS ANNOUNCEMENT ROUTES
+// =============================================================================
+Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
+    Route::get('/sms', [App\Http\Controllers\SMSAnnouncementController::class, 'index'])
+        ->name('admin.sms.index');
+    
+    Route::get('/sms/create', [App\Http\Controllers\SMSAnnouncementController::class, 'create'])
+        ->name('admin.sms.create');
+    
+    Route::post('/sms/send', [App\Http\Controllers\SMSAnnouncementController::class, 'send'])
+        ->name('admin.sms.send');
+    
+    Route::post('/sms/preview', [App\Http\Controllers\SMSAnnouncementController::class, 'previewRecipients'])
+        ->name('admin.sms.preview');
+    
+    Route::get('/sms/{id}', [App\Http\Controllers\SMSAnnouncementController::class, 'show'])
+        ->name('admin.sms.show');
+    
+    Route::get('/sms/balance', [App\Http\Controllers\SMSAnnouncementController::class, 'checkBalance'])
+        ->name('admin.sms.balance');
+});
 
 // Admin API - Dashboard data
 Route::get('/admin/api/dashboard', function () {
@@ -2684,9 +2730,21 @@ Route::get('/forecast', function () {
         return redirect()->route('login');
     }
     $user = Auth::user();
+    // Redirect admin users to admin forecast page
+    if (in_array($user->role, ['admin', 'superadmin', 'da_admin', 'Admin', 'DA Admin'])) {
+        return redirect()->route('admin.forecast');
+    }
     $userMunicipality = $user->location ?? 'La Trinidad';
     return view('forecast', ['userMunicipality' => $userMunicipality]);
 })->name('forecast');
+
+// Admin Forecast Page (DA Officers only)
+Route::get('/admin/forecast', function () {
+    if (!Auth::check()) {
+        return redirect()->route('login');
+    }
+    return view('admin_forecast');
+})->middleware('auth')->name('admin.forecast');
 
 // Settings page (protected)
 Route::get('/settings', function () {
@@ -2713,6 +2771,11 @@ Route::post('/settings/update', function (Request $request) {
         'years_experience' => 'nullable|integer|min:0',
         'bio' => 'nullable|string|max:1000',
     ]);
+
+    // Update phone_number field as well for SMS notifications
+    if (isset($validated['phone'])) {
+        $validated['phone_number'] = $validated['phone'];
+    }
 
     Auth::user()->update($validated);
 
@@ -3116,6 +3179,14 @@ Route::post('/logout', function (Request $request) {
     $request->session()->regenerateToken();
     return redirect()->route('login');
 })->name('logout');
+
+// Fallback GET logout for expired sessions (no CSRF required)
+Route::get('/logout-expired', function (Request $request) {
+    Auth::logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+    return redirect()->route('login')->with('message', 'Your session has expired. Please login again.');
+})->name('logout.expired');
 
 // Admin logout (redirect to unified logout)
 Route::get('/admin/logout', function (Request $request) {
@@ -3527,6 +3598,9 @@ Route::post('/api/announcements', function (Request $request) {
         'content' => 'required|string',
         'type' => 'in:general,weather,market,advisory,urgent',
         'priority' => 'in:low,normal,high,urgent',
+        'sendSMS' => 'boolean',
+        'target_group' => 'string',
+        'municipality' => 'string',
     ]);
     
     $announcement = \App\Models\Announcement::create([
@@ -3536,89 +3610,62 @@ Route::post('/api/announcements', function (Request $request) {
         'type' => $validated['type'] ?? 'general',
         'priority' => $validated['priority'] ?? 'normal',
         'published_at' => now(),
+        'is_active' => true,
     ]);
+    
+    // Send SMS if requested
+    if ($request->input('sendSMS', false)) {
+        try {
+            $smsService = app(\App\Services\SMSApiPhilippinesService::class);
+            
+            // Determine recipients based on target_group
+            $targetGroup = $request->input('target_group', 'all');
+            $municipality = $request->input('municipality', 'all');
+            
+            $query = \App\Models\User::where('role', 'Farmer')
+                ->whereNotNull('phone_number');
+            
+            if ($targetGroup === 'municipality' && $municipality !== 'all') {
+                $query->where('municipality', $municipality);
+            }
+            
+            $farmers = $query->get();
+            $phoneNumbers = $farmers->pluck('phone_number')->filter()->toArray();
+            
+            if (count($phoneNumbers) > 0) {
+                $message = "ANNOUNCEMENT: {$validated['title']}\n\n{$validated['content']}\n\n- SmartHarvest DA";
+                
+                // Send SMS to all recipients using SMS API Philippines
+                $smsResult = $smsService->sendAnnouncement(
+                    $phoneNumbers,
+                    $message,
+                    'SmartHarvest'
+                );
+                
+                \Log::info('SMS Announcement Result', $smsResult);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to send SMS announcement: ' . $e->getMessage());
+            // Don't fail the request if SMS fails
+        }
+    }
     
     return response()->json($announcement, 201);
 })->middleware('auth')->name('api.announcements.store');
 
-// Messages API
-Route::get('/api/messages', function () {
-    $user = Auth::user();
-    if (!$user) {
-        return response()->json(['error' => 'Unauthorized'], 401);
-    }
-    
-    $received = \App\Models\Message::with('sender:id,name')
-        ->where('receiver_id', $user->id)
-        ->orderBy('created_at', 'desc')
-        ->get()
-        ->map(function ($msg) {
-            return [
-                'id' => $msg->id,
-                'sender_name' => $msg->sender->name ?? 'Unknown',
-                'subject' => $msg->subject,
-                'content' => $msg->content,
-                'is_read' => $msg->is_read,
-                'created_at' => $msg->created_at->diffForHumans(),
-            ];
-        });
-    
-    $sent = \App\Models\Message::with('receiver:id,name')
-        ->where('sender_id', $user->id)
-        ->orderBy('created_at', 'desc')
-        ->get()
-        ->map(function ($msg) {
-            return [
-                'id' => $msg->id,
-                'receiver_name' => $msg->receiver->name ?? 'Unknown',
-                'subject' => $msg->subject,
-                'content' => $msg->content,
-                'is_read' => $msg->is_read,
-                'created_at' => $msg->created_at->diffForHumans(),
-            ];
-        });
-    
-    return response()->json([
-        'received' => $received,
-        'sent' => $sent,
-        'unread_count' => \App\Models\Message::where('receiver_id', $user->id)->where('is_read', false)->count()
-    ]);
-})->middleware('auth')->name('api.messages');
+// Messages API - Using MessageController
+Route::prefix('api/messages')->middleware('auth')->group(function () {
+    Route::get('/', [App\Http\Controllers\MessageController::class, 'index'])->name('api.messages');
+    Route::post('/', [App\Http\Controllers\MessageController::class, 'store'])->name('api.messages.store');
+    Route::get('/{id}', [App\Http\Controllers\MessageController::class, 'show'])->name('api.messages.show');
+    Route::post('/{id}/reply', [App\Http\Controllers\MessageController::class, 'reply'])->name('api.messages.reply');
+    Route::patch('/{id}/read', [App\Http\Controllers\MessageController::class, 'markAsRead'])->name('api.messages.read');
+    Route::delete('/{id}', [App\Http\Controllers\MessageController::class, 'destroy'])->name('api.messages.destroy');
+});
 
-Route::post('/api/messages', function (Request $request) {
-    $user = Auth::user();
-    if (!$user) {
-        return response()->json(['error' => 'Unauthorized'], 401);
-    }
-    
-    $validated = $request->validate([
-        'receiver_id' => 'required|exists:users,id',
-        'subject' => 'required|string|max:255',
-        'content' => 'required|string',
-        'priority' => 'in:low,normal,high,urgent',
-    ]);
-    
-    $message = \App\Models\Message::create([
-        'sender_id' => $user->id,
-        'receiver_id' => $validated['receiver_id'],
-        'subject' => $validated['subject'],
-        'content' => $validated['content'],
-        'priority' => $validated['priority'] ?? 'normal',
-    ]);
-    
-    return response()->json($message, 201);
-})->middleware('auth')->name('api.messages.store');
-
-Route::patch('/api/messages/{id}/read', function ($id) {
-    $user = Auth::user();
-    $message = \App\Models\Message::where('id', $id)->where('receiver_id', $user->id)->first();
-    
-    if ($message) {
-        $message->markAsRead();
-    }
-    
-    return response()->json(['success' => true]);
-})->middleware('auth')->name('api.messages.read');
+// Get farmers/officers for messaging
+Route::get('/api/farmers', [App\Http\Controllers\MessageController::class, 'getFarmers'])->middleware('auth')->name('api.farmers');
+Route::get('/api/officers', [App\Http\Controllers\MessageController::class, 'getOfficers'])->middleware('auth')->name('api.officers');
 
 // DA Officer Dashboard API
 Route::get('/api/da-officer/dashboard', function (Illuminate\Http\Request $request) {
@@ -3695,6 +3742,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/admin/market-prices', [App\Http\Controllers\Api\DAOfficerApiController::class, 'getMarketPrices'])->name('admin.api.market-prices.new');
     Route::get('/api/admin/validation-alerts', [App\Http\Controllers\Api\DAOfficerApiController::class, 'getValidationAlerts'])->name('admin.api.validation-alerts.new');
     Route::get('/api/admin/users', [App\Http\Controllers\Api\DAOfficerApiController::class, 'getUsers'])->name('admin.api.users');
+    Route::get('/api/admin/system-status', [App\Http\Controllers\Api\DAOfficerApiController::class, 'getSystemStatus'])->name('admin.api.system-status');
+    Route::get('/api/admin/enhanced-crop-performance', [App\Http\Controllers\Api\DAOfficerApiController::class, 'getEnhancedCropPerformance'])->name('admin.api.enhanced-crop-performance');
+    Route::get('/api/admin/price-insights', [App\Http\Controllers\Api\DAOfficerApiController::class, 'getPriceInsights'])->name('admin.api.price-insights');
 });
 
 // Test route to verify routing works
@@ -3845,3 +3895,47 @@ Route::get('/api/ml-crops', function () {
     ];
     return response()->json($crops);
 })->name('api.ml-crops');
+
+// ============================================
+// PAGASA Weather Integration Routes
+// ============================================
+
+// PAGASA Weather Dashboard (for all authenticated users)
+Route::get('/pagasa-weather', [App\Http\Controllers\WeatherController::class, 'index'])
+    ->middleware('auth')
+    ->name('pagasa.dashboard');
+
+// PAGASA API Endpoints
+Route::prefix('api/pagasa')->middleware('auth')->group(function () {
+    // Get all PAGASA weather data
+    Route::get('/', [App\Http\Controllers\WeatherController::class, 'getWeatherData'])
+        ->name('api.pagasa.data');
+    
+    // Get weather forecasts
+    Route::get('/forecasts', [App\Http\Controllers\WeatherController::class, 'getForecasts'])
+        ->name('api.pagasa.forecasts');
+    
+    // Get soil moisture data
+    Route::get('/soil-moisture', [App\Http\Controllers\WeatherController::class, 'getSoilMoisture'])
+        ->name('api.pagasa.soil-moisture');
+    
+    // Get farming advisories
+    Route::get('/advisories', [App\Http\Controllers\WeatherController::class, 'getAdvisories'])
+        ->name('api.pagasa.advisories');
+    
+    // Get ENSO status
+    Route::get('/enso', [App\Http\Controllers\WeatherController::class, 'getEnsoStatus'])
+        ->name('api.pagasa.enso');
+    
+    // Get gale warnings
+    Route::get('/gale-warnings', [App\Http\Controllers\WeatherController::class, 'getGaleWarnings'])
+        ->name('api.pagasa.gale-warnings');
+    
+    // Get weather widget data (for farmer dashboard)
+    Route::get('/widget', [App\Http\Controllers\WeatherController::class, 'getWeatherWidget'])
+        ->name('api.pagasa.widget');
+    
+    // Manual update (admin only)
+    Route::post('/update', [App\Http\Controllers\WeatherController::class, 'updateWeatherData'])
+        ->name('api.pagasa.update');
+});

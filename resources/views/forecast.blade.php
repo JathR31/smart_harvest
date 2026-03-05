@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Weather Forecast - SmartHarvest</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{{ asset('js/translation-v2.js') }}?v={{ time() }}"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -73,7 +74,7 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                     <span>Settings</span>
                 </a>
-                <form method="POST" action="{{ route('logout') }}" onsubmit="sessionStorage.setItem('isLoggedOut','true');">
+                <form method="POST" action="{{ route('logout') }}" onsubmit="return handleLogout(event);">
                     @csrf
                     <button type="submit" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition w-full text-left">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
@@ -116,11 +117,15 @@
                             <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
                         <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-50" style="display: none;">
-                            <button @click="changeLanguage('en', 'English'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'en'}">English</button>
-                            <button @click="changeLanguage('tl', 'Tagalog'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'tl'}">Tagalog</button>
-                            <button @click="changeLanguage('ilo', 'Ilocano'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'ilo'}">Ilocano</button>
-                            <button @click="changeLanguage('kan', 'Kankanaey'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'kan'}">Kankanaey</button>
-                            <button @click="changeLanguage('ibl', 'Ibaloi'); open = false" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'ibl'}">Ibaloi</button>
+                            <button @click="changeLanguage('en', 'English'); open = false" class="flex items-center w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'en'}">
+                                <span class="mr-2">🇺🇸</span> English
+                            </button>
+                            <button @click="changeLanguage('tl', 'Tagalog'); open = false" class="flex items-center w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'tl'}">
+                                <span class="mr-2">🇵🇭</span> Tagalog
+                            </button>
+                            <button @click="changeLanguage('ilo', 'Ilokano'); open = false" class="flex items-center w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': selectedLanguage === 'ilo'}">
+                                <span class="mr-2">🇵🇭</span> Ilokano
+                            </button>
                         </div>
                     </div>
                     <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold">
@@ -280,8 +285,12 @@
     <script>
         function weatherDashboard() {
             return {
-                selectedLanguage: localStorage.getItem('preferredLanguage') || 'en',
-                selectedLanguageName: localStorage.getItem('preferredLanguageName') || 'English',
+                selectedLanguage: localStorage.getItem('sh_language') || 'en',
+                selectedLanguageName: {
+                    'en': 'English',
+                    'tl': 'Tagalog',
+                    'ilo': 'Ilokano'
+                }[localStorage.getItem('sh_language')] || 'English',
                 originalTexts: {},
                 loading: true,
                 error: false,
@@ -331,60 +340,27 @@
                     await this.fetchWeatherData();
                     await this.fetchRainfallSoilData();
                     await this.fetchRainfallData();
-                    if (this.selectedLanguage !== 'en') {
-                        setTimeout(() => this.translatePage(this.selectedLanguage), 1000);
+                    
+                    // Initialize global translation system
+                    if (typeof SmartHarvestTranslation !== 'undefined') {
+                        SmartHarvestTranslation.init();
                     }
                 },
                 
                 async changeLanguage(code, name) {
                     this.selectedLanguage = code;
                     this.selectedLanguageName = name;
-                    localStorage.setItem('preferredLanguage', code);
-                    localStorage.setItem('preferredLanguageName', name);
                     
-                    if (code !== 'en') {
-                        await this.translatePage(code);
-                    } else {
-                        location.reload();
+                    // Use global translation system
+                    if (typeof SmartHarvestTranslation !== 'undefined') {
+                        SmartHarvestTranslation.changeLanguage(code);
                     }
                 },
                 
+                // Legacy translatePage - now uses global system
                 async translatePage(targetLang) {
-                    const elements = document.querySelectorAll('[data-translate]');
-                    const texts = Array.from(elements).map(el => {
-                        const id = el.getAttribute('data-translate-id');
-                        if (!this.originalTexts[id]) {
-                            this.originalTexts[id] = el.textContent.trim();
-                        }
-                        return this.originalTexts[id];
-                    });
-                    
-                    if (texts.length === 0) return;
-                    
-                    try {
-                        const response = await fetch('{{ url("/api/translate/batch") }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            },
-                            body: JSON.stringify({
-                                texts: texts,
-                                target_language: targetLang
-                            })
-                        });
-                        
-                        const data = await response.json();
-                        
-                        if (data.status === 'success') {
-                            elements.forEach((el, index) => {
-                                if (data.translations[index]?.translatedText) {
-                                    el.textContent = data.translations[index].translatedText;
-                                }
-                            });
-                        }
-                    } catch (error) {
-                        console.error('Translation error:', error);
+                    if (typeof SmartHarvestTranslation !== 'undefined') {
+                        SmartHarvestTranslation.changeLanguage(targetLang);
                     }
                 },
 
@@ -701,6 +677,31 @@
                     });
                 }
             }
+        }
+
+        function handleLogout(event) {
+            sessionStorage.setItem('isLoggedOut','true');
+            event.preventDefault();
+            
+            fetch('{{ route("logout") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin'
+            }).then(response => {
+                if (response.status === 419) {
+                    window.location.href = '{{ route("logout.expired") }}';
+                } else {
+                    window.location.href = '{{ route("login") }}';
+                }
+            }).catch(error => {
+                window.location.href = '{{ route("logout.expired") }}';
+            });
+            
+            return false;
         }
     </script>
 </body>

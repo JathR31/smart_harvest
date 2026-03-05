@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Profile Settings - SmartHarvest</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{{ asset('js/translation-v2.js') }}?v={{ time() }}"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         .sidebar { background: linear-gradient(180deg, #047857 0%, #065f46 100%); }
@@ -71,7 +72,7 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                     <span>Settings</span>
                 </a>
-                <form method="POST" action="{{ route('logout') }}" onsubmit="sessionStorage.setItem('isLoggedOut','true');">
+                <form method="POST" action="{{ route('logout') }}" onsubmit="return handleLogout(event);">
                     @csrf
                     <button type="submit" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition w-full text-left">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
@@ -97,9 +98,30 @@
                     </a>
                     <h1 class="text-2xl font-semibold text-green-700">Profile Settings</h1>
                 </div>
-                <button onclick="document.getElementById('editForm').classList.toggle('hidden')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
-                    Edit Profile
-                </button>
+                <div class="flex items-center space-x-4">
+                    <!-- Language Selector -->
+                    <div x-data="{ open: false, lang: localStorage.getItem('sh_language') || 'en', langName: {'en': 'English', 'tl': 'Tagalog', 'ilo': 'Ilokano'}[localStorage.getItem('sh_language')] || 'English' }" class="relative">
+                        <button @click="open = !open" class="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path></svg>
+                            <span class="text-sm font-medium" x-text="langName"></span>
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-50">
+                            <button @click="SmartHarvestTranslation.changeLanguage('en'); lang='en'; langName='English'; open = false" class="flex items-center w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': lang === 'en'}">
+                                <span class="mr-2">🇺🇸</span> English
+                            </button>
+                            <button @click="SmartHarvestTranslation.changeLanguage('tl'); lang='tl'; langName='Tagalog'; open = false" class="flex items-center w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': lang === 'tl'}">
+                                <span class="mr-2">🇵🇭</span> Tagalog
+                            </button>
+                            <button @click="SmartHarvestTranslation.changeLanguage('ilo'); lang='ilo'; langName='Ilokano'; open = false" class="flex items-center w-full text-left px-4 py-2 hover:bg-gray-50 text-sm" :class="{'bg-green-50 text-green-700': lang === 'ilo'}">
+                                <span class="mr-2">🇵🇭</span> Ilokano
+                            </button>
+                        </div>
+                    </div>
+                    <button onclick="document.getElementById('editForm').classList.toggle('hidden')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                        Edit Profile
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -136,7 +158,7 @@
                         </div>
                         <div class="flex items-center text-gray-700 text-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                            <span>{{ Auth::user()->phone ?? '+63 912 345 6789' }}</span>
+                            <span>{{ Auth::user()->phone_number ?? Auth::user()->phone ?? 'Not set' }}</span>
                         </div>
                         <div class="flex items-center text-gray-700 text-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
@@ -161,7 +183,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                                <div class="px-4 py-2 bg-gray-50 rounded-lg text-gray-800">{{ Auth::user()->phone ?? '+63 912 345 6789' }}</div>
+                                <div class="px-4 py-2 bg-gray-50 rounded-lg text-gray-800">{{ Auth::user()->phone_number ?? Auth::user()->phone ?? 'Not set' }}</div>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Location (Municipality, Province)</label>
@@ -256,7 +278,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                                        <input type="text" name="phone" value="{{ Auth::user()->phone ?? '' }}" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                        <input type="text" name="phone" value="{{ Auth::user()->phone_number ?? Auth::user()->phone ?? '' }}" placeholder="+639xxxxxxxxx" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                        <p class="mt-1 text-xs text-gray-500">Required for SMS notifications and announcements</p>
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Location</label>
@@ -306,5 +329,32 @@
             </div>
         </main>
     </div>
+
+    <script>
+        function handleLogout(event) {
+            sessionStorage.setItem('isLoggedOut','true');
+            event.preventDefault();
+            
+            fetch('{{ route("logout") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin'
+            }).then(response => {
+                if (response.status === 419) {
+                    window.location.href = '{{ route("logout.expired") }}';
+                } else {
+                    window.location.href = '{{ route("login") }}';
+                }
+            }).catch(error => {
+                window.location.href = '{{ route("logout.expired") }}';
+            });
+            
+            return false;
+        }
+    </script>
 </body>
 </html>

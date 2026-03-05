@@ -1,0 +1,114 @@
+<html>
+
+<head>
+	<title>PAGASA</title>
+	<meta name="viewport" content="width=device-width, initial-scale=.8">
+	
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+	<link rel="shortcut icon" href="https://www.pagasa.dost.gov.ph/themes/hiraia/assets/images/favicon.ico">
+	<link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,400i,700" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/css/ol.css"
+    type="text/css">
+    <link rel="stylesheet" href="https://unpkg.com/ol-popup@4.0.0/src/ol-popup.css" />
+	<link href="https://www.pagasa.dost.gov.ph/combine/f7ef8c9f0a2812ec72b9674537a19748-1690286014.css" rel="stylesheet">
+			
+		 <script src="https://www.pagasa.dost.gov.ph/themes/hiraia/assets/js/pdf.js"></script>
+	<!-- <script>
+	pdfjsLib.GlobalWorkerOptions.workerSrc = "https://www.pagasa.dost.gov.ph/themes/hiraia/assets/js/pdf.worker.js";
+	</script> -->
+</head>
+
+<body>
+	<nav class="navbar navbar-inverse navbar-fixed-top gov-ph">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="https://www.gov.ph/">
+                <img src="https://www.pagasa.dost.gov.ph/themes/hiraia//assets/images/layout/coa.png" width="25" style="margin-top:-5px;" class="pull-left">
+                <span class="pull-right color-white" style="margin-top:-23px;margin-left:10px;"><h3 class="gov-text">GOVPH</h3></span>
+            </a>
+        </div>
+        <style type="text/css">
+            .mobile-links .sidemenu a {
+                color: white !important;
+            }
+            .mobile-links li {
+                padding: .25em;
+            }
+            .mobile-links .sub-level li {
+                padding: .5em;
+            }
+            .mobile-links>li>a {
+                padding-top: 9px;
+                padding-bottom: 5px;
+            }
+            .mobile-links .sub-level {
+                padding-left: 3em;
+            }
+        </style>
+        <div class="collapse navbar-collapse " id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav mobile-links">
+                <li><a href="https://www.pagasa.dost.gov.ph" class="color-white">Home</a></li>
+                                    <li class="visible-xs">
+                         
+                        <a href='#weather-mobile' class='sidemenu'>Weather <span class="caret"></span> <img src="https://pubfiles.pagasa.dost.gov.ph/pagasaweb/icons/sidebar/weather.png" alt="" class="menu-icon pull-right" style="margin-top:-6px;"/></a>
+                        <ul class="collapse list-unstyled sub-menu" id="weather-mobile">
+                             
+                                <li>
+                                     
+                                        <a href="#general-weather-mobile" style="padding-left:2em;" class="submenu sidemenu-level">General Weather <span class="caret"></span></a>
+                                        <ul class="collapse list-unstyled sub-level" id="general-weather-mobile">
+                                                                                                                                                <li><a href="/weather#daily-weather-forecast" class="anchor-link">Daily Weather Forecast</a></li>
+                                                                                                                                                                                                <li><a href="/weather/weather-outlook-selected-philippine-cities" class="anchor-link">Weather Outlook Selected Philippine Cities</a></li>
+                                                                                                                                                                                                <li><a href="/weather/weather-asian-cities-weather-forecast" class="anchor-link">Asian Cities Weather Forecast</a></li>
+                                                                                                                                                                                                <li><a href="/weather/weather-outlook-selected-tourist-areas" class="anchor-link">Weather Outlook Selected Tourist Areas</a></li>
+                                                                                                                                                                                                <li><a href="/weather/weather-outlook-weekly" class="anchor-link">Weekly Weather Outlook</a></li>
+                                                                                                                                                                                                <li><a href="/weather/weather-advisory" class="anchor-link">Weather Advisory</a></li>
+                                                                                                                                    </ul>
+                                                                    </li>
+                             
+                                <li>
+                                     
+                                        <a href="#aviation-mobile" style="padding-left:2em;" class="submenu sidemenu-level">Aviation <span class="caret"></span></a>
+                                        <ul class="collapse list-unstyled sub-level" id="aviation-mobile">
+                                                                                                                                                <li><a href="/aviation#sigmet" class="anchor-link">SIGMET</a></li>
+                                                                                                                                                                                                <li><a href="/aviation/metar" class="anchor-link">METAR</a></li>
+                                                                                                                                                                                                <li><a href="/aviation#terminal-aerodome-forecast" class="anchor-link">Terminal Aerodome Forecast</a></li>
+                                                                                                                                                                                                <li><a href="/aviation#airways-and-terminal-forecast" class="anchor-link">Airways and Terminal Forecast</a></li>
+                                                                                                                                    </ul>
+                                                                    </li>
+                             
+                                <li>
+                                     
+                                        <a href="#marine-mobile" style="padding-left:2em;" class="submenu sidemenu-level">Marine <span class="caret"></span></a>
+                                        <ul class="collapse list-unstyled sub-level" id="marine-mobile">
+                                                                                                                                                <li><a href="/marine/high-seas-forecast" class="anchor-link">High Seas and Offshore Waters Forecast</a></li>
+                                                                                                                                                                                                <li><a href="/marine/gale-warning" class="anchor-link">Gale Warning</a></li>
+                                                                                                                                    </ul>
+                                                                    </li>
+                             
+                                <li>
+                                                                             
+                                            <a href="/weather/heat-index" style="padding-left:20px;" class="submenu   anchor-link">Heat Index</a>
+                                                                                <!--  <a href="/weather/heat-index" style="padding-left:20px;" class="submenu   anchor-link">Heat Index</a> -->
+                                                                    </li>
+                             
+                                <li>
+                                                                             
+                                            <a href="/weather/low-high-temperature" style="padding-left:20px;" class="submenu   anchor-link">Daily Temperature</a>
+                                                                                <!--  <a href="/weather/low-high-temperature" style="padding-left:20px;" class="submenu   anchor-link">Daily Temperature</a> -->
+                                                                    </li>
+                                                    </ul>
+                                            </li>
+                                    <li class="visible-xs">
+                         
+                        <a href='#flood-mobile' class='sidemenu'>Flood <span class="caret"></span> <img src="https://pubfiles.pagasa.dost.gov.ph/pagasaweb/icons/sidebar/flood.png" alt="" class="menu-icon pull-right" style="margin-top:-6px;"/></a>
+                        <ul class="collapse list-unstyled sub-menu" id="flood-mobile">
+                             
+                                <li>
+                                   

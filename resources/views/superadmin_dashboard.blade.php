@@ -192,6 +192,185 @@
                         </div>
                     </div>
 
+                    <!-- System Status Overview - Data Records & System Health -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <!-- Data Records Card -->
+                        <div class="stat-card bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-xs text-gray-500 mb-1">Data Records</p>
+                                    <h3 class="text-4xl font-bold text-gray-800" x-text="(systemStatus.dataRecords || 0).toLocaleString()">0</h3>
+                                    <p class="text-sm text-green-600 mt-2 flex items-center">
+                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                                        </svg>
+                                        <span x-text="'+' + (systemStatus.newRecords || 0) + ' new'"></span>
+                                    </p>
+                                </div>
+                                <div class="bg-green-500 p-3 rounded-xl">
+                                    <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z"/>
+                                        <path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z"/>
+                                        <path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- System Health Card -->
+                        <div class="stat-card border border-gray-200 rounded-xl p-6 shadow-sm" :class="{
+                            'bg-green-50': systemStatus.health === 'Good',
+                            'bg-yellow-50': systemStatus.health === 'Warning',
+                            'bg-red-50': systemStatus.health === 'Critical'
+                        }">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-xs text-gray-500 mb-1">System Health</p>
+                                    <h3 class="text-4xl font-bold" :class="{
+                                        'text-green-600': systemStatus.health === 'Good',
+                                        'text-yellow-600': systemStatus.health === 'Warning',
+                                        'text-red-600': systemStatus.health === 'Critical'
+                                    }" x-text="systemStatus.health || 'Good'">Good</h3>
+                                    <p class="text-sm text-gray-500 mt-2" x-text="'Last check: ' + (systemStatus.lastCheck || '0 seconds ago')"></p>
+                                </div>
+                                <div class="p-3 rounded-xl" :class="{
+                                    'bg-green-100': systemStatus.health === 'Good',
+                                    'bg-yellow-100': systemStatus.health === 'Warning',
+                                    'bg-red-100': systemStatus.health === 'Critical'
+                                }">
+                                    <svg class="w-6 h-6" :class="{
+                                        'text-green-600': systemStatus.health === 'Good',
+                                        'text-yellow-600': systemStatus.health === 'Warning',
+                                        'text-red-600': systemStatus.health === 'Critical'
+                                    }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Status Overview Section -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                        <h3 class="text-lg font-bold text-purple-700 mb-6">System Status Overview</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <!-- Server Status -->
+                            <div>
+                                <h4 class="text-sm font-semibold text-gray-700 mb-4">Server Status</h4>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-600">API Response</span>
+                                        <span class="px-3 py-1 rounded-full text-xs font-medium" :class="{
+                                            'bg-green-100 text-green-700': systemStatus.serverStatus?.apiResponse === 'Normal',
+                                            'bg-yellow-100 text-yellow-700': systemStatus.serverStatus?.apiResponse === 'Degraded',
+                                            'bg-red-100 text-red-700': systemStatus.serverStatus?.apiResponse === 'Down'
+                                        }" x-text="systemStatus.serverStatus?.apiResponse || 'Normal'"></span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-600">Database</span>
+                                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium" x-text="systemStatus.serverStatus?.database || 'Online'"></span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-600">Storage</span>
+                                        <span class="px-3 py-1 rounded-full text-xs font-medium" :class="{
+                                            'bg-green-100 text-green-700': (systemStatus.serverStatus?.storageUsed || 0) < 70,
+                                            'bg-yellow-100 text-yellow-700': (systemStatus.serverStatus?.storageUsed || 0) >= 70 && (systemStatus.serverStatus?.storageUsed || 0) < 90,
+                                            'bg-red-100 text-red-700': (systemStatus.serverStatus?.storageUsed || 0) >= 90
+                                        }" x-text="(systemStatus.serverStatus?.storageUsed || 10) + '% used'"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Data Statistics -->
+                            <div>
+                                <h4 class="text-sm font-semibold text-gray-700 mb-4">Data Statistics</h4>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-600">Total Farms</span>
+                                        <span class="text-sm font-bold text-gray-800" x-text="(systemStatus.dataStatistics?.totalFarms || 0).toLocaleString()"></span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-600">Municipalities</span>
+                                        <span class="text-sm font-bold text-gray-800" x-text="systemStatus.dataStatistics?.municipalities || 0"></span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-600">Crop Types</span>
+                                        <span class="text-sm font-bold text-gray-800" x-text="systemStatus.dataStatistics?.cropTypes || 0"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Recent Activity -->
+                            <div>
+                                <h4 class="text-sm font-semibold text-gray-700 mb-4">Recent Activity</h4>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-600">Data Updates</span>
+                                        <span class="text-sm font-bold text-gray-800" x-text="(systemStatus.recentActivity?.dataUpdates || 0) + ' Today'"></span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-600">System Logs</span>
+                                        <span class="text-sm font-bold text-gray-800" x-text="(systemStatus.recentActivity?.systemLogs || 0) + ' entries'"></span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-600">Monitoring Alerts</span>
+                                        <span class="text-sm font-bold text-yellow-600" x-text="(systemStatus.recentActivity?.monitoringAlerts || 0) + ' pending'"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Links: Manage Datasets & System Monitoring -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <!-- Manage Datasets -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <div class="bg-green-100 p-3 rounded-xl">
+                                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-gray-800">Manage Datasets</h4>
+                                        <p class="text-sm text-gray-500">View and manage data</p>
+                                    </div>
+                                </div>
+                                <a href="#" @click.prevent="activeTab = 'logs'" class="text-purple-600 hover:text-purple-700 font-medium text-sm flex items-center">
+                                    Go to Datasets
+                                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- System Monitoring -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <div class="bg-purple-100 p-3 rounded-xl">
+                                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-gray-800">System Monitoring</h4>
+                                        <p class="text-sm text-gray-500">Check system health</p>
+                                    </div>
+                                </div>
+                                <a href="#" @click.prevent="activeTab = 'logs'" class="text-purple-600 hover:text-purple-700 font-medium text-sm flex items-center">
+                                    Go to Monitoring
+                                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Recent Activity -->
                     <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                         <h4 class="text-lg font-semibold text-gray-800 mb-4">Recent System Activity</h4>
@@ -932,6 +1111,29 @@
                     activeToday: 0
                 },
                 
+                // System Status for monitoring section
+                systemStatus: {
+                    health: 'Good',
+                    lastCheck: '0 seconds ago',
+                    dataRecords: 0,
+                    newRecords: 0,
+                    serverStatus: {
+                        apiResponse: 'Normal',
+                        database: 'Online',
+                        storageUsed: 10
+                    },
+                    dataStatistics: {
+                        totalFarms: 0,
+                        municipalities: 0,
+                        cropTypes: 0
+                    },
+                    recentActivity: {
+                        dataUpdates: 0,
+                        systemLogs: 0,
+                        monitoringAlerts: 0
+                    }
+                },
+                
                 users: [],
                 farmers: [],
                 admins: [],
@@ -978,9 +1180,30 @@
 
                 async init() {
                     await this.fetchDashboardData();
+                    await this.loadSystemStatus();
                     await this.fetchUsers();
                     await this.fetchSystemLogs();
                     await this.fetchRolesUsers();
+                },
+
+                async loadSystemStatus() {
+                    try {
+                        const response = await fetch('{{ url("/api/admin/system-status") }}');
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.systemStatus = {
+                                health: data.systemHealth >= 80 ? 'Good' : (data.systemHealth >= 50 ? 'Warning' : 'Critical'),
+                                lastCheck: '0 seconds ago',
+                                dataRecords: data.dataStatistics?.totalFarms || 0,
+                                newRecords: data.recentActivity?.dataUpdates || 0,
+                                serverStatus: data.serverStatus || this.systemStatus.serverStatus,
+                                dataStatistics: data.dataStatistics || this.systemStatus.dataStatistics,
+                                recentActivity: data.recentActivity || this.systemStatus.recentActivity
+                            };
+                        }
+                    } catch (error) {
+                        console.error('Error loading system status:', error);
+                    }
                 },
 
                 async fetchDashboardData() {
