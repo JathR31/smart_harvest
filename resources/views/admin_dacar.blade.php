@@ -9,6 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
+        [x-cloak] { display: none !important; }
         .sidebar-item {
             transition: all 0.2s;
         }
@@ -86,12 +87,6 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/>
                         </svg>
                         <span>Forecast</span>
-                    </a>
-                    <a href="{{ route('pagasa.dashboard') }}" class="flex items-center space-x-3 px-4 py-3 rounded hover:bg-green-800 transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        <span>PAGASA Data</span>
                     </a>
                 </div>
 
@@ -206,7 +201,7 @@
                 </div>
 
                 <!-- DASHBOARD SECTION -->
-                <div x-show="!loading && currentSection === 'dashboard'">
+                <div x-show="!loading && currentSection === 'dashboard'" x-cloak>
                     <!-- Yield & Planting Schedule Analysis -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
                         <div class="mb-6 flex items-center justify-between">
@@ -372,7 +367,6 @@
                                 </template>
                             </div>
                         </div>
-                    </div>
 
                     <!-- Current Market Prices Section (Full Width) -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-8">
@@ -436,7 +430,7 @@
                 </div>
 
                 <!-- MARKET PRICES SECTION -->
-                <div x-show="!loading && currentSection === 'market-prices'" x-data="{
+                <div x-cloak x-show="!loading && currentSection === 'market-prices'" x-data="{
                     pricesCurrentPage: 1,
                     pricesPerPage: 10,
                     pricesSearchQuery: '',
@@ -814,7 +808,7 @@
                 </div>
 
                 <!-- ANNOUNCEMENTS SECTION -->
-                <div x-show="!loading && currentSection === 'announcements'" x-data="{
+                <div x-cloak x-show="!loading && currentSection === 'announcements'" x-data="{
                     announcementsList: [],
                     showCreateModal: false,
                     newAnnouncement: { title: '', content: '', priority: 'normal', target_group: 'all', municipality: 'all', sendSMS: false },
@@ -1068,7 +1062,7 @@
                 </div>
 
                 <!-- INBOX SECTION -->
-                <div x-show="!loading && currentSection === 'inbox'" x-data="{
+                <div x-cloak x-show="!loading && currentSection === 'inbox'" x-data="{
                     inboxTab: 'received',
                     messagesList: { received: [], sent: [] },
                     showComposeModal: false,
@@ -1190,9 +1184,6 @@
                         }
                     }
                 }">
-                        this.showMessageModal = true;
-                    }
-                }">
                     <div class="mb-6 flex items-center justify-between">
                         <div>
                             <h2 class="text-2xl font-bold text-gray-800">Inbox</h2>
@@ -1304,11 +1295,6 @@
                                                         </div>
                                                     </template>
                                                 </div>
-                                            </div>
-                                            <span class="text-xs text-gray-400" x-text="message.created_at"></span>
-                                        </div>
-                                    </div>
-                                </template>
                                             </div>
                                             <span class="text-xs text-gray-400" x-text="message.created_at"></span>
                                         </div>
@@ -1578,6 +1564,11 @@
                         this.currentSection = hash;
                         console.log('Navigating to section from URL hash:', hash);
                     }
+                    
+                    // Keep URL hash in sync with active section
+                    this.$watch('currentSection', value => {
+                        window.location.hash = value;
+                    });
                     
                     await this.loadDashboardData();
                     await this.loadYieldAnalysis();

@@ -119,6 +119,7 @@
     </div>
 
     <script>
+        const baseUrl = '{{ url("/") }}';
         let countdownInterval = null;
         let resendTimeout = null;
         let resendAllowedAt = null;
@@ -160,7 +161,7 @@
                 showLoading('resend-btn', 'resend-text');
             }
 
-            fetch('/api/sms/send-otp', {
+            fetch(baseUrl + '/api/sms/send-otp', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -203,7 +204,7 @@
 
             showLoading('verify-btn', 'verify-text');
 
-            fetch('/api/sms/verify-otp', {
+            fetch(baseUrl + '/api/sms/verify-otp', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -236,7 +237,7 @@
 
         // Switch to Email
         function switchToEmail() {
-            fetch('/api/sms/switch-to-email', {
+            fetch(baseUrl + '/api/sms/switch-to-email', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

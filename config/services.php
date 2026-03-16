@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'sms_api_philippines' => [
+        'key' => env('SMS_API_PHILIPPINES_KEY'),
+        'base_url' => env('SMS_API_PHILIPPINES_URL', 'https://api.smsapi.ph/v1'),
+        'simulation_mode' => env('SMS_SIMULATION_MODE', false),
+    ],
+
 ];

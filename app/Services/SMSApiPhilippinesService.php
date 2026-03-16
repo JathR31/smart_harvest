@@ -11,17 +11,24 @@ use Illuminate\Support\Facades\Cache;
  * 
  * API Documentation: https://smsapi.ph/docs
  * Dashboard: https://smsapi.ph/dashboard
+ * 
+ * This service sends real SMS messages through the SMS API Philippines provider.
+ * It includes SSL fallback, retry logic, and comprehensive error handling.
  */
 class SMSApiPhilippinesService
 {
     protected $apiKey;
     protected $baseUrl = 'https://api.smsapi.ph/v1';
+    protected $fallbackUrl = 'http://api.smsapi.ph/v1';
     protected $simulationMode;
     
     public function __construct()
     {
-        $this->apiKey = env('SMS_API_PHILIPPINES_KEY');
-        $this->simulationMode = env('SMS_SIMULATION_MODE', false);
+        $this->apiKey = config('services.sms_api_philippines.key', env('SMS_API_PHILIPPINES_KEY'));
+        
+        // Handle 'false' string from .env properly
+        $simMode = config('services.sms_api_philippines.simulation_mode', env('SMS_SIMULATION_MODE', false));
+        $this->simulationMode = filter_var($simMode, FILTER_VALIDATE_BOOLEAN);
     }
     
     /**
@@ -33,17 +40,18 @@ class SMSApiPhilippinesService
      */
     public function sendOTP($phoneNumber, $otpCode)
     {
-        // Simulation mode - bypass actual API  call
+        // Simulation mode - bypass actual API call
         if ($this->simulationMode) {
             Log::info('[SIMULATION] SMS OTP would be sent', [
-                'phone' => $phoneNumber,
+                'phone' => $this->maskPhoneNumber($phoneNumber),
                 'otp' => $otpCode
             ]);
             
             return [
                 'success' => true,
-                'message' => '[SIMULATION MODE] OTP code sent successfully to ' . $this->maskPhoneNumber($phoneNumber),
-                'simulation' => true
+                'message' => '[SIMULATION] OTP code: ' . $otpCode . ' — sent to ' . $this->maskPhoneNumber($phoneNumber),
+                'simulation' => true,
+                'otp_code' => $otpCode
             ];
         }
         
@@ -79,53 +87,20 @@ class SMSApiPhilippinesService
         // Compose SMS message
         $message = "SmartHarvest Verification\n\nYour OTP code is: {$otpCode}\n\nThis code will expire in 10 minutes. Do not share this code with anyone.";
         
-        try {
-            $response = Http::withoutVerifying()->withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-            ])->timeout(15)->post($this->baseUrl . '/send', [
-                'recipient' => $normalizedPhone,
-                'message' => $message,
-                'sender_name' => 'SmartHarvest'
-            ]);
-            
-            if ($response->successful()) {
-                $data = $response->json();
-                
-                // Increment rate limit counter
-                Cache::put($cacheKey, $attempts + 1, now()->addMinutes(10));
-                
-                Log::info('SMS sent successfully via SMS API Philippines', [
-                    'phone' => $normalizedPhone,
-                    'response' => $data
-                ]);
-                
-                return [
-                    'success' => true,
-                    'message' => 'OTP code sent successfully to ' . $this->maskPhoneNumber($normalizedPhone),
-                    'data' => $data
-                ];
-            }
-            
-            Log::error('SMS API Philippines request failed', [
-                'status' => $response->status(),
-                'response' => $response->body()
-            ]);
+        $result = $this->sendSMS($normalizedPhone, $message, 'SmartHarvest');
+        
+        if ($result['success']) {
+            // Increment rate limit counter
+            Cache::put($cacheKey, $attempts + 1, now()->addMinutes(10));
             
             return [
-                'success' => false,
-                'message' => 'Failed to send SMS. Please try again or use email verification.'
-            ];
-            
-        } catch (\Exception $e) {
-            Log::error('SMS Service Exception: ' . $e->getMessage());
-            
-            return [
-                'success' => false,
-                'message' => 'SMS service temporarily unavailable. Please try email verification.'
+                'success' => true,
+                'message' => 'OTP code sent successfully to ' . $this->maskPhoneNumber($normalizedPhone),
+                'data' => $result['data'] ?? null
             ];
         }
+        
+        return $result;
     }
     
     /**
@@ -141,11 +116,16 @@ class SMSApiPhilippinesService
         // Simulation mode - skip actual API calls
         if ($this->simulationMode) {
             $validCount = 0;
+            $details = [];
             foreach ($phoneNumbers as $phone) {
                 if ($this->isValidPhoneNumber($phone)) {
                     $validCount++;
+                    $details[] = [
+                        'phone' => $this->maskPhoneNumber($phone),
+                        'status' => 'simulated',
+                    ];
                     Log::info('[SIMULATION] Announcement SMS would be sent', [
-                        'phone' => $phone,
+                        'phone' => $this->maskPhoneNumber($phone),
                         'message' => substr($message, 0, 50) . '...'
                     ]);
                 }
@@ -155,8 +135,9 @@ class SMSApiPhilippinesService
                 'success' => true,
                 'sent' => $validCount,
                 'failed' => count($phoneNumbers) - $validCount,
-                'message' => sprintf('[SIMULATION MODE] Would send to %d recipient(s), %d invalid.', $validCount, count($phoneNumbers) - $validCount),
-                'simulation' => true
+                'message' => sprintf('[SIMULATION] Would send to %d recipient(s), %d invalid.', $validCount, count($phoneNumbers) - $validCount),
+                'simulation' => true,
+                'details' => $details
             ];
         }
         
@@ -165,7 +146,8 @@ class SMSApiPhilippinesService
                 'success' => false,
                 'message' => 'SMS service not configured.',
                 'sent' => 0,
-                'failed' => count($phoneNumbers)
+                'failed' => count($phoneNumbers),
+                'details' => []
             ];
         }
         
@@ -189,62 +171,39 @@ class SMSApiPhilippinesService
                 continue;
             }
             
-            try {
-                $response = Http::withoutVerifying()->withHeaders([
-                    'Authorization' => 'Bearer ' . $this->apiKey,
-                    'Content-Type' => 'application/json',
-                    'Accept' => 'application/json',
-                ])->timeout(15)->post($this->baseUrl . '/send', [
-                    'recipient' => $normalizedPhone,
-                    'message' => $message,
-                    'sender_name' => $senderName
+            $sendResult = $this->sendSMS($normalizedPhone, $message, $senderName);
+            
+            if ($sendResult['success']) {
+                $results['sent']++;
+                $results['details'][] = [
+                    'phone' => $this->maskPhoneNumber($normalizedPhone),
+                    'status' => 'sent',
+                    'response' => $sendResult['data'] ?? null
+                ];
+                
+                Log::info('Announcement SMS sent', [
+                    'phone' => $this->maskPhoneNumber($normalizedPhone),
+                    'sender' => $senderName
                 ]);
-                
-                if ($response->successful()) {
-                    $results['sent']++;
-                    $results['details'][] = [
-                        'phone' => $this->maskPhoneNumber($normalizedPhone),
-                        'status' => 'sent',
-                        'response' => $response->json()
-                    ];
-                    
-                    Log::info('Announcement SMS sent', [
-                        'phone' => $normalizedPhone,
-                        'sender' => $senderName
-                    ]);
-                } else {
-                    $results['failed']++;
-                    $results['details'][] = [
-                        'phone' => $this->maskPhoneNumber($normalizedPhone),
-                        'status' => 'failed',
-                        'error' => $response->body()
-                    ];
-                    
-                    Log::error('Failed to send announcement SMS', [
-                        'phone' => $normalizedPhone,
-                        'error' => $response->body()
-                    ]);
-                }
-                
-                // Small delay to avoid rate limiting
-                usleep(100000); // 0.1 second delay
-                
-            } catch (\Exception $e) {
+            } else {
                 $results['failed']++;
                 $results['details'][] = [
                     'phone' => $this->maskPhoneNumber($normalizedPhone),
                     'status' => 'failed',
-                    'error' => $e->getMessage()
+                    'error' => $sendResult['message'] ?? 'Unknown error'
                 ];
                 
-                Log::error('SMS Service Exception for announcement', [
-                    'phone' => $normalizedPhone,
-                    'error' => $e->getMessage()
+                Log::error('Failed to send announcement SMS', [
+                    'phone' => $this->maskPhoneNumber($normalizedPhone),
+                    'error' => $sendResult['message'] ?? 'Unknown error'
                 ]);
             }
+            
+            // Small delay to avoid rate limiting
+            usleep(200000); // 0.2 second delay
         }
         
-        if ($results['failed'] > 0) {
+        if ($results['failed'] > 0 && $results['sent'] === 0) {
             $results['success'] = false;
         }
         
@@ -270,14 +229,14 @@ class SMSApiPhilippinesService
         // Simulation mode
         if ($this->simulationMode) {
             Log::info('[SIMULATION] SMS would be sent', [
-                'phone' => $phoneNumber,
+                'phone' => $this->maskPhoneNumber($phoneNumber),
                 'message' => substr($message, 0, 50) . '...',
                 'sender' => $senderName
             ]);
             
             return [
                 'success' => true,
-                'message' => '[SIMULATION MODE] SMS sent successfully to ' . $this->maskPhoneNumber($phoneNumber),
+                'message' => '[SIMULATION] SMS sent successfully to ' . $this->maskPhoneNumber($phoneNumber),
                 'simulation' => true
             ];
         }
@@ -298,46 +257,188 @@ class SMSApiPhilippinesService
             ];
         }
         
+        return $this->sendSMS($normalizedPhone, $message, $senderName);
+    }
+    
+    /**
+     * Core SMS sending method with retry and SSL fallback
+     * 
+     * @param string $phoneNumber - Normalized phone number (+639XXXXXXXXX)
+     * @param string $message - SMS message content
+     * @param string $senderName - Sender display name
+     * @return array - ['success' => bool, 'message' => string, 'data' => array|null]
+     */
+    protected function sendSMS($phoneNumber, $message, $senderName = 'SmartHarvest')
+    {
+        $payload = [
+            'recipient' => $phoneNumber,
+            'message' => $message,
+            'sender_name' => $senderName
+        ];
+        
+        $headers = [
+            'Authorization' => 'Bearer ' . $this->apiKey,
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+            'User-Agent' => 'SmartHarvest/1.0'
+        ];
+        
+        // Try multiple URL patterns with SSL fallback
+        $urlsToTry = [
+            $this->baseUrl . '/send',
+            $this->fallbackUrl . '/send',
+            'https://smsapi.ph/api/v1/send',
+        ];
+        
+        $lastError = null;
+        
+        foreach ($urlsToTry as $url) {
+            $result = $this->attemptSend($url, $payload, $headers);
+            
+            if ($result['success']) {
+                return $result;
+            }
+            
+            $lastError = $result;
+            
+            // Only continue to next URL if it was a connection/SSL/response error
+            $errorType = $result['error_type'] ?? 'unknown';
+            if (!in_array($errorType, ['ssl', 'connect', 'timeout', 'invalid_response'])) {
+                // API responded with valid JSON error — don't try alternate URLs
+                return $result;
+            }
+        }
+        
+        // All attempts failed
+        Log::error('SMS API: All send attempts failed', [
+            'phone' => $this->maskPhoneNumber($phoneNumber),
+            'last_error' => $lastError['message'] ?? 'Unknown'
+        ]);
+        
+        return [
+            'success' => false,
+            'message' => 'Failed to send SMS. The SMS service may be temporarily unavailable. Please try again later or use email verification.',
+            'error_type' => 'all_attempts_failed'
+        ];
+    }
+    
+    /**
+     * Attempt to send SMS to a specific URL
+     * 
+     * @param string $url - Full API endpoint URL
+     * @param array $payload - Request body
+     * @param array $headers - Request headers
+     * @return array
+     */
+    protected function attemptSend($url, $payload, $headers)
+    {
         try {
-            $response = Http::withoutVerifying()->withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-            ])->timeout(15)->post($this->baseUrl . '/send', [
-                'recipient' => $normalizedPhone,
-                'message' => $message,
-                'sender_name' => $senderName
-            ]);
+            $response = Http::withoutVerifying()
+                ->withHeaders($headers)
+                ->timeout(20)
+                ->connectTimeout(10)
+                ->retry(2, 1000)
+                ->post($url, $payload);
+            
+            // Check content type — API must return JSON, not HTML
+            $contentType = $response->header('Content-Type') ?? '';
+            $body = $response->body();
+            
+            // If response is HTML or a redirect page, this is not a valid API response
+            if (str_contains($contentType, 'text/html') || str_starts_with(trim($body), '<html') || str_starts_with(trim($body), '<!DOCTYPE')) {
+                Log::warning('SMS API returned HTML instead of JSON', [
+                    'url' => $url,
+                    'status' => $response->status(),
+                    'content_type' => $contentType,
+                    'body_preview' => substr($body, 0, 200)
+                ]);
+                
+                return [
+                    'success' => false,
+                    'message' => 'SMS API endpoint returned an invalid response. The service may be down or the URL may be incorrect.',
+                    'error_type' => 'invalid_response'
+                ];
+            }
             
             if ($response->successful()) {
+                $data = $response->json();
+                
+                // Verify we got actual JSON data back
+                if ($data === null && !empty($body)) {
+                    Log::warning('SMS API response was not valid JSON', [
+                        'url' => $url,
+                        'body_preview' => substr($body, 0, 200)
+                    ]);
+                    
+                    return [
+                        'success' => false,
+                        'message' => 'SMS API returned an unexpected response format.',
+                        'error_type' => 'invalid_response'
+                    ];
+                }
+                
                 Log::info('SMS sent successfully', [
-                    'phone' => $normalizedPhone,
-                    'sender' => $senderName
+                    'url' => $url,
+                    'phone' => $this->maskPhoneNumber($payload['recipient']),
+                    'response_status' => $response->status()
                 ]);
                 
                 return [
                     'success' => true,
-                    'message' => 'SMS sent successfully to ' . $this->maskPhoneNumber($normalizedPhone),
-                    'data' => $response->json()
+                    'message' => 'SMS sent successfully to ' . $this->maskPhoneNumber($payload['recipient']),
+                    'data' => $data
                 ];
             }
             
-            Log::error('Failed to send SMS', [
+            // API responded but with error status
+            $errorJson = $response->json() ?? [];
+            
+            Log::error('SMS API error response', [
+                'url' => $url,
                 'status' => $response->status(),
-                'response' => $response->body()
+                'body' => substr($body, 0, 500)
             ]);
             
             return [
                 'success' => false,
-                'message' => 'Failed to send SMS. Please try again.'
+                'message' => $errorJson['message'] ?? $errorJson['error'] ?? 'SMS API returned error (HTTP ' . $response->status() . ')',
+                'error_type' => 'api_error',
+                'status' => $response->status()
             ];
             
-        } catch (\Exception $e) {
-            Log::error('SMS Service Exception: ' . $e->getMessage());
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            $errorMsg = $e->getMessage();
+            $errorType = 'connect';
+            
+            $lowerMsg = strtolower($errorMsg);
+            if (str_contains($lowerMsg, 'ssl') || str_contains($lowerMsg, 'certificate') || str_contains($lowerMsg, 'tls')) {
+                $errorType = 'ssl';
+            } elseif (str_contains($lowerMsg, 'timeout') || str_contains($lowerMsg, 'timed out')) {
+                $errorType = 'timeout';
+            }
+            
+            Log::warning('SMS API connection error', [
+                'url' => $url,
+                'error' => substr($errorMsg, 0, 200),
+                'type' => $errorType
+            ]);
             
             return [
                 'success' => false,
-                'message' => 'SMS service temporarily unavailable.'
+                'message' => 'Could not connect to SMS service. Please try again.',
+                'error_type' => $errorType
+            ];
+            
+        } catch (\Exception $e) {
+            Log::error('SMS Service Exception', [
+                'url' => $url,
+                'error' => $e->getMessage()
+            ]);
+            
+            return [
+                'success' => false,
+                'message' => 'SMS service temporarily unavailable.',
+                'error_type' => 'exception'
             ];
         }
     }
@@ -349,46 +450,128 @@ class SMSApiPhilippinesService
      */
     public function checkBalance()
     {
+        if ($this->simulationMode) {
+            return [
+                'success' => true,
+                'balance' => 999.00,
+                'message' => '[SIMULATION] Balance check — simulated credits.',
+                'simulation' => true
+            ];
+        }
+        
         if (!$this->apiKey) {
             return [
                 'success' => false,
                 'balance' => null,
-                'message' => 'SMS service not configured.'
+                'message' => 'SMS service not configured. Add SMS_API_PHILIPPINES_KEY to your .env file.'
             ];
         }
         
-        try {
-            $response = Http::withoutVerifying()->withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
-                'Accept' => 'application/json',
-            ])->timeout(10)->get($this->baseUrl . '/balance');
-            
-            if ($response->successful()) {
-                $data = $response->json();
+        // Try multiple URL patterns
+        $urls = [
+            $this->baseUrl . '/balance',
+            $this->fallbackUrl . '/balance',
+            'https://smsapi.ph/api/v1/balance',
+        ];
+        
+        foreach ($urls as $url) {
+            try {
+                $response = Http::withoutVerifying()
+                    ->withHeaders([
+                        'Authorization' => 'Bearer ' . $this->apiKey,
+                        'Accept' => 'application/json',
+                        'User-Agent' => 'SmartHarvest/1.0'
+                    ])
+                    ->timeout(15)
+                    ->connectTimeout(8)
+                    ->get($url);
                 
-                return [
-                    'success' => true,
-                    'balance' => $data['balance'] ?? null,
-                    'message' => 'Balance retrieved successfully.',
-                    'data' => $data
-                ];
+                // Skip HTML responses (bounce pages, etc.)
+                $contentType = $response->header('Content-Type') ?? '';
+                $body = $response->body();
+                if (str_contains($contentType, 'text/html') || str_starts_with(trim($body), '<html') || str_starts_with(trim($body), '<!DOCTYPE')) {
+                    Log::debug('SMS balance endpoint returned HTML, skipping: ' . $url);
+                    continue;
+                }
+                
+                if ($response->successful()) {
+                    $data = $response->json();
+                    
+                    if ($data === null) {
+                        continue; // Not valid JSON
+                    }
+                    
+                    return [
+                        'success' => true,
+                        'balance' => $data['balance'] ?? $data['credits'] ?? null,
+                        'message' => 'Balance retrieved successfully.',
+                        'data' => $data
+                    ];
+                }
+            } catch (\Exception $e) {
+                Log::debug('SMS balance check failed for URL: ' . $url, ['error' => $e->getMessage()]);
+                continue;
             }
-            
+        }
+        
+        return [
+            'success' => false,
+            'balance' => null,
+            'message' => 'Could not retrieve SMS balance. Service may be temporarily unavailable.'
+        ];
+    }
+    
+    /**
+     * Test the API connection
+     * 
+     * @return array - ['connected' => bool, 'message' => string]
+     */
+    public function testConnection()
+    {
+        if ($this->simulationMode) {
             return [
-                'success' => false,
-                'balance' => null,
-                'message' => 'Failed to retrieve balance.'
-            ];
-            
-        } catch (\Exception $e) {
-            Log::error('Failed to check SMS balance: ' . $e->getMessage());
-            
-            return [
-                'success' => false,
-                'balance' => null,
-                'message' => 'Service temporarily unavailable.'
+                'connected' => true,
+                'message' => 'Running in simulation mode. SMS will be logged but not actually sent.',
+                'mode' => 'simulation',
+                'api_key_configured' => !empty($this->apiKey)
             ];
         }
+        
+        if (!$this->apiKey) {
+            return [
+                'connected' => false,
+                'message' => 'API key not configured. Set SMS_API_PHILIPPINES_KEY in .env',
+                'mode' => 'unconfigured'
+            ];
+        }
+        
+        $balance = $this->checkBalance();
+        
+        return [
+            'connected' => $balance['success'],
+            'message' => $balance['success'] 
+                ? 'Connected to SMS API Philippines successfully.' 
+                : 'Could not connect to SMS API. Error: ' . $balance['message'],
+            'mode' => 'live',
+            'api_key_configured' => true,
+            'balance' => $balance['balance'] ?? null
+        ];
+    }
+    
+    /**
+     * Get service status for display
+     * 
+     * @return array
+     */
+    public function getStatus()
+    {
+        return [
+            'provider' => 'SMS API Philippines',
+            'api_key_set' => !empty($this->apiKey),
+            'api_key_preview' => $this->apiKey ? substr($this->apiKey, 0, 8) . '...' : 'Not set',
+            'simulation_mode' => $this->simulationMode,
+            'base_url' => $this->baseUrl,
+        ];
     }
     
     /**
@@ -397,10 +580,14 @@ class SMSApiPhilippinesService
      * @param string $phoneNumber
      * @return string|false
      */
-    protected function normalizePhoneNumber($phoneNumber)
+    public function normalizePhoneNumber($phoneNumber)
     {
-        // Remove all non-numeric characters
-        $cleaned = preg_replace('/[^0-9]/', '', $phoneNumber);
+        if (!$phoneNumber) return false;
+        
+        // Remove all non-numeric characters except leading +
+        $cleaned = preg_replace('/[^0-9+]/', '', trim($phoneNumber));
+        // Strip + sign for uniform handling
+        $cleaned = ltrim($cleaned, '+');
         
         // Handle different formats
         if (preg_match('/^09\d{9}$/', $cleaned)) {
@@ -424,14 +611,14 @@ class SMSApiPhilippinesService
      * @param string $phoneNumber
      * @return string
      */
-    protected function maskPhoneNumber($phoneNumber)
+    public function maskPhoneNumber($phoneNumber)
     {
-        if (strlen($phoneNumber) >= 4) {
-            $lastFour = substr($phoneNumber, -4);
-            return '+639XX XXX X' . substr($lastFour, -3);
+        if (!$phoneNumber || strlen($phoneNumber) < 4) {
+            return 'XXX XXX XXXX';
         }
         
-        return 'XXX XXX XXXX';
+        $lastFour = substr($phoneNumber, -4);
+        return '+639XX XXX ' . substr($lastFour, -3);
     }
     
     /**

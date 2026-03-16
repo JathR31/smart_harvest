@@ -23,10 +23,10 @@ class DataImportApiController extends Controller
             $datasets = [
                 [
                     'id' => 'crop_production',
-                    'name' => 'Crop Production Statistics (Quarterly)',
-                    'description' => 'Volume of production (MT) and area harvested (Ha) for key CAR commodities from municipal-level',
+                    'name' => 'Crop Production Statistics (Monthly)',
+                    'description' => 'Monthly crop production data including area planted/harvested, production volume, and productivity metrics',
                     'table' => 'crop_data',
-                    'required_fields' => ['Year', 'Quarter', 'Province', 'Municipality', 'Crop', 'Volume_MT', 'Area_Ha']
+                    'required_fields' => ['Municipality', 'Farm_Type', 'Year', 'Month', 'Crop', 'Area_Planted_Ha', 'Area_Harvested_Ha', 'Production_MT', 'Productivity_MT_Ha']
                 ],
                 [
                     'id' => 'climate_patterns',
@@ -76,10 +76,10 @@ class DataImportApiController extends Controller
             $templates = [
                 'crop_production' => [
                     'filename' => 'crop_production_template.csv',
-                    'headers' => ['Year', 'Quarter', 'Province', 'Municipality', 'Crop', 'Volume_MT', 'Area_Ha'],
+                    'headers' => ['Municipality', 'Farm_Type', 'Year', 'Month', 'Crop', 'Area_Planted_Ha', 'Area_Harvested_Ha', 'Production_MT', 'Productivity_MT_Ha'],
                     'sample_data' => [
-                        ['2025', 'Q1', 'Benguet', 'La Trinidad', 'Cabbage', '450.5', '85.2'],
-                        ['2025', 'Q1', 'Benguet', 'Bokod', 'Lettuce', '125.3', '22.5']
+                        ['ATOK', 'IRRIGATED', '2015', 'JAN', 'CABBAGE', '98', '120', '2400', '20'],
+                        ['ATOK', 'IRRIGATED', '2015', 'FEB', 'CABBAGE', '115', '76', '1216', '16']
                     ]
                 ],
                 'climate_patterns' => [
@@ -370,7 +370,7 @@ class DataImportApiController extends Controller
     private function getRequiredFields($datasetId)
     {
         $fields = [
-            'crop_production' => ['Year', 'Quarter', 'Province', 'Municipality', 'Crop', 'Volume_MT', 'Area_Ha'],
+            'crop_production' => ['Municipality', 'Farm_Type', 'Year', 'Month', 'Crop', 'Area_Planted_Ha', 'Area_Harvested_Ha', 'Production_MT', 'Productivity_MT_Ha'],
             'climate_patterns' => ['Year', 'Month', 'Municipality', 'Rainfall', 'Avg_Temperature', 'Humidity'],
             'market_prices' => ['Date', 'Crop_Name', 'Price_Per_Kg', 'Market_Location', 'Demand_Level'],
             'livestock_poultry' => ['Year', 'Period', 'Municipality', 'Animal_Type', 'Headcount', 'Farm_Type']
@@ -382,7 +382,7 @@ class DataImportApiController extends Controller
     private function getDatasetName($datasetId)
     {
         $names = [
-            'crop_production' => 'Crop Production Statistics (Quarterly)',
+            'crop_production' => 'Crop Production Statistics (Monthly)',
             'climate_patterns' => 'Climate & Weather Data',
             'market_prices' => 'Agricultural Market Prices',
             'livestock_poultry' => 'Livestock & Poultry Inventory'
@@ -395,12 +395,13 @@ class DataImportApiController extends Controller
     {
         CropData::create([
             'crop_type' => $data['Crop'] ?? null,
+            'variety' => $data['Farm_Type'] ?? null,
             'municipality' => $data['Municipality'] ?? null,
-            'planting_date' => isset($data['Year'], $data['Quarter']) 
-                ? $this->getDateFromQuarter($data['Year'], $data['Quarter']) 
+            'planting_date' => isset($data['Year'], $data['Month']) 
+                ? $this->getDateFromMonth($data['Year'], $data['Month']) 
                 : null,
-            'yield_amount' => isset($data['Volume_MT']) ? floatval($data['Volume_MT']) * 1000 : 0, // Convert MT to kg
-            'area_planted' => $data['Area_Ha'] ?? 0,
+            'yield_amount' => isset($data['Production_MT']) ? floatval($data['Production_MT']) * 1000 : 0, // Convert MT to kg
+            'area_planted' => $data['Area_Planted_Ha'] ?? 0,
         ]);
     }
 
@@ -438,5 +439,26 @@ class DataImportApiController extends Controller
 
         $date = $quarterMap[$quarter] ?? '01-01';
         return "$year-$date";
+    }
+
+    private function getDateFromMonth($year, $month)
+    {
+        $monthMap = [
+            'JAN' => '01', 'JANUARY' => '01',
+            'FEB' => '02', 'FEBRUARY' => '02',
+            'MAR' => '03', 'MARCH' => '03',
+            'APR' => '04', 'APRIL' => '04',
+            'MAY' => '05',
+            'JUN' => '06', 'JUNE' => '06',
+            'JUL' => '07', 'JULY' => '07',
+            'AUG' => '08', 'AUGUST' => '08',
+            'SEP' => '09', 'SEPTEMBER' => '09',
+            'OCT' => '10', 'OCTOBER' => '10',
+            'NOV' => '11', 'NOVEMBER' => '11',
+            'DEC' => '12', 'DECEMBER' => '12',
+        ];
+
+        $monthNum = $monthMap[strtoupper($month)] ?? (is_numeric($month) ? str_pad($month, 2, '0', STR_PAD_LEFT) : '01');
+        return "$year-$monthNum-01";
     }
 }

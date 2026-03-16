@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
  * SMSService - Wrapper service that delegates to SMSApiPhilippinesService
  * 
  * This service maintains backward compatibility while using SMS API Philippines
- * as the actual SMS provider.
+ * as the actual SMS provider. Used by MessageController and other parts of the app.
  */
 class SMSService
 {
@@ -16,7 +16,7 @@ class SMSService
     
     public function __construct()
     {
-        $this->smsApiService = new SMSApiPhilippinesService();
+        $this->smsApiService = app(SMSApiPhilippinesService::class);
     }
     
     /**
@@ -36,16 +36,12 @@ class SMSService
      * 
      * @param array $phoneNumbers - Array of phone numbers
      * @param string $message - Announcement message
-     * @param string $priority - Priority level (normal, high, urgent) - converted to sender name
+     * @param string $priority - Priority level (normal, high, urgent) - used as sender name
      * @return array - ['success' => bool, 'message' => string, 'sent' => int, 'failed' => int]
      */
     public function sendAnnouncement($phoneNumbers, $message, $priority = 'normal')
     {
-        // SMS API Philippines uses sender name instead of priority
-        // We'll use SmartHarvest as the sender name
-        $senderName = 'SmartHarvest';
-        
-        return $this->smsApiService->sendAnnouncement($phoneNumbers, $message, $senderName);
+        return $this->smsApiService->sendAnnouncement($phoneNumbers, $message, 'SmartHarvest');
     }
     
     /**
@@ -89,19 +85,6 @@ class SMSService
      */
     public function checkHealth()
     {
-        $apiKey = env('SMS_API_PHILIPPINES_KEY');
-        
-        if (!$apiKey) {
-            return [
-                'status' => 'error',
-                'message' => 'SMS_API_PHILIPPINES_KEY not configured'
-            ];
-        }
-        
-        return [
-            'status' => 'ok',
-            'message' => 'SMS service configured',
-            'provider' => 'SMS API Philippines'
-        ];
+        return $this->smsApiService->testConnection();
     }
 }

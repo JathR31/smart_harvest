@@ -57,6 +57,10 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
                     <span data-translate data-translate-id="menu-dashboard">Dashboard</span>
                 </a>
+                <a href="#" @click.prevent="showSection = 'my-crops'; loadMyCrops();" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition mt-1" :class="{'active': showSection === 'my-crops'}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 21h14M5 21a2 2 0 01-2-2V7a2 2 0 012-2h4l2-2h2l2 2h4a2 2 0 012 2v12a2 2 0 01-2 2M9 14c0-1.657 1.79-3 4-3s4 1.343 4 3m-8 0v2m8-2v2"></path></svg>
+                    <span>My Crops</span>
+                </a>
             </div>
 
             <div class="mb-8">
@@ -194,11 +198,14 @@
                         </div>
                         <div>
                             <p class="text-xs text-gray-500 font-medium">Weather Forecast</p>
-                            <h3 class="text-xl font-bold text-green-700" x-text="weatherPrediction.condition || 'Good Rain'"></h3>
+                            <h3 class="text-xl font-bold text-green-700" x-text="weatherPrediction.condition || 'Loading...'"></h3>
                         </div>
                     </div>
                     <p class="text-sm text-gray-700">
-                        Expected rainfall: <span class="font-semibold" x-text="weatherPrediction.rainfall || '120'"></span>mm this month
+                        Expected rainfall: <span class="font-semibold" x-text="weatherPrediction.rainfall || '...'"></span>mm this month
+                        <template x-if="weatherPrediction.temperature">
+                            <span class="ml-2">| Temp: <span class="font-semibold" x-text="weatherPrediction.temperature"></span>°C</span>
+                        </template>
                     </p>
                 </div>
 
@@ -212,10 +219,13 @@
                         </div>
                         <div>
                             <p class="text-xs text-gray-500 font-medium">Best Planting Date</p>
-                            <h3 class="text-lg font-bold text-green-700" x-text="optimal.planting_window || 'May 15 - June 5'"></h3>
+                            <h3 class="text-lg font-bold text-green-700" x-text="optimal.planting_window || 'Loading...'"></h3>
                         </div>
                     </div>
-                    <p class="text-sm text-gray-700">Optimal window for highest yield</p>
+                    <p class="text-sm text-gray-700">
+                        <span x-show="optimal.ml_connected || optimal.ml_status === 'success'" class="text-green-600 font-medium">ML-predicted optimal window</span>
+                        <span x-show="!(optimal.ml_connected || optimal.ml_status === 'success')">Based on historical data analysis</span>
+                    </p>
                 </div>
 
                 <!-- Recommended Variety Card -->
@@ -226,10 +236,16 @@
                         </div>
                         <div>
                             <p class="text-xs text-gray-500 font-medium">Recommended Variety</p>
-                            <h3 class="text-xl font-bold text-green-700" x-text="optimal.crop || 'Cabbage'"></h3>
+                            <h3 class="text-xl font-bold text-green-700" x-text="optimal.crop || 'Loading...'"></h3>
                         </div>
                     </div>
-                    <p class="text-sm text-gray-700">Cool season, high yield vegetable</p>
+                    <p class="text-sm text-gray-700">
+                        <span x-show="optimal.expected_yield && optimal.expected_yield !== '0.0'">
+                            Expected yield: <span class="font-semibold" x-text="optimal.expected_yield"></span> mt/ha
+                            <span x-show="optimal.confidence" class="ml-1">(<span x-text="optimal.confidence"></span> confidence)</span>
+                        </span>
+                        <span x-show="!optimal.expected_yield || optimal.expected_yield === '0.0'">ML-recommended crop for <span x-text="selectedMunicipality"></span></span>
+                    </p>
                 </div>
             </div>
 
@@ -302,19 +318,21 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h3 class="text-lg font-semibold text-green-700 mb-4">Best Time to Plant</h3>
-                    <p class="text-sm text-gray-600 font-medium mb-2" x-text="optimal.planting_window || 'May 20 and June 10'"></p>
+                    <p class="text-sm text-gray-600 font-medium mb-2" x-text="optimal.planting_window || 'Loading...'"></p>
                     <p class="text-sm text-gray-700 leading-relaxed">
-                        Based on 5-6 years of past yield data and local climate data, the best planting window is between 
-                        <span class="font-semibold" x-text="optimal.planting_dates || 'May 20 and June 10'"></span>. 
+                        Based on ML analysis of historical crop yield data and local climate patterns for <span class="font-semibold" x-text="selectedMunicipality"></span>, 
+                        the best planting window for <span class="font-semibold" x-text="optimal.crop || 'recommended crops'"></span> is 
+                        <span class="font-semibold" x-text="optimal.planting_dates || 'being calculated'"></span>. 
+                        <span x-show="optimal.expected_yield && optimal.expected_yield !== '0.0'">
+                            Expected yield: <span class="font-semibold" x-text="optimal.expected_yield"></span> mt/ha 
+                            <span x-show="optimal.confidence">(<span x-text="optimal.confidence"></span> confidence)</span>.
+                        </span>
                         Planting within this period helps you take advantage of ideal temperature and rainfall patterns.
                     </p>
                 </div>
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h3 class="text-lg font-semibold text-green-700 mb-4">Weather Outlook</h3>
-                    <p class="text-sm text-gray-700 leading-relaxed">
-                        Expect moderate rainfall and mild temperatures in the coming weeks. These conditions support healthy crop growth, 
-                        but it's best to delay planting after heavy rain (4+ cm daily) to avoid waterlogging issues.
-                    </p>
+                    <p class="text-sm text-gray-700 leading-relaxed" x-text="weatherOutlook"></p>
                 </div>
             </div>
 
@@ -368,10 +386,7 @@
                     </svg>
                     <div>
                         <h3 class="text-base font-semibold text-blue-900 mb-2">💡 Price Insights</h3>
-                        <p class="text-sm text-blue-800 leading-relaxed">
-                            Prices are based on current market conditions in La Trinidad Trading Post and Baguio City Public Market. Highland Cabbage and Potatoes show strong upward 
-                            trend due to high demand and favorable weather conditions. Plan your planting accordingly to maximize returns.
-                        </p>
+                        <p class="text-sm text-blue-800 leading-relaxed" x-text="dynamicPriceInsights"></p>
                     </div>
                 </div>
             </div>
@@ -380,18 +395,176 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h2 class="text-lg font-semibold text-green-700 mb-4">Conclusion & Future Outlook</h2>
                 <div class="space-y-4 text-sm text-gray-700 leading-relaxed">
-                    <p>
-                        Your Farm Analysis combines up to 5-6 years of historical crop yield data, demonstrating that data-driven decision-making combined with sustainable agricultural practices leads to superior outcomes. The 9.8% 
-                        performance advantage over regional averages validates your strategic approach to crop selection, timing, and resource management.
-                    </p>
-                    <p>
-                        Looking ahead to 2026, the forecast suggests continued improvement with incremental improvements positions your farm for continued growth. Climate projections suggest 
-                        similar favorable conditions, with potential for achieving 6.1MT/ha average yields through incremental optimizations. The SmartHarvest system will continue monitoring and analyzing 
-                        data to provide timely insights for maximizing your farming success.
-                    </p>
+                    <p x-text="dynamicConclusion"></p>
+                    <p x-text="dynamicOutlook"></p>
+                    <template x-if="mlConnected">
+                        <p class="flex items-center text-green-700 font-medium">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            ML Model Active — Predictions powered by RandomForest with climate data integration
+                        </p>
+                    </template>
                 </div>
             </div>
             </div> <!-- End Main Dashboard Section -->
+
+            <!-- My Crops Section -->
+            <div x-show="showSection === 'my-crops'" x-cloak>
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-3xl font-semibold text-green-700">My Planted Crops</h2>
+                        <p class="text-gray-600 mt-1">Record and track your planted crops</p>
+                    </div>
+                    <button @click="showAddCropForm = !showAddCropForm" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-sm">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Add Crop
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white rounded-xl border border-gray-200 p-5">
+                        <p class="text-sm text-gray-500">Total Crops</p>
+                        <p class="text-3xl font-semibold text-gray-900" x-text="cropStats.total_crops"></p>
+                        <p class="text-sm text-green-600 mt-1">Active records</p>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-5">
+                        <p class="text-sm text-gray-500">Total Area</p>
+                        <p class="text-3xl font-semibold text-gray-900" x-text="cropStats.total_area.toFixed(2)"></p>
+                        <p class="text-sm text-gray-600 mt-1">Hectares</p>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-5">
+                        <p class="text-sm text-gray-500">Expected Yield</p>
+                        <p class="text-3xl font-semibold text-gray-900" x-text="cropStats.expected_yield_mt.toFixed(2)"></p>
+                        <p class="text-sm text-gray-600 mt-1">MT (machine learning)</p>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-5">
+                        <p class="text-sm text-gray-500">Growing</p>
+                        <p class="text-3xl font-semibold text-gray-900" x-text="cropStats.growing"></p>
+                        <p class="text-sm text-gray-600 mt-1">Active crops</p>
+                    </div>
+                </div>
+
+                <div x-show="showAddCropForm" class="bg-white rounded-xl border border-gray-200 p-6 mb-6" style="display: none;">
+                    <h3 class="text-2xl font-semibold text-green-700 mb-5">Add New Crop Record</h3>
+                    <form @submit.prevent="saveCropRecord">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Crop Type *</label>
+                                <input x-model="cropForm.crop_type" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Input crop">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Variety</label>
+                                <input x-model="cropForm.variety" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="e.g., Scorpio F1">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Planting Date *</label>
+                                <input x-model="cropForm.planting_date" type="date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Expected Harvest Date</label>
+                                <input x-model="cropForm.expected_harvest_date" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Area (Hectares) *</label>
+                                <input x-model.number="cropForm.area_planted" type="number" step="0.01" min="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="e.g., 2.5">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Municipality *</label>
+                                <select x-model="cropForm.municipality" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                    <template x-for="municipality in municipalities" :key="municipality">
+                                        <option :value="municipality" x-text="municipality"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Plot Location</label>
+                                <input x-model="cropForm.plot_location" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="e.g., Lot 3, Barangay Wangal">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Seed Source</label>
+                                <input x-model="cropForm.seed_source" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="e.g., Local supplier">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                                <textarea x-model="cropForm.notes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Any additional notes..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="mt-5 flex items-center gap-3">
+                            <button type="submit" :disabled="cropSaving" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed">
+                                <span x-show="!cropSaving">Save Crop Record</span>
+                                <span x-show="cropSaving">Saving & Predicting...</span>
+                            </button>
+                            <button type="button" @click="showAddCropForm = false; resetCropForm();" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div x-show="cropLoading" class="text-center py-10 text-gray-500">Loading crop records...</div>
+
+                <div class="space-y-4" x-show="!cropLoading">
+                    <template x-for="crop in myCrops" :key="crop.id">
+                        <div class="bg-white rounded-xl border border-gray-200 p-6">
+                            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                                <div>
+                                    <h3 class="text-2xl font-semibold text-gray-800" x-text="crop.crop_type"></h3>
+                                    <p class="text-gray-500">Variety: <span x-text="crop.variety || 'N/A'"></span></p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700" x-show="crop.ml_connected">ML</span>
+                                    <select x-model="crop.status" @change="updateCropStatus(crop)" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500">
+                                        <option value="Planning">Planning</option>
+                                        <option value="Planted">Planted</option>
+                                        <option value="Growing">Growing</option>
+                                        <option value="Harvested">Harvested</option>
+                                        <option value="Failed">Failed</option>
+                                    </select>
+                                    <button @click="deleteCropRecord(crop.id)" class="px-3 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5 text-sm">
+                                <div>
+                                    <p class="text-gray-500">Location</p>
+                                    <p class="font-medium" x-text="crop.municipality"></p>
+                                    <p class="text-gray-500" x-text="crop.plot_location || 'N/A'"></p>
+                                </div>
+                                <div>
+                                    <p class="text-gray-500">Planting Date</p>
+                                    <p class="font-medium" x-text="formatDate(crop.planting_date)"></p>
+                                </div>
+                                <div>
+                                    <p class="text-gray-500">Expected Harvest</p>
+                                    <p class="font-medium" x-text="formatDate(crop.expected_harvest_date)"></p>
+                                </div>
+                                <div>
+                                    <p class="text-gray-500">Area Planted</p>
+                                    <p class="font-medium" x-text="Number(crop.area_planted).toFixed(2) + ' hectares'"></p>
+                                </div>
+                                <div>
+                                    <p class="text-gray-500">Expected Yield</p>
+                                    <p class="font-semibold text-green-600" x-text="Number(crop.expected_yield_mt).toFixed(2) + ' MT'"></p>
+                                    <p class="text-xs text-gray-500" x-show="crop.ml_confidence">Confidence: <span x-text="crop.ml_confidence + '%' "></span></p>
+                                </div>
+                                <div>
+                                    <p class="text-gray-500">Seed Source</p>
+                                    <p class="font-medium" x-text="crop.seed_source || 'N/A'"></p>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 bg-blue-50 border border-blue-100 rounded-lg p-3" x-show="crop.notes">
+                                <p class="text-sm font-semibold text-blue-700">Notes</p>
+                                <p class="text-sm text-gray-700" x-text="crop.notes"></p>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div x-show="myCrops.length === 0" class="bg-white rounded-xl border border-gray-200 p-10 text-center text-gray-500">
+                        No crop records yet. Click "Add Crop" to create your first ML-powered crop record.
+                    </div>
+                </div>
+            </div>
 
             <!-- Market Prices Section -->
             <div x-show="showSection === 'market-prices'" x-cloak
@@ -715,7 +888,7 @@
                         <span class="text-xl">💡</span>
                         <div>
                             <h4 class="font-semibold text-blue-900 mb-1">Price Insights</h4>
-                            <p class="text-sm text-blue-800">Prices are based on current market conditions in La Trinidad Trading Post and Baguio City Public Market. Highland Cabbage and Potatoes show strong upward trends due to high demand and favorable weather conditions. Plan your planting accordingly to maximize returns.</p>
+                            <p class="text-sm text-blue-800" x-text="dynamicPriceInsights"></p>
                         </div>
                     </div>
                 </div>
@@ -1257,6 +1430,31 @@
                 topCrops: [],
                 loading: false,
                 mlConnected: false,
+                weatherOutlook: 'Loading weather outlook...',
+                dynamicConclusion: 'Loading analysis...',
+                dynamicOutlook: 'Loading future outlook...',
+                dynamicPriceInsights: 'Loading price insights...',
+                cropLoading: false,
+                cropSaving: false,
+                showAddCropForm: false,
+                myCrops: [],
+                cropStats: {
+                    total_crops: 0,
+                    total_area: 0,
+                    expected_yield_mt: 0,
+                    growing: 0,
+                },
+                cropForm: {
+                    crop_type: '',
+                    variety: '',
+                    planting_date: '',
+                    expected_harvest_date: '',
+                    area_planted: '',
+                    municipality: '{{ $userMunicipality ?? "La Trinidad" }}',
+                    plot_location: '',
+                    seed_source: '',
+                    notes: '',
+                },
 
                 init() {
                     console.log('Dashboard initialized for municipality:', this.selectedMunicipality);
@@ -1264,6 +1462,7 @@
                     this.loadMarketPrices();
                     this.loadAnnouncements();
                     this.loadMessages();
+                    this.loadMyCrops();
                     
                     // Initialize translation system
                     if (typeof SmartHarvestTranslation !== 'undefined') {
@@ -1314,6 +1513,125 @@
                         }
                     } catch (error) {
                         console.error('Error loading messages:', error);
+                    }
+                },
+
+                resetCropForm() {
+                    this.cropForm = {
+                        crop_type: '',
+                        variety: '',
+                        planting_date: '',
+                        expected_harvest_date: '',
+                        area_planted: '',
+                        municipality: this.selectedMunicipality,
+                        plot_location: '',
+                        seed_source: '',
+                        notes: '',
+                    };
+                },
+
+                async loadMyCrops() {
+                    this.cropLoading = true;
+                    try {
+                        const response = await fetch(`{{ url('/api/farmer/my-crops') }}`);
+                        if (!response.ok) {
+                            throw new Error('Failed to load crop records.');
+                        }
+
+                        const data = await response.json();
+                        this.myCrops = Array.isArray(data.records) ? data.records : [];
+                        this.cropStats = {
+                            total_crops: Number(data.stats?.total_crops || 0),
+                            total_area: Number(data.stats?.total_area || 0),
+                            expected_yield_mt: Number(data.stats?.expected_yield_mt || 0),
+                            growing: Number(data.stats?.growing || 0),
+                        };
+
+                        if (!this.cropForm.municipality) {
+                            this.cropForm.municipality = this.selectedMunicipality;
+                        }
+                    } catch (error) {
+                        console.error('Error loading my crops:', error);
+                    } finally {
+                        this.cropLoading = false;
+                    }
+                },
+
+                async saveCropRecord() {
+                    this.cropSaving = true;
+                    try {
+                        const response = await fetch(`{{ url('/api/farmer/my-crops') }}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify(this.cropForm),
+                        });
+
+                        if (!response.ok) {
+                            const errorData = await response.json().catch(() => ({}));
+                            const firstError = errorData?.message || 'Failed to save crop record.';
+                            throw new Error(firstError);
+                        }
+
+                        this.showAddCropForm = false;
+                        this.resetCropForm();
+                        await this.loadMyCrops();
+                    } catch (error) {
+                        console.error('Error saving crop record:', error);
+                        alert(error.message || 'Failed to save crop record.');
+                    } finally {
+                        this.cropSaving = false;
+                    }
+                },
+
+                async updateCropStatus(crop) {
+                    try {
+                        const response = await fetch(`{{ url('/api/farmer/my-crops') }}/${crop.id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({ status: crop.status }),
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Failed to update crop status.');
+                        }
+
+                        await this.loadMyCrops();
+                    } catch (error) {
+                        console.error('Error updating crop status:', error);
+                        alert(error.message || 'Failed to update crop status.');
+                    }
+                },
+
+                async deleteCropRecord(cropId) {
+                    if (!confirm('Delete this crop record?')) {
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`{{ url('/api/farmer/my-crops') }}/${cropId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json',
+                            },
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Failed to delete crop record.');
+                        }
+
+                        await this.loadMyCrops();
+                    } catch (error) {
+                        console.error('Error deleting crop record:', error);
+                        alert(error.message || 'Failed to delete crop record.');
                     }
                 },
 
@@ -1475,30 +1793,43 @@
                         if (optimalResponse.ok) {
                             const optimalData = await optimalResponse.json();
                             this.optimal = {
-                                crop: optimalData.crop || 'Cabbage',
-                                variety: optimalData.variety || 'Scorpio',
+                                crop: optimalData.crop || 'Loading...',
+                                variety: optimalData.variety || 'Mixed',
                                 next_date: optimalData.next_date || 'N/A',
-                                planting_window: 'May 15 - June 5',
-                                planting_dates: 'May 20 and June 10',
+                                planting_window: optimalData.next_date || 'N/A',
+                                planting_dates: optimalData.next_date || 'N/A',
                                 expected_yield: optimalData.expected_yield?.toFixed ? optimalData.expected_yield.toFixed(1) : optimalData.expected_yield || '0.0',
                                 historical_yield: optimalData.historical_yield ? (optimalData.historical_yield.toFixed ? optimalData.historical_yield.toFixed(1) : optimalData.historical_yield) : null,
                                 confidence: optimalData.confidence || 'Medium',
                                 confidence_score: optimalData.confidence_score || null,
-                                ml_status: optimalData.ml_status || 'unknown'
+                                ml_status: optimalData.ml_status || 'unknown',
+                                ml_connected: optimalData.ml_api_connected || false
                             };
                             console.log('✓ Optimal planting data loaded:', this.optimal);
                         }
 
                         // Update weather prediction based on climate data
                         if (this.climate.current) {
-                            const rainfall = this.climate.current.rainfall || 120;
+                            const rainfall = this.climate.current.rainfall || 0;
+                            const temp = this.climate.current.avg_temperature || 22;
+                            const humidity = this.climate.current.humidity || 70;
+                            
+                            let condition = 'Clear';
+                            if (rainfall > 200) condition = 'Heavy Rain';
+                            else if (rainfall > 100) condition = 'Good Rain';
+                            else if (rainfall > 50) condition = 'Moderate Rain';
+                            else if (rainfall > 20) condition = 'Light Rain';
+                            else condition = 'Mostly Dry';
+                            
                             this.weatherPrediction = {
-                                condition: rainfall > 100 ? 'Good Rain' : rainfall > 50 ? 'Moderate Rain' : 'Light Rain',
-                                rainfall: rainfall.toString()
+                                condition: condition,
+                                rainfall: Math.round(rainfall).toString(),
+                                temperature: Math.round(temp),
+                                humidity: Math.round(humidity)
                             };
                         }
 
-                        // Load 7-day weather forecast
+                        // Load 7-day weather forecast and generate dynamic weather outlook
                         const weatherResponse = await fetch(`{{ url('/api/weather') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}&_t=${timestamp}`);
                         if (weatherResponse.ok) {
                             const weatherData = await weatherResponse.json();
@@ -1513,13 +1844,119 @@
                                     description: day.weather[0].description
                                 }));
                                 console.log('✓ Weather forecast loaded:', this.weatherForecast.length, 'days');
+                                
+                                // Generate dynamic weather outlook from real forecast data
+                                const avgTemp = this.weatherForecast.reduce((sum, d) => sum + d.temp, 0) / this.weatherForecast.length;
+                                const rainyDays = this.weatherForecast.filter(d => d.description.includes('rain') || d.description.includes('drizzle') || d.description.includes('shower')).length;
+                                const maxTemp = Math.max(...this.weatherForecast.map(d => d.temp));
+                                const minTemp = Math.min(...this.weatherForecast.map(d => d.temp));
+                                
+                                let outlook = '';
+                                if (rainyDays >= 5) {
+                                    outlook = `Heavy rainfall expected over the next 7 days with ${rainyDays} rainy days. Temperature ranges from ${Math.round(minTemp)}°C to ${Math.round(maxTemp)}°C. Consider delaying planting if soil is waterlogged. Ensure proper drainage for existing crops.`;
+                                } else if (rainyDays >= 3) {
+                                    outlook = `Moderate rainfall expected with ${rainyDays} rainy days out of 7. Average temperature around ${Math.round(avgTemp)}°C (${Math.round(minTemp)}°C - ${Math.round(maxTemp)}°C). Good conditions for crop growth. Monitor soil moisture levels and adjust irrigation accordingly.`;
+                                } else if (rainyDays >= 1) {
+                                    outlook = `Mostly dry weather ahead with only ${rainyDays} day(s) of rain expected. Temperature ranges ${Math.round(minTemp)}°C to ${Math.round(maxTemp)}°C. Ensure adequate irrigation for your crops. Highland vegetables generally perform well in these conditions.`;
+                                } else {
+                                    outlook = `Dry and clear weather expected for the next 7 days. Temperature between ${Math.round(minTemp)}°C and ${Math.round(maxTemp)}°C. Increase irrigation frequency to maintain soil moisture. Monitor crops for signs of heat stress.`;
+                                }
+                                this.weatherOutlook = outlook;
+                            }
+                            
+                            // Also update weather prediction from current weather if climate wasn't loaded
+                            if (!this.climate.current && weatherData.current) {
+                                const currentTemp = weatherData.current.temp || 22;
+                                const currentRain = weatherData.current.rain || 0;
+                                const desc = weatherData.current.weather?.[0]?.description || 'clear';
+                                
+                                let condition = desc.charAt(0).toUpperCase() + desc.slice(1);
+                                this.weatherPrediction = {
+                                    condition: condition,
+                                    rainfall: Math.round(currentRain * 30).toString(),
+                                    temperature: Math.round(currentTemp),
+                                    humidity: weatherData.current.humidity || 70
+                                };
                             }
                         }
+                        
+                        // Generate dynamic conclusion and outlook based on loaded data
+                        this.generateDynamicInsights();
+                        
                     } catch (error) {
                         console.error('Error loading dashboard data:', error);
                         this.mlConnected = false;
                     } finally {
                         this.loading = false;
+                    }
+                },
+                
+                generateDynamicInsights() {
+                    const municipality = this.selectedMunicipality;
+                    const topCropName = this.topCrops.length > 0 ? this.topCrops[0].crop : 'highland vegetables';
+                    const cropCount = this.topCrops.length;
+                    const totalProduction = this.stats.expected_harvest;
+                    const pctChange = this.stats.percentage_change;
+                    const confidence = this.stats.ml_confidence;
+                    const optCrop = this.optimal.crop || topCropName;
+                    const plantWindow = this.optimal.planting_window || 'N/A';
+                    const yieldExp = this.optimal.expected_yield || '0';
+                    
+                    // Dynamic conclusion
+                    let conclusion = `Based on machine learning analysis of ${municipality}'s agricultural data, `;
+                    if (this.mlConnected) {
+                        conclusion += `the ML model (confidence: ${confidence}%) predicts a total production of ${totalProduction} MT for the top crops. `;
+                    } else {
+                        conclusion += `historical data analysis shows production patterns for the region. `;
+                    }
+                    if (cropCount > 0) {
+                        const cropNames = this.topCrops.slice(0, 3).map(c => c.crop).join(', ');
+                        conclusion += `The top performing crops are ${cropNames}. `;
+                    }
+                    if (pctChange > 0) {
+                        conclusion += `Production shows a positive trend of +${pctChange}% compared to the previous period, indicating favorable growing conditions.`;
+                    } else if (pctChange < 0) {
+                        conclusion += `Production shows a ${pctChange}% change compared to the previous period. Consider adjusting crop selection and planting schedules for better results.`;
+                    } else {
+                        conclusion += `Production levels are stable compared to the previous period.`;
+                    }
+                    this.dynamicConclusion = conclusion;
+                    
+                    // Dynamic future outlook
+                    let outlook = `For ${municipality}, the SmartHarvest ML model recommends ${optCrop} as the optimal crop `;
+                    outlook += `with a planting window of ${plantWindow}`;
+                    if (yieldExp && yieldExp !== '0' && yieldExp !== '0.0') {
+                        outlook += ` and an expected yield of ${yieldExp} mt/ha`;
+                    }
+                    outlook += '. ';
+                    if (this.weatherForecast.length > 0) {
+                        const avgTemp = (this.weatherForecast.reduce((s, d) => s + d.temp, 0) / this.weatherForecast.length).toFixed(1);
+                        outlook += `Current weather conditions (avg ${avgTemp}°C) are being factored into predictions. `;
+                    }
+                    outlook += `The system continuously analyzes crop yields, weather data, and market trends to provide updated recommendations for maximizing your farming success in ${municipality}.`;
+                    this.dynamicOutlook = outlook;
+                    
+                    // Dynamic price insights
+                    if (this.marketPrices.length > 0) {
+                        const pricesWithData = this.marketPrices.filter(p => p.hasPrice);
+                        const upTrend = pricesWithData.filter(p => p.trend === 'up');
+                        const downTrend = pricesWithData.filter(p => p.trend === 'down');
+                        
+                        let priceInsight = `Market data shows ${pricesWithData.length} crops with current pricing. `;
+                        if (upTrend.length > 0) {
+                            priceInsight += `${upTrend.map(p => p.crop).join(', ')} ${upTrend.length === 1 ? 'shows' : 'show'} upward price trends. `;
+                        }
+                        if (downTrend.length > 0) {
+                            priceInsight += `${downTrend.map(p => p.crop).join(', ')} ${downTrend.length === 1 ? 'has' : 'have'} declining prices. `;
+                        }
+                        const highDemand = pricesWithData.filter(p => p.demand === 'high' || p.demand === 'very_high');
+                        if (highDemand.length > 0) {
+                            priceInsight += `High demand crops: ${highDemand.map(p => p.crop).join(', ')}. `;
+                        }
+                        priceInsight += 'Plan your planting accordingly to maximize returns.';
+                        this.dynamicPriceInsights = priceInsight;
+                    } else {
+                        this.dynamicPriceInsights = 'Market price data is being loaded. Check back for latest pricing information.';
                     }
                 },
 

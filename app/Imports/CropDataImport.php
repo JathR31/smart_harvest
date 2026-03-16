@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Models\CropData;
+use App\Models\User;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
@@ -14,9 +15,13 @@ class CropDataImport implements ToModel, WithHeadingRow, WithChunkReading, WithB
     protected $recordsImported = 0;
     protected $userId;
 
-    public function __construct($userId = 1)
+    public function __construct($userId = null)
     {
-        $this->userId = $userId;
+        // Use provided user ID, or find first admin user, or first user
+        $this->userId = $userId ?? User::where('is_superadmin', true)->first()?->id 
+            ?? User::whereIn('role', ['Admin', 'DA Admin'])->first()?->id 
+            ?? User::first()?->id 
+            ?? 1;
     }
 
     /**
@@ -29,12 +34,18 @@ class CropDataImport implements ToModel, WithHeadingRow, WithChunkReading, WithB
         $this->recordsImported++;
 
         // Map Excel columns to database fields
-        // Laravel Excel converts headers to lowercase slugs: "MUNICIPALITY" -> "municipality", "Area planted(ha)" -> "area_plantedha"
+        // Laravel Excel converts headers to lowercase slugs
+        // Headers: MUNICIPALITY, FARM TYPE, YEAR, MONTH, CROP, Area planted(ha), Area harvested(ha), Production(mt), Productivity(mt/ha)
+        
         $municipality = $row['municipality'] ?? null;
         $cropType = $row['crop'] ?? null;
-        $variety = $row['farm_type'] ?? 'Standard';
-        $areaPlanted = $row['area_plantedha'] ?? 0;
-        $yieldAmount = $row['productionmt'] ?? 0;
+        $variety = $row['farm_type'] ?? $row['farm type'] ?? 'Standard';
+        
+        // Handle different possible column name formats for area planted
+        $areaPlanted = $row['area_planted_ha'] ?? $row['area_plantedha'] ?? $row['area planted(ha)'] ?? $row['area_planted(ha)'] ?? 0;
+        
+        // Handle different possible column name formats for production
+        $yieldAmount = $row['production_mt'] ?? $row['productionmt'] ?? $row['production(mt)'] ?? 0;
         
         // Build dates from YEAR and MONTH columns
         $year = $row['year'] ?? null;

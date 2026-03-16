@@ -79,12 +79,6 @@
                         </svg>
                         <span>Forecast</span>
                     </a>
-                    <a href="{{ route('pagasa.dashboard') }}" class="flex items-center space-x-3 px-4 py-3 rounded hover:bg-green-800 transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        <span>PAGASA Data</span>
-                    </a>
                 </div>
 
                 <div class="mb-4">
@@ -178,6 +172,12 @@
                             </svg>
                             <span x-text="loading ? 'Loading...' : 'Live'"></span>
                         </button>
+                    </div>
+                </div>
+                <div x-show="dataSource" class="mt-2 flex items-center justify-between">
+                    <p class="text-xs text-gray-400" x-text="'Data source: ' + dataSource"></p>
+                    <p class="text-xs text-gray-400" x-text="lastUpdated ? 'Last updated: ' + lastUpdated : ''"></p>
+                </div>
                     </div>
                 </div>
 
@@ -434,26 +434,29 @@
                                                   }"
                                                   x-text="municipality.status"></span>
                                         </div>
-                                        <template x-if="municipality.rainfall">
-                                            <div class="flex items-center space-x-4 text-xs text-gray-600 ml-8">
-                                                <div class="flex items-center space-x-1">
-                                                    <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z"/>
-                                                    </svg>
-                                                    <span x-text="municipality.rainfall + 'mm'"></span>
+                                        <template x-if="municipality.temperature !== undefined">
+                                            <div class="ml-8">
+                                                <div class="flex items-center space-x-4 text-xs text-gray-600">
+                                                    <div class="flex items-center space-x-1">
+                                                        <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z"/>
+                                                        </svg>
+                                                        <span x-text="municipality.rainfall + 'mm'"></span>
+                                                    </div>
+                                                    <div class="flex items-center space-x-1">
+                                                        <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/>
+                                                        </svg>
+                                                        <span x-text="municipality.temperature + '°C'"></span>
+                                                    </div>
+                                                    <div class="flex items-center space-x-1">
+                                                        <svg class="w-4 h-4 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path d="M10 3.5a1.5 1.5 0 013 0V4a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-.5a1.5 1.5 0 000 3h.5a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-.5a1.5 1.5 0 00-3 0v.5a1 1 0 01-1 1H6a1 1 0 01-1-1v-3a1 1 0 00-1-1h-.5a1.5 1.5 0 010-3H4a1 1 0 001-1V6a1 1 0 011-1h3a1 1 0 001-1v-.5z"/>
+                                                        </svg>
+                                                        <span x-text="municipality.humidity + '%'"></span>
+                                                    </div>
                                                 </div>
-                                                <div class="flex items-center space-x-1">
-                                                    <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/>
-                                                    </svg>
-                                                    <span x-text="municipality.temperature + '°C'"></span>
-                                                </div>
-                                                <div class="flex items-center space-x-1">
-                                                    <svg class="w-4 h-4 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path d="M10 3.5a1.5 1.5 0 013 0V4a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-.5a1.5 1.5 0 000 3h.5a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-.5a1.5 1.5 0 00-3 0v.5a1 1 0 01-1 1H6a1 1 0 01-1-1v-3a1 1 0 00-1-1h-.5a1.5 1.5 0 010-3H4a1 1 0 001-1V6a1 1 0 011-1h3a1 1 0 001-1v-.5z"/>
-                                                    </svg>
-                                                    <span x-text="municipality.humidity + '%'"></span>
-                                                </div>
+                                                <p class="text-xs text-gray-400 mt-1 capitalize" x-text="municipality.description || ''"></p>
                                             </div>
                                         </template>
                                     </div>
@@ -468,7 +471,7 @@
                                         <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
                                             <path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z"/>
                                         </svg>
-                                        <span class="text-gray-600">Rainfall (mm)</span>
+                                        <span class="text-gray-600">Rainfall (mm/h, current)</span>
                                     </div>
                                     <div class="flex items-center space-x-2">
                                         <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
@@ -495,7 +498,7 @@
                                             </div>
                                             <div class="flex items-center space-x-2">
                                                 <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Watch</span>
-                                                <span class="text-gray-600">Extreme conditions detected</span>
+                                                <span class="text-gray-600">Needs attention (rain, wind, or extreme conditions)</span>
                                             </div>
                                         </div>
                                     </div>
@@ -520,6 +523,8 @@
                 filteredAlerts: [],
                 rainfallForecast: [],
                 municipalities: [],
+                dataSource: '',
+                lastUpdated: '',
 
                 async init() {
                     await this.loadData();
@@ -610,6 +615,10 @@
                         });
                         const data = await response.json();
                         this.municipalities = data.municipalities || [];
+                        this.dataSource = data.source || 'API';
+                        this.lastUpdated = data.last_updated 
+                            ? new Date(data.last_updated).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                            : new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
                     } catch (error) {
                         console.error('Error loading municipality status:', error);
                     }

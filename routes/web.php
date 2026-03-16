@@ -411,11 +411,17 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::post('/sms/preview', [App\Http\Controllers\SMSAnnouncementController::class, 'previewRecipients'])
         ->name('admin.sms.preview');
     
-    Route::get('/sms/{id}', [App\Http\Controllers\SMSAnnouncementController::class, 'show'])
-        ->name('admin.sms.show');
-    
     Route::get('/sms/balance', [App\Http\Controllers\SMSAnnouncementController::class, 'checkBalance'])
         ->name('admin.sms.balance');
+    
+    Route::get('/sms/test-connection', function () {
+        $smsService = app(\App\Services\SMSApiPhilippinesService::class);
+        return response()->json($smsService->testConnection());
+    })->name('admin.sms.test');
+    
+    Route::get('/sms/{id}', [App\Http\Controllers\SMSAnnouncementController::class, 'show'])
+        ->where('id', '[0-9]+')
+        ->name('admin.sms.show');
 });
 
 // Admin API - Dashboard data
@@ -750,7 +756,7 @@ Route::get('/admin/monitoring', function () {
 })->name('admin.monitoring');
 
 // Admin API - Monitoring Climate Alerts
-Route::get('/admin/api/monitoring/alerts', [App\Http\Controllers\Api\MonitoringApiController::class, 'getAlerts'])->name('admin.api.monitoring.alerts');
+Route::get('/admin/api/monitoring/alerts', [App\Http\Controllers\Api\MonitoringApiController::class, 'getAlerts'])->middleware('auth')->name('admin.api.monitoring.alerts');
 
 // Admin API - 7-Day Rainfall Forecast using OpenWeather API
 Route::get('/admin/api/monitoring/rainfall', function (Request $request) {
@@ -885,11 +891,11 @@ Route::get('/admin/api/monitoring/rainfall', function (Request $request) {
     }
 })->name('admin.api.monitoring.rainfall.legacy');
 
-// Admin API - 7-Day Rainfall Forecast (ML-Powered)
-Route::get('/admin/api/monitoring/rainfall', [App\Http\Controllers\Api\MonitoringApiController::class, 'getRainfallForecast'])->name('admin.api.monitoring.rainfall');
+// Admin API - 7-Day Rainfall Forecast (OpenWeatherMap Live)
+Route::get('/admin/api/monitoring/rainfall', [App\Http\Controllers\Api\MonitoringApiController::class, 'getRainfallForecast'])->middleware('auth')->name('admin.api.monitoring.rainfall');
 
-// Admin API - Municipality Climate Status
-Route::get('/admin/api/monitoring/municipalities', [App\Http\Controllers\Api\MonitoringApiController::class, 'getMunicipalityStatus'])->name('admin.api.monitoring.municipalities');
+// Admin API - Municipality Climate Status (OpenWeatherMap Live)
+Route::get('/admin/api/monitoring/municipalities', [App\Http\Controllers\Api\MonitoringApiController::class, 'getMunicipalityStatus'])->middleware('auth')->name('admin.api.monitoring.municipalities');
 
 // Legacy Municipality Status Route
 Route::get('/admin/api/monitoring/municipalities/legacy', function () {
@@ -1327,10 +1333,18 @@ Route::post('/admin/api/import', function (Request $request) {
         // Set JSON response header immediately
         header('Content-Type: application/json');
         
+        // Dataset name mapping
+        $datasetNames = [
+            'crop_production' => 'Crop Production Statistics (Monthly)',
+            'climate_patterns' => 'Climate & Weather Data',
+            'market_prices' => 'Agricultural Market Prices',
+            'livestock_poultry' => 'Livestock & Poultry Inventory'
+        ];
+        
         // Validate the request
         $validator = \Validator::make($request->all(), [
             'file' => 'required|file|mimes:csv,xlsx,xls|max:51200', // Increased to 50MB
-            'dataset_name' => 'required|string|max:255',
+            'dataset_id' => 'required|string|in:crop_production,climate_patterns,market_prices,livestock_poultry',
             'description' => 'nullable|string|max:1000',
         ]);
 
@@ -1341,6 +1355,10 @@ Route::post('/admin/api/import', function (Request $request) {
                 'errors' => $validator->errors()->toArray()
             ], 422);
         }
+        
+        // Get dataset name from dataset_id
+        $datasetId = $request->input('dataset_id');
+        $datasetName = $datasetNames[$datasetId] ?? $datasetId;
 
         $file = $request->file('file');
         
@@ -1360,8 +1378,8 @@ Route::post('/admin/api/import', function (Request $request) {
         $fullPath = storage_path('app/public/' . $filePath);
         
         // Store metadata in database immediately
-        \DB::table('uploaded_datasets')->insert([
-            'name' => $request->input('dataset_name'),
+        $datasetRecord = \DB::table('uploaded_datasets')->insertGetId([
+            'name' => $datasetName,
             'description' => $request->input('description'),
             'file_name' => $fileName,
             'file_path' => $filePath,
@@ -1374,24 +1392,58 @@ Route::post('/admin/api/import', function (Request $request) {
             'updated_at' => now(),
         ]);
 
-        // Dispatch the import job to the queue
-        \App\Jobs\ImportCropDataJob::dispatch(
-            $fullPath,
-            $request->input('dataset_name'),
-            $originalName,
-            Auth::user()->email,
-            $request->ip(),
-            $request->userAgent()
-        );
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Dataset upload successful! Import is processing in the background.',
-            'file_path' => $filePath,
-            'dataset_name' => $request->input('dataset_name'),
-            'import_method' => 'Laravel Queue (Background Processing)',
-            'status' => 'processing'
-        ], 200);
+        // Import synchronously for immediate results
+        $startTime = microtime(true);
+        
+        try {
+            $import = new \App\Imports\CropDataImport(Auth::id());
+            \Maatwebsite\Excel\Facades\Excel::import($import, $fullPath);
+            
+            $recordCount = $import->getRecordsImported();
+            $processingTime = round(microtime(true) - $startTime, 2);
+            
+            // Update dataset record with results
+            \DB::table('uploaded_datasets')->where('id', $datasetRecord)->update([
+                'record_count' => $recordCount,
+                'status' => 'completed',
+                'updated_at' => now(),
+            ]);
+            
+            // Log the activity
+            \App\Models\AdminActivityLog::create([
+                'admin_email' => Auth::user()->email,
+                'action' => 'data_import',
+                'action_type' => 'data_upload',
+                'description' => "Imported {$recordCount} records from {$originalName} in {$processingTime}s",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'metadata' => [
+                    'records_imported' => $recordCount,
+                    'processing_time' => $processingTime,
+                    'dataset_name' => $datasetName,
+                    'file_path' => $filePath
+                ]
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => "Dataset uploaded successfully! Imported {$recordCount} records.",
+                'file_path' => $filePath,
+                'dataset_name' => $datasetName,
+                'records_imported' => $recordCount,
+                'processing_time' => $processingTime,
+                'status' => 'completed'
+            ], 200);
+            
+        } catch (\Exception $importError) {
+            // Update dataset status to failed
+            \DB::table('uploaded_datasets')->where('id', $datasetRecord)->update([
+                'status' => 'failed',
+                'updated_at' => now(),
+            ]);
+            
+            throw $importError;
+        }
         
     } catch (\Illuminate\Database\QueryException $e) {
         \Log::error('Database import error: ' . $e->getMessage());
@@ -1470,27 +1522,41 @@ Route::get('/admin/api/recent-uploads', function () {
 
 // Admin API - Get Datasets
 Route::get('/admin/api/datasets', function () {
-    // Temporarily bypassed for testing
-    // if (!Auth::check() || Auth::user()->role !== 'Admin') {
-    //     return response()->json(['error' => 'Unauthorized'], 401);
-    // }
-
-    // Get actual datasets from database
+    // Get actual datasets from uploaded_datasets table
     $datasets = \DB::table('uploaded_datasets')
         ->orderBy('created_at', 'desc')
         ->get()
         ->map(function($dataset) {
             return [
                 'id' => $dataset->id,
-                'name' => $dataset->name,
-                'description' => $dataset->description,
-                'records' => $dataset->record_count,
-                'updated' => \Carbon\Carbon::parse($dataset->updated_at)->format('M d, Y'),
-                'updated_by' => $dataset->uploaded_by,
-                'file_size' => $dataset->file_size,
+                'name' => $dataset->name ?? 'Untitled Dataset',
+                'description' => $dataset->description ?? 'Imported dataset containing agricultural data',
+                'records' => $dataset->record_count ?? 0,
+                'updated' => $dataset->updated_at ? \Carbon\Carbon::parse($dataset->updated_at)->format('M d, Y') : 'N/A',
+                'updated_by' => $dataset->uploaded_by ?? 'System',
+                'file_size' => $dataset->file_size ?? 0,
+                'status' => $dataset->status ?? 'unknown',
             ];
         })
         ->toArray();
+
+    // If no uploaded datasets but we have crop_data, show that as a dataset
+    if (empty($datasets)) {
+        $cropDataCount = \App\Models\CropData::count();
+        if ($cropDataCount > 0) {
+            $latestCrop = \App\Models\CropData::latest('updated_at')->first();
+            $datasets[] = [
+                'id' => 'crop_production',
+                'name' => 'Crop Production Statistics',
+                'description' => 'Comprehensive crop production data including yield, area planted, and harvest information',
+                'records' => $cropDataCount,
+                'updated' => $latestCrop ? $latestCrop->updated_at->format('M d, Y') : 'N/A',
+                'updated_by' => 'System Import',
+                'file_size' => $cropDataCount * 256, // Approximate
+                'status' => 'completed',
+            ];
+        }
+    }
 
     // Calculate stats
     $totalRecords = array_sum(array_column($datasets, 'records'));
@@ -1538,6 +1604,99 @@ Route::delete('/admin/api/datasets/{id}', function ($id) {
         ], 500);
     }
 })->name('admin.api.datasets.delete');
+
+// Admin API - Get Dataset Records
+Route::get('/admin/api/datasets/{id}/records', function ($id) {
+    try {
+        // Get dataset info
+        $dataset = \DB::table('uploaded_datasets')->where('id', $id)->first();
+        
+        if (!$dataset) {
+            // If not in uploaded_datasets, check if it's a system dataset like crop_production
+            if ($id === 'crop_production') {
+                $records = \App\Models\CropData::select(
+                    'id',
+                    'municipality',
+                    'crop_type as crop',
+                    'variety',
+                    'area_planted',
+                    'yield_amount',
+                    'planting_date',
+                    'harvest_date',
+                    'status'
+                )
+                ->orderBy('planting_date', 'desc')
+                ->limit(100)
+                ->get()
+                ->map(function($record) {
+                    return [
+                        'ID' => $record->id,
+                        'Municipality' => $record->municipality,
+                        'Crop' => $record->crop,
+                        'Variety' => $record->variety,
+                        'Area (ha)' => number_format($record->area_planted, 2),
+                        'Yield (kg)' => number_format($record->yield_amount, 2),
+                        'Planting Date' => $record->planting_date ? $record->planting_date->format('Y-m-d') : 'N/A',
+                        'Harvest Date' => $record->harvest_date ? $record->harvest_date->format('Y-m-d') : 'N/A',
+                        'Status' => $record->status,
+                    ];
+                })
+                ->toArray();
+
+                return response()->json([
+                    'success' => true,
+                    'records' => $records,
+                    'total' => \App\Models\CropData::count()
+                ]);
+            }
+            
+            return response()->json(['success' => false, 'message' => 'Dataset not found'], 404);
+        }
+        
+        // For uploaded datasets, fetch crop_data records
+        // Get sample records (first 100)
+        $records = \App\Models\CropData::select(
+            'id',
+            'municipality',
+            'crop_type as crop',
+            'variety',
+            'area_planted',
+            'yield_amount',
+            'planting_date',
+            'harvest_date',
+            'status'
+        )
+        ->orderBy('planting_date', 'desc')
+        ->limit(100)
+        ->get()
+        ->map(function($record) {
+            return [
+                'ID' => $record->id,
+                'Municipality' => $record->municipality,
+                'Crop' => $record->crop,
+                'Variety' => $record->variety,
+                'Area (ha)' => number_format($record->area_planted, 2),
+                'Yield (kg)' => number_format($record->yield_amount, 2),
+                'Planting Date' => $record->planting_date ? $record->planting_date->format('Y-m-d') : 'N/A',
+                'Harvest Date' => $record->harvest_date ? $record->harvest_date->format('Y-m-d') : 'N/A',
+                'Status' => $record->status,
+            ];
+        })
+        ->toArray();
+        
+        return response()->json([
+            'success' => true,
+            'records' => $records,
+            'total' => $dataset->record_count
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('Get dataset records error: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to load records: ' . $e->getMessage()
+        ], 500);
+    }
+});
 
 // Farmer Dashboard API - Stats with ML predictions
 Route::get('/api/dashboard/stats', function (\Illuminate\Http\Request $request) {
@@ -1690,6 +1849,410 @@ Route::get('/api/dashboard/stats', function (\Illuminate\Http\Request $request) 
         ]);
     }
 })->name('api.dashboard.stats');
+
+// Farmer My Crops API - user-owned records with ML-powered expected yield
+Route::get('/api/farmer/my-crops', function () {
+    if (!Auth::check()) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    $user = Auth::user();
+
+    $records = \App\Models\CropData::where('user_id', $user->id)
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    $monthCodes = [
+        1 => 'JAN', 2 => 'FEB', 3 => 'MAR', 4 => 'APR', 5 => 'MAY', 6 => 'JUN',
+        7 => 'JUL', 8 => 'AUG', 9 => 'SEP', 10 => 'OCT', 11 => 'NOV', 12 => 'DEC'
+    ];
+
+    $durationDaysMap = [
+        'CABBAGE' => 78,
+        'CHINESE CABBAGE' => 68,
+        'CAULIFLOWER' => 105,
+        'BROCCOLI' => 80,
+        'LETTUCE' => 52,
+        'WHITE POTATO' => 105,
+        'POTATO' => 105,
+        'CARROTS' => 82,
+        'CARROT' => 82,
+        'SNAP BEANS' => 58,
+        'GARDEN PEAS' => 68,
+        'SWEET PEPPER' => 105,
+        'SAYOTE' => 120,
+    ];
+
+    $resolveMlHarvestDate = function ($record, $mlService) use ($monthCodes, $durationDaysMap) {
+        $plantingDate = $record->planting_date ? \Carbon\Carbon::parse($record->planting_date) : null;
+        if (!$plantingDate) {
+            return null;
+        }
+
+        $normalizedCrop = strtoupper(trim($record->crop_type ?? ''));
+        $normalizedMunicipality = strtoupper(str_replace(' ', '', $record->municipality ?? ''));
+        $area = max(0.1, (float)$record->area_planted);
+
+        $bestMonthDate = null;
+        $bestProduction = 0;
+
+        if ($mlService) {
+            for ($offset = 0; $offset < 12; $offset++) {
+                $targetDate = $plantingDate->copy()->startOfMonth()->addMonths($offset);
+                $monthNumber = (int)$targetDate->format('n');
+                $year = (int)$targetDate->format('Y');
+
+                try {
+                    $result = $mlService->predict([
+                        'MUNICIPALITY' => $normalizedMunicipality,
+                        'CROP' => $normalizedCrop,
+                        'FARM_TYPE' => 'IRRIGATED',
+                        'YEAR' => $year,
+                        'Area_planted_ha' => $area,
+                        'MONTH' => $monthCodes[$monthNumber],
+                    ]);
+
+                    if ($result['status'] === 'success' && isset($result['data']['prediction'])) {
+                        $monthProduction = (float)($result['data']['prediction']['production_mt'] ?? 0);
+                        if ($monthProduction > $bestProduction) {
+                            $bestProduction = $monthProduction;
+                            $bestMonthDate = $targetDate->copy()->endOfMonth();
+                        }
+                    }
+                } catch (\Exception $e) {
+                    // continue evaluating other months
+                }
+            }
+        }
+
+        if ($bestMonthDate) {
+            return $bestMonthDate->format('Y-m-d');
+        }
+
+        $durationDays = $durationDaysMap[$normalizedCrop] ?? 90;
+        return $plantingDate->copy()->addDays($durationDays)->format('Y-m-d');
+    };
+
+    $mlService = null;
+    try {
+        $mlService = new \App\Services\MLApiService();
+    } catch (\Exception $e) {
+        $mlService = null;
+    }
+
+    $mapped = $records->map(function ($record) use ($resolveMlHarvestDate, $mlService) {
+        $decodedNotes = json_decode($record->notes ?? '', true);
+        $isStructuredNotes = is_array($decodedNotes);
+
+        $structuredNotes = $isStructuredNotes ? $decodedNotes : ['note_text' => $record->notes ?? ''];
+
+        $noteText = $structuredNotes['note_text'] ?? '';
+        $seedSource = $structuredNotes['seed_source'] ?? null;
+        $plotLocation = $structuredNotes['plot_location'] ?? null;
+        $mlConnected = (bool)($structuredNotes['ml_connected'] ?? false);
+        $mlConfidence = $structuredNotes['ml_confidence'] ?? null;
+
+        $expectedHarvestDate = optional($record->harvest_date)->format('Y-m-d');
+
+        if (!$expectedHarvestDate && !empty($structuredNotes['ml_harvest_date'])) {
+            $expectedHarvestDate = $structuredNotes['ml_harvest_date'];
+        }
+
+        if (!$expectedHarvestDate) {
+            $computedHarvestDate = $resolveMlHarvestDate($record, $mlService);
+            if (!empty($computedHarvestDate)) {
+                $expectedHarvestDate = $computedHarvestDate;
+                $structuredNotes['ml_harvest_date'] = $computedHarvestDate;
+
+                try {
+                    $record->harvest_date = $computedHarvestDate;
+                    $record->notes = json_encode($structuredNotes);
+                    $record->save();
+                } catch (\Exception $saveError) {
+                    // Keep response data even if persistence fails
+                }
+            }
+        }
+
+        return [
+            'id' => $record->id,
+            'crop_type' => $record->crop_type,
+            'variety' => $record->variety,
+            'municipality' => $record->municipality,
+            'area_planted' => round((float)$record->area_planted, 2),
+            'expected_yield_mt' => round(((float)$record->yield_amount) / 1000, 2),
+            'planting_date' => optional($record->planting_date)->format('Y-m-d'),
+            'expected_harvest_date' => $expectedHarvestDate,
+            'status' => $record->status,
+            'notes' => $noteText,
+            'seed_source' => $seedSource,
+            'plot_location' => $plotLocation,
+            'ml_connected' => $mlConnected,
+            'ml_confidence' => $mlConfidence,
+        ];
+    });
+
+    $totalCrops = $mapped->count();
+    $totalArea = $mapped->sum('area_planted');
+    $expectedYieldMt = $mapped->sum('expected_yield_mt');
+    $growingCount = $mapped->filter(function ($item) {
+        return in_array($item['status'], ['Growing', 'Planted', 'Planning']);
+    })->count();
+
+    return response()->json([
+        'records' => $mapped,
+        'stats' => [
+            'total_crops' => $totalCrops,
+            'total_area' => round($totalArea, 2),
+            'expected_yield_mt' => round($expectedYieldMt, 2),
+            'growing' => $growingCount,
+        ],
+    ]);
+})->middleware('auth')->name('api.farmer.my-crops.index');
+
+Route::post('/api/farmer/my-crops', function (Request $request) {
+    if (!Auth::check()) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    $validated = $request->validate([
+        'crop_type' => 'required|string|max:255',
+        'variety' => 'nullable|string|max:255',
+        'planting_date' => 'required|date',
+        'expected_harvest_date' => 'nullable|date|after_or_equal:planting_date',
+        'area_planted' => 'required|numeric|min:0.01',
+        'municipality' => 'nullable|string|max:255',
+        'plot_location' => 'nullable|string|max:255',
+        'seed_source' => 'nullable|string|max:255',
+        'notes' => 'nullable|string|max:2000',
+    ]);
+
+    $user = Auth::user();
+    $municipality = $validated['municipality'] ?? ($user->location ?? 'La Trinidad');
+
+    $areaPlanted = (float)$validated['area_planted'];
+    $plantingDate = \Carbon\Carbon::parse($validated['planting_date']);
+    $mlMunicipality = strtoupper(str_replace(' ', '', $municipality));
+    $mlCrop = strtoupper(trim($validated['crop_type']));
+    $mlMonth = strtoupper($plantingDate->format('M'));
+    $mlYear = (int)$plantingDate->format('Y');
+
+    $predictedProductionMt = 0;
+    $mlConfidence = null;
+    $mlConnected = false;
+
+    $monthCodes = [
+        1 => 'JAN', 2 => 'FEB', 3 => 'MAR', 4 => 'APR', 5 => 'MAY', 6 => 'JUN',
+        7 => 'JUL', 8 => 'AUG', 9 => 'SEP', 10 => 'OCT', 11 => 'NOV', 12 => 'DEC'
+    ];
+
+    $durationDaysMap = [
+        'CABBAGE' => 78,
+        'CHINESE CABBAGE' => 68,
+        'CAULIFLOWER' => 105,
+        'BROCCOLI' => 80,
+        'LETTUCE' => 52,
+        'WHITE POTATO' => 105,
+        'POTATO' => 105,
+        'CARROTS' => 82,
+        'CARROT' => 82,
+        'SNAP BEANS' => 58,
+        'GARDEN PEAS' => 68,
+        'SWEET PEPPER' => 105,
+        'SAYOTE' => 120,
+    ];
+
+    $resolveMlHarvestDate = function ($mlServiceInstance) use ($plantingDate, $mlCrop, $mlMunicipality, $areaPlanted, $monthCodes, $durationDaysMap) {
+        $bestMonthDate = null;
+        $bestProduction = 0;
+
+        if ($mlServiceInstance) {
+            for ($offset = 0; $offset < 12; $offset++) {
+                $targetDate = $plantingDate->copy()->startOfMonth()->addMonths($offset);
+                $monthNumber = (int)$targetDate->format('n');
+                $year = (int)$targetDate->format('Y');
+
+                try {
+                    $result = $mlServiceInstance->predict([
+                        'MUNICIPALITY' => $mlMunicipality,
+                        'CROP' => $mlCrop,
+                        'FARM_TYPE' => 'IRRIGATED',
+                        'YEAR' => $year,
+                        'Area_planted_ha' => $areaPlanted,
+                        'MONTH' => $monthCodes[$monthNumber],
+                    ]);
+
+                    if ($result['status'] === 'success' && isset($result['data']['prediction'])) {
+                        $monthProduction = (float)($result['data']['prediction']['production_mt'] ?? 0);
+                        if ($monthProduction > $bestProduction) {
+                            $bestProduction = $monthProduction;
+                            $bestMonthDate = $targetDate->copy()->endOfMonth();
+                        }
+                    }
+                } catch (\Exception $monthError) {
+                    // continue scanning months
+                }
+            }
+        }
+
+        if ($bestMonthDate) {
+            return $bestMonthDate->format('Y-m-d');
+        }
+
+        $durationDays = $durationDaysMap[$mlCrop] ?? 90;
+        return $plantingDate->copy()->addDays($durationDays)->format('Y-m-d');
+    };
+
+    $mlService = null;
+
+    try {
+        $mlService = new \App\Services\MLApiService();
+        $predictionResult = $mlService->predict([
+            'MUNICIPALITY' => $mlMunicipality,
+            'CROP' => $mlCrop,
+            'FARM_TYPE' => 'IRRIGATED',
+            'YEAR' => $mlYear,
+            'Area_planted_ha' => $areaPlanted,
+            'MONTH' => $mlMonth,
+        ]);
+
+        if (
+            $predictionResult['status'] === 'success' &&
+            isset($predictionResult['data']['prediction'])
+        ) {
+            $prediction = $predictionResult['data']['prediction'];
+            $predictedProductionMt = (float)($prediction['production_mt'] ?? 0);
+            $mlConfidence = isset($prediction['confidence_score'])
+                ? round((float)$prediction['confidence_score'] * 100, 1)
+                : null;
+            $mlConnected = $predictedProductionMt > 0;
+        }
+    } catch (\Exception $e) {
+        \Log::warning('My crops ML prediction failed: ' . $e->getMessage());
+    }
+
+    // Fallback to historical average (MT/ha) from validated records in municipality
+    if ($predictedProductionMt <= 0) {
+        $historicalMtPerHa = \App\Models\CropData::whereRaw('UPPER(REPLACE(municipality, " ", "")) = ?', [$mlMunicipality])
+            ->whereRaw('UPPER(crop_type) = ?', [$mlCrop])
+            ->whereNotNull('yield_amount')
+            ->where('yield_amount', '>', 0)
+            ->whereNotNull('area_planted')
+            ->where('area_planted', '>', 0)
+            ->selectRaw('AVG((yield_amount / 1000) / area_planted) as avg_mt_per_ha')
+            ->value('avg_mt_per_ha');
+
+        $predictedProductionMt = round(((float)$historicalMtPerHa) * $areaPlanted, 2);
+        if ($predictedProductionMt <= 0) {
+            $predictedProductionMt = round(15 * $areaPlanted, 2);
+        }
+    }
+
+    $resolvedHarvestDate = $validated['expected_harvest_date'] ?? $resolveMlHarvestDate($mlService);
+
+    $structuredNotes = [
+        'note_text' => $validated['notes'] ?? '',
+        'seed_source' => $validated['seed_source'] ?? null,
+        'plot_location' => $validated['plot_location'] ?? null,
+        'ml_connected' => $mlConnected,
+        'ml_confidence' => $mlConfidence,
+        'ml_harvest_date' => $resolvedHarvestDate,
+    ];
+
+    $record = \App\Models\CropData::create([
+        'user_id' => $user->id,
+        'crop_type' => $validated['crop_type'],
+        'variety' => $validated['variety'] ?? null,
+        'municipality' => $municipality,
+        'area_planted' => $areaPlanted,
+        'yield_amount' => round($predictedProductionMt * 1000, 2), // stored in kg
+        'planting_date' => $validated['planting_date'],
+        'harvest_date' => $resolvedHarvestDate,
+        'status' => 'Growing',
+        'notes' => json_encode($structuredNotes),
+        'validation_status' => 'Pending',
+    ]);
+
+    return response()->json([
+        'message' => 'Crop record created successfully.',
+        'record' => [
+            'id' => $record->id,
+            'crop_type' => $record->crop_type,
+            'variety' => $record->variety,
+            'municipality' => $record->municipality,
+            'area_planted' => round((float)$record->area_planted, 2),
+            'expected_yield_mt' => round(((float)$record->yield_amount) / 1000, 2),
+            'planting_date' => optional($record->planting_date)->format('Y-m-d'),
+            'expected_harvest_date' => optional($record->harvest_date)->format('Y-m-d'),
+            'status' => $record->status,
+            'notes' => $validated['notes'] ?? '',
+            'seed_source' => $validated['seed_source'] ?? null,
+            'plot_location' => $validated['plot_location'] ?? null,
+            'ml_connected' => $mlConnected,
+            'ml_confidence' => $mlConfidence,
+        ],
+    ]);
+})->middleware('auth')->name('api.farmer.my-crops.store');
+
+Route::put('/api/farmer/my-crops/{id}', function (Request $request, $id) {
+    if (!Auth::check()) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    $record = \App\Models\CropData::where('id', $id)
+        ->where('user_id', Auth::id())
+        ->first();
+
+    if (!$record) {
+        return response()->json(['error' => 'Record not found'], 404);
+    }
+
+    $validated = $request->validate([
+        'status' => 'nullable|in:Planning,Planted,Growing,Harvested,Failed',
+        'notes' => 'nullable|string|max:2000',
+    ]);
+
+    $decodedNotes = json_decode($record->notes ?? '', true);
+    $structuredNotes = is_array($decodedNotes) ? $decodedNotes : [
+        'note_text' => $record->notes ?? '',
+    ];
+
+    if (array_key_exists('notes', $validated)) {
+        $structuredNotes['note_text'] = $validated['notes'] ?? '';
+        $record->notes = json_encode($structuredNotes);
+    }
+
+    if (!empty($validated['status'])) {
+        $record->status = $validated['status'];
+    }
+
+    $record->save();
+
+    return response()->json([
+        'message' => 'Crop record updated successfully.',
+        'status' => $record->status,
+    ]);
+})->middleware('auth')->name('api.farmer.my-crops.update');
+
+Route::delete('/api/farmer/my-crops/{id}', function ($id) {
+    if (!Auth::check()) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    $record = \App\Models\CropData::where('id', $id)
+        ->where('user_id', Auth::id())
+        ->first();
+
+    if (!$record) {
+        return response()->json(['error' => 'Record not found'], 404);
+    }
+
+    $record->delete();
+
+    return response()->json([
+        'message' => 'Crop record deleted successfully.',
+    ]);
+})->middleware('auth')->name('api.farmer.my-crops.delete');
 
 // Climate API - Current weather data from database
 Route::get('/api/climate/current', function (\Illuminate\Http\Request $request) {
@@ -2212,6 +2775,25 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
         $schedules = [];
         $cropPredictions = [];
         $mlConnected = false;
+
+        $monthCodes = [
+            1 => 'JAN', 2 => 'FEB', 3 => 'MAR', 4 => 'APR', 5 => 'MAY', 6 => 'JUN',
+            7 => 'JUL', 8 => 'AUG', 9 => 'SEP', 10 => 'OCT', 11 => 'NOV', 12 => 'DEC'
+        ];
+
+        // Approximate mid-range growth duration in days
+        $cropDurationDays = [
+            'CABBAGE' => 78,
+            'CHINESE CABBAGE' => 68,
+            'CAULIFLOWER' => 105,
+            'BROCCOLI' => 80,
+            'LETTUCE' => 52,
+            'WHITE POTATO' => 105,
+            'CARROTS' => 82,
+            'SNAP BEANS' => 58,
+            'GARDEN PEAS' => 68,
+            'SWEET PEPPER' => 105,
+        ];
         
         // Get ML predictions for all crops
         foreach ($allCrops as $crop) {
@@ -2268,9 +2850,45 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
                 $cropName = $cropData['crop'];
                 $production = $cropData['production'];
                 $confidence = $cropData['confidence'];
+
+                // Find best planting month using ML predictions across all months
+                $bestMonth = null;
+                $bestMonthProduction = 0;
+                $monthPredictions = 0;
+
+                for ($monthNum = 1; $monthNum <= 12; $monthNum++) {
+                    try {
+                        $monthResult = $mlService->predict([
+                            'MUNICIPALITY' => $mlMunicipality,
+                            'CROP' => $cropName,
+                            'FARM_TYPE' => 'IRRIGATED',
+                            'YEAR' => $currentYear,
+                            'Area_planted_ha' => 2.5,
+                            'MONTH' => $monthCodes[$monthNum]
+                        ]);
+
+                        if ($monthResult['status'] === 'success' && isset($monthResult['data']['prediction'])) {
+                            $monthProduction = floatval($monthResult['data']['prediction']['production_mt'] ?? 0);
+                            if ($monthProduction > 0) {
+                                $monthPredictions++;
+                                if ($monthProduction > $bestMonthProduction) {
+                                    $bestMonthProduction = $monthProduction;
+                                    $bestMonth = $monthNum;
+                                }
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        // Continue evaluating other months
+                    }
+                }
                 
                 // Calculate yield per hectare from ML prediction
                 $predicted_yield = $production / 2.5; // production per planted area
+
+                // Use best-month ML prediction when available
+                if ($bestMonth !== null && $bestMonthProduction > 0) {
+                    $predicted_yield = $bestMonthProduction / 2.5;
+                }
                 
                 // Get previous year prediction for historical comparison
                 $historical_yield = $predicted_yield * 0.97; // Default 3% growth assumption
@@ -2301,6 +2919,23 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
                     ->first();
                 
                 $schedule = $cropSchedules[$cropName] ?? $defaultSchedule;
+
+                // ML-derived planting and harvest windows (fallback to static windows)
+                $mlPlantingWindow = $schedule['planting'];
+                $mlHarvestWindow = $schedule['harvest'];
+
+                if ($bestMonth !== null && $monthPredictions > 0) {
+                    $durationDays = $cropDurationDays[$cropName] ?? 90;
+
+                    $plantingStartDate = \Carbon\Carbon::create($currentYear, $bestMonth, 1)->startOfMonth();
+                    $plantingEndDate = \Carbon\Carbon::create($currentYear, $bestMonth, 1)->endOfMonth();
+
+                    $harvestStartDate = $plantingStartDate->copy()->addDays($durationDays);
+                    $harvestEndDate = $plantingEndDate->copy()->addDays($durationDays + 20);
+
+                    $mlPlantingWindow = $plantingStartDate->format('M Y');
+                    $mlHarvestWindow = $harvestStartDate->format('M Y') . ' - ' . $harvestEndDate->format('M Y');
+                }
                 
                 // Calculate confidence score from ML
                 $confidence_score = round($confidence * 100);
@@ -2309,8 +2944,8 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
                 $schedules[] = [
                     'crop' => $cropName,
                     'variety' => $variety ? $variety->variety : 'Mixed',
-                    'optimal_planting' => $schedule['planting'],
-                    'expected_harvest' => $schedule['harvest'],
+                    'optimal_planting' => $mlPlantingWindow,
+                    'expected_harvest' => $mlHarvestWindow,
                     'duration' => $schedule['duration'],
                     'yield_prediction' => round($predicted_yield, 1) . ' mt/ha',
                     'historical_yield' => round($historical_yield, 1) . ' mt/ha',

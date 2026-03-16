@@ -66,12 +66,6 @@
                         </svg>
                         <span>Forecast</span>
                     </a>
-                    <a href="{{ route('pagasa.dashboard') }}" class="flex items-center space-x-3 px-4 py-3 rounded hover:bg-green-800 transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        <span>PAGASA Data</span>
-                    </a>
                 </div>
 
                 <div class="mb-4">
@@ -233,22 +227,6 @@
                         </div>
                     </div>
 
-                    <!-- Dataset Information -->
-                    <div class="mb-6">
-                        <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Dataset Name *</label>
-                            <input type="text" x-model="datasetName" required
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                   placeholder="e.g., Crop Production Statistics 2025">
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                            <textarea x-model="description" rows="3"
-                                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                      placeholder="Provide a brief description of the dataset..."></textarea>
-                        </div>
-                    </div>
                 </div>
 
                     <!-- Action Buttons -->
@@ -328,8 +306,6 @@
         function dataImportApp() {
             return {
                 selectedFile: null,
-                datasetName: '',
-                description: '',
                 uploading: false,
                 isDragging: false,
                 successMessage: '',
@@ -358,10 +334,6 @@
 
                 updateDatasetInfo() {
                     this.selectedDataset = this.availableDatasets.find(d => d.id === this.selectedDatasetType);
-                    if (this.selectedDataset) {
-                        this.datasetName = this.selectedDataset.name;
-                        this.description = this.selectedDataset.description;
-                    }
                 },
 
                 async downloadTemplate() {
@@ -384,9 +356,6 @@
                     const file = event.target.files[0];
                     if (file) {
                         this.selectedFile = file;
-                        if (!this.datasetName && !this.selectedDatasetType) {
-                            this.datasetName = file.name.replace(/\.[^/.]+$/, '');
-                        }
                     }
                 },
 
@@ -395,9 +364,6 @@
                     const file = event.dataTransfer.files[0];
                     if (file && (file.name.endsWith('.csv') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
                         this.selectedFile = file;
-                        if (!this.datasetName && !this.selectedDatasetType) {
-                            this.datasetName = file.name.replace(/\.[^/.]+$/, '');
-                        }
                     } else {
                         this.showError('Please upload a CSV or Excel file');
                     }
@@ -479,8 +445,6 @@
 
                 resetForm() {
                     this.selectedFile = null;
-                    this.datasetName = '';
-                    this.description = '';
                     this.selectedDatasetType = '';
                     this.selectedDataset = null;
                     this.$refs.fileInput.value = '';

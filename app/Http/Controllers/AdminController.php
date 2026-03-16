@@ -31,7 +31,7 @@ class AdminController extends Controller
         $totalAdmins = User::where('role', 'Admin')->count();
         $recentUsers = User::latest()->take(5)->get();
 
-        return view('admin_dash', compact('totalUsers', 'totalFarmers', 'totalAdmins', 'recentUsers'));
+        return view('admin_dacar', compact('totalUsers', 'totalFarmers', 'totalAdmins', 'recentUsers'));
     }
 
     /**

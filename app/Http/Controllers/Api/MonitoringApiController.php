@@ -4,322 +4,372 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Services\MLApiService;
-use App\Models\ClimatePattern;
 use App\Models\CropData;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
 
 class MonitoringApiController extends Controller
 {
-    protected $mlService;
+    /**
+     * Municipality coordinates for OpenWeatherMap API
+     */
+    private $municipalityCoords = [
+        'Atok'         => ['lat' => 16.5970, 'lon' => 120.7090],
+        'Bakun'        => ['lat' => 16.7880, 'lon' => 120.6590],
+        'Baguio'       => ['lat' => 16.4023, 'lon' => 120.5960],
+        'Bokod'        => ['lat' => 16.4860, 'lon' => 120.8230],
+        'Buguias'      => ['lat' => 16.7310, 'lon' => 120.8360],
+        'Itogon'       => ['lat' => 16.3690, 'lon' => 120.6540],
+        'Kabayan'      => ['lat' => 16.6190, 'lon' => 120.8370],
+        'Kapangan'     => ['lat' => 16.5692, 'lon' => 120.5920],
+        'Kibungan'     => ['lat' => 16.6850, 'lon' => 120.6540],
+        'La Trinidad'  => ['lat' => 16.4561, 'lon' => 120.5870],
+        'Mankayan'     => ['lat' => 16.8590, 'lon' => 120.7770],
+        'Sablan'       => ['lat' => 16.4880, 'lon' => 120.5060],
+        'Tuba'         => ['lat' => 16.3600, 'lon' => 120.5650],
+        'Tublay'       => ['lat' => 16.5110, 'lon' => 120.6200],
+    ];
 
-    public function __construct()
+    /**
+     * Fetch current weather for a single municipality from OpenWeatherMap
+     * Results are cached for 10 minutes to avoid rate limits
+     */
+    private function fetchWeather(string $municipality): ?array
     {
-        $this->mlService = new MLApiService();
+        $apiKey = env('OPENWEATHER_API_KEY');
+        if (!$apiKey) return null;
+
+        $coords = $this->municipalityCoords[$municipality] ?? null;
+        if (!$coords) return null;
+
+        $cacheKey = "owm_weather_{$municipality}";
+        return Cache::remember($cacheKey, 600, function () use ($coords, $apiKey, $municipality) {
+            try {
+                $response = Http::timeout(10)->get('https://api.openweathermap.org/data/2.5/weather', [
+                    'lat'   => $coords['lat'],
+                    'lon'   => $coords['lon'],
+                    'appid' => $apiKey,
+                    'units' => 'metric',
+                ]);
+
+                if (!$response->successful()) {
+                    Log::warning("OpenWeather API error for {$municipality}: " . $response->status());
+                    return null;
+                }
+
+                $data = $response->json();
+                return [
+                    'temp'        => round($data['main']['temp'] ?? 0, 1),
+                    'feels_like'  => round($data['main']['feels_like'] ?? 0, 1),
+                    'temp_min'    => round($data['main']['temp_min'] ?? 0, 1),
+                    'temp_max'    => round($data['main']['temp_max'] ?? 0, 1),
+                    'humidity'    => $data['main']['humidity'] ?? 0,
+                    'pressure'    => $data['main']['pressure'] ?? 0,
+                    'wind_speed'  => $data['wind']['speed'] ?? 0,
+                    'wind_deg'    => $data['wind']['deg'] ?? 0,
+                    'clouds'      => $data['clouds']['all'] ?? 0,
+                    'rain_1h'     => $data['rain']['1h'] ?? ($data['rain']['3h'] ?? 0),
+                    'visibility'  => ($data['visibility'] ?? 10000) / 1000,
+                    'description' => $data['weather'][0]['description'] ?? 'N/A',
+                    'icon'        => $data['weather'][0]['icon'] ?? '01d',
+                    'main'        => $data['weather'][0]['main'] ?? 'Clear',
+                ];
+            } catch (\Exception $e) {
+                Log::error("Weather fetch error for {$municipality}: " . $e->getMessage());
+                return null;
+            }
+        });
     }
 
     /**
-     * Get Climate Hazard Alerts based on ML predictions and climate patterns
+     * Fetch 5-day/3-hour forecast for a municipality from OpenWeatherMap
+     * Cached for 15 minutes
+     */
+    private function fetchForecast(string $municipality): ?array
+    {
+        $apiKey = env('OPENWEATHER_API_KEY');
+        if (!$apiKey) return null;
+
+        $coords = $this->municipalityCoords[$municipality] ?? null;
+        if (!$coords) return null;
+
+        $cacheKey = "owm_forecast_{$municipality}";
+        return Cache::remember($cacheKey, 900, function () use ($coords, $apiKey, $municipality) {
+            try {
+                $response = Http::timeout(15)->get('https://api.openweathermap.org/data/2.5/forecast', [
+                    'lat'   => $coords['lat'],
+                    'lon'   => $coords['lon'],
+                    'appid' => $apiKey,
+                    'units' => 'metric',
+                ]);
+
+                if (!$response->successful()) {
+                    Log::warning("OpenWeather Forecast API error for {$municipality}: " . $response->status());
+                    return null;
+                }
+
+                return $response->json();
+            } catch (\Exception $e) {
+                Log::error("Forecast fetch error for {$municipality}: " . $e->getMessage());
+                return null;
+            }
+        });
+    }
+
+    /**
+     * Get Climate Hazard Alerts based on LIVE weather from OpenWeatherMap
      */
     public function getAlerts(Request $request)
     {
         try {
-            Log::info('MonitoringApiController::getAlerts called');
-            
             $municipality = $request->query('municipality');
             $alerts = [];
 
-            // Get climate patterns for Benguet municipalities
-            $municipalities = ['Atok', 'Bakun', 'Baguio', 'Bokod', 'Buguias', 'Itogon', 
-                             'Kabayan', 'Kapangan', 'Kibungan', 'La Trinidad', 'Mankayan',
-                             'Sablan', 'Tuba', 'Tublay'];
+            $checkList = ($municipality && $municipality !== 'all')
+                ? [$municipality]
+                : array_keys($this->municipalityCoords);
 
-            // Analyze recent climate data for extreme conditions
-            $recentClimate = ClimatePattern::whereIn('municipality', $municipalities)
-                ->where('year', '>=', Carbon::now()->year - 1)
-                ->select('municipality', 
-                    DB::raw('AVG(rainfall) as avg_rainfall'),
-                    DB::raw('MAX(rainfall) as max_rainfall'),
-                    DB::raw('AVG(avg_temperature) as avg_temp'),
-                    DB::raw('AVG(humidity) as avg_humidity')
-                )
-                ->groupBy('municipality')
-                ->get();
+            foreach ($checkList as $muni) {
+                $weather = $this->fetchWeather($muni);
+                if (!$weather) continue;
 
-            // Generate alerts based on climate patterns
-            foreach ($recentClimate as $climate) {
-                // Heavy Rainfall Alert
-                if ($climate->max_rainfall > 250) {
+                // Heavy rain alert
+                if ($weather['rain_1h'] > 5) {
                     $alerts[] = [
-                        'id' => 'rainfall_' . $climate->municipality,
-                        'type' => 'heavy_rainfall',
-                        'title' => 'Heavy Rainfall Advisory',
-                        'time' => 'Today, ' . Carbon::now()->format('g:i A'),
-                        'description' => 'Scattered heavy rainfall expected in ' . $climate->municipality . ' for the next 24 hours.',
-                        'locations' => [$climate->municipality],
-                        'severity' => 'low',
-                        'riskLabel' => 'Low Risk'
+                        'id'          => 'rain_' . $muni,
+                        'type'        => 'heavy_rainfall',
+                        'title'       => 'Heavy Rainfall Alert — ' . $muni,
+                        'time'        => 'Now, ' . Carbon::now()->format('g:i A'),
+                        'description' => "Current rainfall of {$weather['rain_1h']}mm/h recorded in {$muni}. Risk of flooding in low-lying farm areas. Advise farmers to secure harvested crops and check drainage.",
+                        'locations'   => [$muni],
+                        'severity'    => $weather['rain_1h'] > 15 ? 'high' : 'medium',
+                        'riskLabel'   => $weather['rain_1h'] > 15 ? 'High Risk' : 'Medium Risk',
                     ];
                 }
 
-                // Drought Risk Alert
-                if ($climate->avg_rainfall < 80) {
+                // Strong wind alert
+                if ($weather['wind_speed'] > 8) {
                     $alerts[] = [
-                        'id' => 'drought_' . $climate->municipality,
-                        'type' => 'drought',
-                        'title' => 'Drought Risk Alert',
-                        'time' => 'Yesterday, 2:00 PM',
-                        'description' => 'Below-normal rainfall recorded in ' . $climate->municipality . ' for the past 30 days. Monitor crop water needs.',
-                        'locations' => [$climate->municipality],
-                        'severity' => 'medium',
-                        'riskLabel' => 'Medium Risk'
+                        'id'          => 'wind_' . $muni,
+                        'type'        => 'tropical_depression',
+                        'title'       => 'Strong Wind Advisory — ' . $muni,
+                        'time'        => 'Now, ' . Carbon::now()->format('g:i A'),
+                        'description' => "Wind speed at {$weather['wind_speed']} m/s in {$muni}. Secure greenhouses and tall crop supports. Delay pesticide spraying.",
+                        'locations'   => [$muni],
+                        'severity'    => $weather['wind_speed'] > 14 ? 'high' : 'medium',
+                        'riskLabel'   => $weather['wind_speed'] > 14 ? 'High Risk' : 'Medium Risk',
+                    ];
+                }
+
+                // Extreme temperature alert
+                if ($weather['temp'] > 30) {
+                    $alerts[] = [
+                        'id'          => 'heat_' . $muni,
+                        'type'        => 'drought',
+                        'title'       => 'High Temperature Warning — ' . $muni,
+                        'time'        => 'Today, ' . Carbon::now()->format('g:i A'),
+                        'description' => "Temperature at {$weather['temp']}°C in {$muni} — above normal for Cordillera highlands. Increase irrigation, apply mulching to retain soil moisture.",
+                        'locations'   => [$muni],
+                        'severity'    => $weather['temp'] > 34 ? 'high' : 'medium',
+                        'riskLabel'   => $weather['temp'] > 34 ? 'High Risk' : 'Medium Risk',
+                    ];
+                }
+
+                // Very high humidity - fungal risk
+                if ($weather['humidity'] > 90) {
+                    $alerts[] = [
+                        'id'          => 'humid_' . $muni,
+                        'type'        => 'heavy_rainfall',
+                        'title'       => 'High Humidity / Fungal Risk — ' . $muni,
+                        'time'        => 'Today, ' . Carbon::now()->format('g:i A'),
+                        'description' => "Humidity at {$weather['humidity']}% in {$muni}. Conditions favor fungal diseases (blight, mildew). Monitor vegetable crops and apply preventive fungicide.",
+                        'locations'   => [$muni],
+                        'severity'    => 'low',
+                        'riskLabel'   => 'Low Risk',
+                    ];
+                }
+
+                // Low visibility / fog
+                if ($weather['visibility'] < 2) {
+                    $alerts[] = [
+                        'id'          => 'fog_' . $muni,
+                        'type'        => 'heavy_rainfall',
+                        'title'       => 'Dense Fog Advisory — ' . $muni,
+                        'time'        => 'Now, ' . Carbon::now()->format('g:i A'),
+                        'description' => "Visibility at {$weather['visibility']}km in {$muni}. Exercise caution on highland roads. Delay field work if visibility is impaired.",
+                        'locations'   => [$muni],
+                        'severity'    => 'low',
+                        'riskLabel'   => 'Low Risk',
                     ];
                 }
             }
-
-            // Add tropical depression alert for specific provinces
-            $watchAreas = ['Baguio', 'Bokod'];
-            if (empty($municipality) || in_array($municipality, $watchAreas)) {
-                $alerts[] = [
-                    'id' => 'tropical_depression_001',
-                    'type' => 'tropical_depression',
-                    'title' => 'Tropical Depression entering PAR',
-                    'time' => 'Today, 8:00 AM',
-                    'description' => 'TD Neneng expected to affect Northern Luzon within 48 hours. Moderate to heavy rainfall expected.',
-                    'locations' => $watchAreas,
-                    'severity' => 'medium',
-                    'riskLabel' => 'Medium Risk'
-                ];
-            }
-
-            // Filter by municipality if specified
-            if ($municipality && $municipality !== 'all') {
-                $alerts = array_filter($alerts, function($alert) use ($municipality) {
-                    return in_array($municipality, $alert['locations']);
-                });
-            }
-
-            Log::info('Climate alerts generated: ' . count($alerts));
 
             return response()->json([
-                'alerts' => array_values($alerts),
-                'last_updated' => Carbon::now()->toIso8601String()
+                'alerts'       => array_values($alerts),
+                'source'       => 'OpenWeatherMap (Live)',
+                'last_updated' => Carbon::now()->toIso8601String(),
             ]);
 
         } catch (\Exception $e) {
             Log::error('Climate Alerts Error: ' . $e->getMessage());
             return response()->json([
                 'alerts' => [],
-                'error' => 'Failed to load climate alerts'
+                'error'  => 'Failed to load climate alerts: ' . $e->getMessage(),
             ], 500);
         }
     }
 
     /**
-     * Get 7-Day Rainfall Forecast using ML predictions
+     * Get 7-Day Rainfall Forecast using OpenWeatherMap 5-day forecast API
      */
     public function getRainfallForecast(Request $request)
     {
         try {
-            Log::info('MonitoringApiController::getRainfallForecast called');
-            
             $municipality = $request->query('municipality', 'La Trinidad');
-            
-            // Try to get ML forecast data
-            $mlForecast = $this->mlService->getForecast([
-                'municipality' => strtoupper(str_replace(' ', '', $municipality)),
-                'days' => 7
-            ]);
 
+            $forecastData = $this->fetchForecast($municipality);
             $forecast = [];
-            $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-            
-            if ($mlForecast['status'] === 'success' && isset($mlForecast['data']['forecast'])) {
-                // Use ML forecast data
-                $mlData = $mlForecast['data']['forecast'];
-                foreach ($mlData as $index => $day) {
-                    $rainfall = $day['rainfall'] ?? 0;
-                    $forecast[] = [
-                        'day' => $days[$index] ?? 'Day ' . ($index + 1),
-                        'rainfall' => round($rainfall, 1),
-                        'percentage' => $this->getRainfallPercentage($rainfall)
-                    ];
-                }
-            } else {
-                // Generate forecast based on historical climate patterns
-                $historicalData = ClimatePattern::where('municipality', $municipality)
-                    ->where('month', Carbon::now()->month)
-                    ->select(DB::raw('AVG(rainfall) as avg_rainfall'))
-                    ->first();
 
-                $baseRainfall = $historicalData ? $historicalData->avg_rainfall : 150;
-                
-                // Generate 7-day forecast with variation
-                for ($i = 0; $i < 7; $i++) {
-                    $variation = rand(-30, 50) / 100; // -30% to +50% variation
-                    $rainfall = max(0, $baseRainfall * (1 + $variation));
-                    
+            if ($forecastData && isset($forecastData['list'])) {
+                // Group 3-hour intervals by day
+                $daily = [];
+                $today = Carbon::now()->format('Y-m-d');
+
+                foreach ($forecastData['list'] as $item) {
+                    $date    = date('Y-m-d', $item['dt']);
+                    $dayName = date('l', $item['dt']);
+
+                    if (!isset($daily[$date])) {
+                        $daily[$date] = [
+                            'day'      => $dayName,
+                            'rainfall' => 0,
+                            'pop'      => 0,
+                            'count'    => 0,
+                        ];
+                    }
+
+                    $rain = $item['rain']['3h'] ?? 0;
+                    $daily[$date]['rainfall'] += $rain;
+                    $daily[$date]['pop'] = max($daily[$date]['pop'], ($item['pop'] ?? 0) * 100);
+                    $daily[$date]['count']++;
+                }
+
+                foreach ($daily as $date => $dayData) {
                     $forecast[] = [
-                        'day' => $days[$i],
-                        'rainfall' => round($rainfall, 1),
-                        'percentage' => $this->getRainfallPercentage($rainfall)
+                        'day'        => $dayData['day'],
+                        'rainfall'   => round($dayData['rainfall'], 1),
+                        'percentage' => round($dayData['pop']) . '%',
                     ];
                 }
+
+                // Limit to 7 days max
+                $forecast = array_slice($forecast, 0, 7);
             }
 
-            Log::info('Rainfall forecast generated for ' . $municipality . ': ' . count($forecast) . ' days');
-
+            // If no forecast data at all, return empty (frontend handles this)
             return response()->json([
-                'forecast' => $forecast,
+                'forecast'     => $forecast,
                 'municipality' => $municipality,
-                'ml_powered' => $mlForecast['status'] === 'success',
-                'last_updated' => Carbon::now()->toIso8601String()
+                'source'       => count($forecast) > 0 ? 'OpenWeatherMap (Live)' : 'No data',
+                'last_updated' => Carbon::now()->toIso8601String(),
             ]);
 
         } catch (\Exception $e) {
             Log::error('Rainfall Forecast Error: ' . $e->getMessage());
-            
-            // Return fallback forecast
-            $fallbackForecast = [
-                ['day' => 'Monday', 'rainfall' => 30.7, 'percentage' => '33%'],
-                ['day' => 'Tuesday', 'rainfall' => 3.5, 'percentage' => '15%'],
-                ['day' => 'Wednesday', 'rainfall' => 42.2, 'percentage' => '55%'],
-                ['day' => 'Thursday', 'rainfall' => 40.0, 'percentage' => '50%'],
-                ['day' => 'Friday', 'rainfall' => 46.3, 'percentage' => '62%'],
-                ['day' => 'Saturday', 'rainfall' => 45.2, 'percentage' => '60%'],
-                ['day' => 'Sunday', 'rainfall' => 40.6, 'percentage' => '51%']
-            ];
-
             return response()->json([
-                'forecast' => $fallbackForecast,
+                'forecast'     => [],
                 'municipality' => $request->query('municipality', 'All'),
-                'ml_powered' => false,
-                'last_updated' => Carbon::now()->toIso8601String()
+                'error'        => $e->getMessage(),
+                'last_updated' => Carbon::now()->toIso8601String(),
             ]);
         }
     }
 
     /**
-     * Get Provincial Climate Status for all municipalities
+     * Get Provincial Climate Status for all municipalities using LIVE OpenWeatherMap data
      */
     public function getMunicipalityStatus(Request $request)
     {
         try {
-            Log::info('MonitoringApiController::getMunicipalityStatus called');
-            
             $municipalities = [];
-            $municipalityList = ['Atok', 'Bakun', 'Baguio', 'Bokod', 'Buguias', 'Itogon', 
-                               'Kabayan', 'Kapangan', 'Kibungan', 'La Trinidad', 'Mankayan',
-                               'Sablan', 'Tuba', 'Tublay'];
 
-            // Get recent climate data for each municipality
-            $climateData = ClimatePattern::whereIn('municipality', $municipalityList)
-                ->where('year', '>=', Carbon::now()->year - 1)
-                ->select('municipality',
-                    DB::raw('AVG(rainfall) as avg_rainfall'),
-                    DB::raw('AVG(avg_temperature) as avg_temp'),
-                    DB::raw('AVG(humidity) as avg_humidity')
-                )
-                ->groupBy('municipality')
-                ->get()
-                ->keyBy('municipality');
+            foreach ($this->municipalityCoords as $muni => $coords) {
+                $weather = $this->fetchWeather($muni);
 
-            foreach ($municipalityList as $muni) {
-                $climate = $climateData->get($muni);
-                
-                if ($climate) {
-                    $rainfall = round($climate->avg_rainfall, 1);
-                    $temperature = round($climate->avg_temp, 1);
-                    $humidity = round($climate->avg_humidity, 0);
-                    
-                    // Determine status based on conditions
-                    $status = $this->determineClimateStatus($rainfall, $temperature, $humidity);
+                if ($weather) {
+                    $rainfall    = round($weather['rain_1h'], 1);
+                    $temperature = round($weather['temp'], 1);
+                    $humidity    = round($weather['humidity']);
+                    $status      = $this->determineClimateStatus($weather);
                 } else {
-                    // Default values if no data
-                    $rainfall = rand(100, 250) / 10;
-                    $temperature = rand(180, 250) / 10;
-                    $humidity = rand(60, 85);
-                    $status = 'Normal';
+                    // Fallback if API call fails for this municipality
+                    $rainfall    = 0;
+                    $temperature = 20.0;
+                    $humidity    = 70;
+                    $status      = 'Normal';
                 }
 
                 $municipalities[] = [
-                    'name' => $muni,
-                    'status' => $status,
-                    'rainfall' => $rainfall,
+                    'name'        => $muni,
+                    'status'      => $status,
+                    'rainfall'    => $rainfall,
                     'temperature' => $temperature,
-                    'humidity' => $humidity
+                    'humidity'    => $humidity,
+                    'description' => $weather['description'] ?? 'N/A',
+                    'wind_speed'  => $weather['wind_speed'] ?? 0,
+                    'icon'        => $weather['icon'] ?? '01d',
                 ];
             }
 
-            // Sort by status priority (Watch > Favorable > Normal)
-            usort($municipalities, function($a, $b) {
+            // Sort by status priority (Watch first, then Favorable, then Normal)
+            usort($municipalities, function ($a, $b) {
                 $priority = ['Watch' => 0, 'Favorable' => 1, 'Normal' => 2];
                 return ($priority[$a['status']] ?? 3) <=> ($priority[$b['status']] ?? 3);
             });
 
-            Log::info('Municipality status generated for ' . count($municipalities) . ' municipalities');
-
             return response()->json([
                 'municipalities' => $municipalities,
-                'last_updated' => Carbon::now()->toIso8601String()
+                'source'         => 'OpenWeatherMap (Live)',
+                'last_updated'   => Carbon::now()->toIso8601String(),
             ]);
 
         } catch (\Exception $e) {
             Log::error('Municipality Status Error: ' . $e->getMessage());
-            
-            // Return fallback data
-            $fallbackMunicipalities = [
-                ['name' => 'Atok', 'status' => 'Normal', 'rainfall' => 15.5, 'temperature' => 18.2, 'humidity' => 75],
-                ['name' => 'Bakun', 'status' => 'Watch', 'rainfall' => 32.1, 'temperature' => 22.5, 'humidity' => 82],
-                ['name' => 'Baguio', 'status' => 'Favorable', 'rainfall' => 18.3, 'temperature' => 19.8, 'humidity' => 70],
-                ['name' => 'Bokod', 'status' => 'Watch', 'rainfall' => 28.7, 'temperature' => 21.3, 'humidity' => 80],
-                ['name' => 'Itogon', 'status' => 'Normal', 'rainfall' => 16.2, 'temperature' => 20.1, 'humidity' => 72],
-                ['name' => 'Kabayan', 'status' => 'Watch', 'rainfall' => 25.4, 'temperature' => 17.9, 'humidity' => 78],
-                ['name' => 'Kapangan', 'status' => 'Favorable', 'rainfall' => 17.8, 'temperature' => 19.5, 'humidity' => 68]
-            ];
-
             return response()->json([
-                'municipalities' => $fallbackMunicipalities,
-                'last_updated' => Carbon::now()->toIso8601String()
-            ]);
+                'municipalities' => [],
+                'error'          => 'Failed to load municipality data: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
     /**
-     * Helper: Determine climate status based on conditions
+     * Determine climate status based on real-time weather data
+     *
+     * Watch:     Extreme rain (>5mm/h), strong wind (>8 m/s), temp >30°C, humidity >90%, visibility <2km
+     * Favorable: Temp 15-24°C, humidity 55-80%, low wind, light or no rain — ideal growing
+     * Normal:    Everything else
      */
-    private function determineClimateStatus($rainfall, $temperature, $humidity)
+    private function determineClimateStatus(array $weather): string
     {
-        // Watch status: Extreme conditions
-        if ($rainfall > 250 || $rainfall < 50 || $temperature > 28 || $humidity > 90 || $humidity < 40) {
+        $rain    = $weather['rain_1h'] ?? 0;
+        $temp    = $weather['temp'] ?? 20;
+        $hum     = $weather['humidity'] ?? 70;
+        $wind    = $weather['wind_speed'] ?? 0;
+        $vis     = $weather['visibility'] ?? 10;
+
+        // Watch: any extreme condition
+        if ($rain > 5 || $wind > 8 || $temp > 30 || $hum > 90 || $vis < 2) {
             return 'Watch';
         }
-        
-        // Favorable status: Optimal growing conditions
-        if ($rainfall >= 150 && $rainfall <= 250 && 
-            $temperature >= 18 && $temperature <= 24 && 
-            $humidity >= 60 && $humidity <= 80) {
+
+        // Favorable: ideal Cordillera agriculture conditions
+        if ($temp >= 15 && $temp <= 24 && $hum >= 55 && $hum <= 80 && $wind <= 5 && $rain <= 2) {
             return 'Favorable';
         }
-        
-        // Normal status: Standard conditions
-        return 'Normal';
-    }
 
-    /**
-     * Helper: Calculate rainfall percentage category
-     */
-    private function getRainfallPercentage($rainfall)
-    {
-        if ($rainfall < 10) return '10%';
-        if ($rainfall < 20) return '20%';
-        if ($rainfall < 30) return '30%';
-        if ($rainfall < 40) return '40%';
-        if ($rainfall < 50) return '50%';
-        if ($rainfall < 75) return '62%';
-        if ($rainfall < 100) return '75%';
-        return '90%';
+        return 'Normal';
     }
 }

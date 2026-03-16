@@ -61,12 +61,6 @@
                         </svg>
                         <span>Forecast</span>
                     </a>
-                    <a href="{{ route('pagasa.dashboard') }}" class="flex items-center space-x-3 px-4 py-3 rounded hover:bg-green-800 transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        <span>PAGASA Data</span>
-                    </a>
                 </div>
 
                 <div class="mb-4">
@@ -221,7 +215,7 @@
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Municipality</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
                         </tr>
@@ -260,12 +254,12 @@
                                         'bg-purple-100 text-purple-800': user.role === 'Superadmin'
                                     }" class="px-3 py-1 text-xs font-medium rounded-full" x-text="user.role"></span>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-600" x-text="user.municipality || 'N/A'"></td>
+                                <td class="px-6 py-4 text-sm text-gray-600" x-text="user.location || 'N/A'"></td>
                                 <td class="px-6 py-4">
                                     <span :class="{
-                                        'bg-green-100 text-green-800': user.email_verified_at,
-                                        'bg-yellow-100 text-yellow-800': !user.email_verified_at
-                                    }" class="px-3 py-1 text-xs font-medium rounded-full" x-text="user.email_verified_at ? 'Active' : 'Pending'"></span>
+                                        'bg-green-100 text-green-800': user.status === 'Active',
+                                        'bg-yellow-100 text-yellow-800': user.status !== 'Active'
+                                    }" class="px-3 py-1 text-xs font-medium rounded-full" x-text="user.status || 'Pending'"></span>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-600" x-text="new Date(user.created_at).toLocaleDateString()"></td>
                             </tr>
@@ -336,7 +330,7 @@
                     this.stats.total = this.users.length;
                     this.stats.farmers = this.users.filter(u => u.role === 'Farmer').length;
                     this.stats.daAdmins = this.users.filter(u => u.role === 'DA Admin' || u.role === 'Admin' || u.role === 'Superadmin').length;
-                    this.stats.active = this.users.filter(u => u.email_verified_at).length;
+                    this.stats.active = this.users.filter(u => u.status === 'Active').length;
                 },
 
                 filterUsers() {
@@ -344,7 +338,7 @@
                         const matchesSearch = !this.searchQuery || 
                             user.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
                             user.email.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                            (user.municipality && user.municipality.toLowerCase().includes(this.searchQuery.toLowerCase()));
+                            (user.location && user.location.toLowerCase().includes(this.searchQuery.toLowerCase()));
                         
                         const matchesRole = !this.roleFilter || user.role === this.roleFilter;
                         

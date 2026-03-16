@@ -264,7 +264,7 @@
             
             const formData = new FormData(document.getElementById('announcement-form'));
             
-            fetch('/admin/sms/preview', {
+            fetch('{{ url("/admin/sms/preview") }}', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
@@ -321,7 +321,7 @@
 
             const formData = new FormData(this);
 
-            fetch('/admin/sms/send', {
+            fetch('{{ url("/admin/sms/send") }}', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
@@ -334,7 +334,7 @@
                     showAlert('success', `${data.message}\nSent: ${data.sent}, Failed: ${data.failed}`);
                     
                     setTimeout(() => {
-                        window.location.href = '/admin/sms';
+                        window.location.href = '{{ url("/admin/sms") }}';
                     }, 2000);
                 } else {
                     showAlert('error', data.message || 'Failed to send announcement.');
