@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 
-Route::get('/', function () {
+Route::match(['GET', 'HEAD'], '/', function () {
     return view('homepage'); 
 })->name('homepage');
 
@@ -4376,10 +4376,108 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/admin/crop-performance', [App\Http\Controllers\Api\DAOfficerApiController::class, 'getCropPerformance'])->name('admin.api.crop-performance.new');
     Route::get('/api/admin/market-prices', [App\Http\Controllers\Api\DAOfficerApiController::class, 'getMarketPrices'])->name('admin.api.market-prices.new');
     Route::get('/api/admin/validation-alerts', [App\Http\Controllers\Api\DAOfficerApiController::class, 'getValidationAlerts'])->name('admin.api.validation-alerts.new');
-    Route::get('/api/admin/users', [App\Http\Controllers\Api\DAOfficerApiController::class, 'getUsers'])->name('admin.api.users');
+    Route::get('/api/admin/users', [App\Http\Controllers\Api\DAOfficerApiController::class, 'getUsers'])->name('admin.api.da-users');
     Route::get('/api/admin/system-status', [App\Http\Controllers\Api\DAOfficerApiController::class, 'getSystemStatus'])->name('admin.api.system-status');
     Route::get('/api/admin/enhanced-crop-performance', [App\Http\Controllers\Api\DAOfficerApiController::class, 'getEnhancedCropPerformance'])->name('admin.api.enhanced-crop-performance');
     Route::get('/api/admin/price-insights', [App\Http\Controllers\Api\DAOfficerApiController::class, 'getPriceInsights'])->name('admin.api.price-insights');
+
+    Route::get('/api/admin/crop-monitoring', function () {
+        // Stats
+        $totalFarmers   = \App\Models\CropData::distinct('user_id')->count('user_id');
+        $totalRecords   = \App\Models\CropData::count();
+        $totalArea      = (float) \App\Models\CropData::sum('area_planted');
+        // yield_amount stored in kg (1 MT = 1000 kg)
+        $totalYieldMt   = round(\App\Models\CropData::sum('yield_amount') / 1000, 2);
+
+        // Crop type distribution (bar chart)
+        $cropTypes = \App\Models\CropData::selectRaw('crop_type, COUNT(*) as count, SUM(area_planted) as total_area, SUM(yield_amount)/1000 as total_yield_mt')
+            ->groupBy('crop_type')
+            ->orderByDesc('count')
+            ->get()
+            ->map(function ($row) {
+                return [
+                    'crop'            => ucwords(strtolower($row->crop_type)),
+                    'count'           => (int) $row->count,
+                    'total_area'      => round((float) $row->total_area, 2),
+                    'expected_yield'  => round((float) $row->total_yield_mt, 2),
+                ];
+            });
+
+        // Status distribution (pie chart)
+        $statusGroups = \App\Models\CropData::selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->get();
+        $statusTotal = $statusGroups->sum('count') ?: 1;
+        $statusDist  = $statusGroups->map(function ($row) use ($statusTotal) {
+            return [
+                'status'     => $row->status ?? 'Unknown',
+                'count'      => (int) $row->count,
+                'percentage' => round($row->count / $statusTotal * 100, 1),
+            ];
+        });
+
+        // Municipality data (horizontal bar chart)
+        $municipalityData = \App\Models\CropData::selectRaw('municipality, SUM(yield_amount)/1000 as expected_yield, SUM(area_planted) as total_area')
+            ->whereNotNull('municipality')
+            ->groupBy('municipality')
+            ->orderByDesc('expected_yield')
+            ->limit(10)
+            ->get()
+            ->map(function ($row) {
+                return [
+                    'municipality'   => $row->municipality,
+                    'expected_yield' => round((float) $row->expected_yield, 2),
+                    'total_area'     => round((float) $row->total_area, 2),
+                ];
+            });
+
+        // Detailed crop records (table)
+        $records = \App\Models\CropData::with('user')
+            ->orderByDesc('created_at')
+            ->limit(100)
+            ->get()
+            ->map(function ($r) {
+                $notes = [];
+                if ($r->notes) {
+                    $decoded = json_decode($r->notes, true);
+                    if (is_array($decoded)) {
+                        $notes = $decoded;
+                    }
+                }
+                $location = $r->municipality;
+                if (!empty($notes['plot_location'])) {
+                    $location = $notes['plot_location'] . ', ' . $r->municipality;
+                }
+                return [
+                    'id'               => $r->id,
+                    'farmer_name'      => optional($r->user)->name ?? 'Unknown',
+                    'farmer_role'      => optional($r->user)->role ?? 'Farmer',
+                    'crop_type'        => ucwords(strtolower($r->crop_type ?? '')),
+                    'variety'          => $r->variety ?? '',
+                    'location'         => $location,
+                    'municipality'     => $r->municipality ?? '',
+                    'area_planted'     => round((float) $r->area_planted, 2),
+                    'planting_date'    => $r->planting_date ? $r->planting_date->format('M j, Y') : null,
+                    'harvest_date'     => $r->harvest_date ? $r->harvest_date->format('M j, Y') : null,
+                    'harvest_date_iso' => $r->harvest_date ? $r->harvest_date->format('Y-m-d') : null,
+                    'expected_yield_mt'=> $r->yield_amount ? round($r->yield_amount / 1000, 2) : 0,
+                    'status'           => $r->status ?? 'Unknown',
+                ];
+            });
+
+        return response()->json([
+            'stats' => [
+                'total_farmers'     => $totalFarmers,
+                'total_records'     => $totalRecords,
+                'total_area'        => round($totalArea, 2),
+                'expected_yield_mt' => $totalYieldMt,
+            ],
+            'crop_type_distribution' => $cropTypes,
+            'status_distribution'    => $statusDist,
+            'municipality_data'      => $municipalityData,
+            'crop_records'           => $records,
+        ]);
+    })->name('admin.api.crop-monitoring');
 });
 
 // Test route to verify routing works

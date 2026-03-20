@@ -98,6 +98,12 @@
 
                 <div class="mb-4">
                     <p class="text-xs uppercase text-green-300 mb-2 px-4">Monitoring</p>
+                    <a href="{{ route('admin.dashboard') }}#crop-monitoring" class="flex items-center space-x-3 px-4 py-3 rounded hover:bg-green-800 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/>
+                        </svg>
+                        <span>Crop Monitoring</span>
+                    </a>
                     <a href="{{ route('admin.monitoring') }}" class="flex items-center space-x-3 px-4 py-3 rounded hover:bg-green-800 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
@@ -361,7 +367,6 @@
                 loading: true,
                 error: null,
                 lastUpdated: null,
-                apiKey: '{{ env("OPENWEATHER_API_KEY", "") }}',
                 selectedMunicipality: 'La Trinidad',
 
                 municipalities: [
@@ -440,82 +445,53 @@
 
                     this.currentCoords = { lat: muni.lat, lon: muni.lon };
 
-                    if (!this.apiKey) {
-                        this.error = 'OpenWeatherMap API key not configured in .env (OPENWEATHER_API_KEY)';
-                        this.loading = false;
-                        return;
-                    }
-
                     try {
-                        // Current Weather
-                        const currentUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${muni.lat}&lon=${muni.lon}&appid=${this.apiKey}&units=metric`;
-                        const currentRes = await fetch(currentUrl);
-                        if (!currentRes.ok) {
-                            const errBody = await currentRes.json().catch(() => ({}));
-                            throw new Error(errBody.message || `API error: ${currentRes.status}`);
+                        const response = await fetch(`{{ url('/api/weather') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
+                        if (!response.ok) {
+                            const errBody = await response.json().catch(() => ({}));
+                            throw new Error(errBody.error || `Weather API error: ${response.status}`);
                         }
-                        const current = await currentRes.json();
+                        const payload = await response.json();
+                        const current = payload.current || {};
 
                         this.currentWeather = {
-                            temp: Math.round(current.main.temp),
-                            feelsLike: Math.round(current.main.feels_like),
-                            tempMin: Math.round(current.main.temp_min),
-                            tempMax: Math.round(current.main.temp_max),
-                            description: current.weather[0].description,
-                            icon: current.weather[0].icon,
-                            humidity: current.main.humidity,
-                            pressure: current.main.pressure,
-                            wind: current.wind.speed,
-                            windDir: this.getWindDirection(current.wind.deg || 0),
-                            windDeg: current.wind.deg || 0,
-                            gust: current.wind.gust || null,
-                            rain: current.rain ? (current.rain['1h'] || current.rain['3h'] || 0) : 0,
-                            clouds: current.clouds.all,
-                            visibility: ((current.visibility || 10000) / 1000).toFixed(1),
-                            sunrise: this.formatTime(current.sys.sunrise, current.timezone),
-                            sunset: this.formatTime(current.sys.sunset, current.timezone)
+                            temp: Math.round(current.temp ?? 0),
+                            feelsLike: Math.round(current.feels_like ?? current.temp ?? 0),
+                            tempMin: Math.round(current.temp_min ?? current.temp ?? 0),
+                            tempMax: Math.round(current.temp_max ?? current.temp ?? 0),
+                            description: current.weather?.[0]?.description || 'N/A',
+                            icon: current.weather?.[0]?.icon || '01d',
+                            humidity: current.humidity ?? 0,
+                            pressure: current.pressure ?? '--',
+                            wind: current.wind_speed ?? 0,
+                            windDir: this.getWindDirection(current.wind_deg || 0),
+                            windDeg: current.wind_deg || 0,
+                            gust: current.wind_gust || null,
+                            rain: current.rain || 0,
+                            clouds: current.clouds ?? 0,
+                            visibility: current.visibility ? Number(current.visibility).toFixed(1) : '--',
+                            sunrise: '--',
+                            sunset: '--'
                         };
 
-                        // 5-Day Forecast
-                        const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${muni.lat}&lon=${muni.lon}&appid=${this.apiKey}&units=metric`;
-                        const forecastRes = await fetch(forecastUrl);
-                        if (!forecastRes.ok) throw new Error('Forecast API error');
-                        const forecastData = await forecastRes.json();
-
-                        // Group by day and pick the midday reading (or closest)
-                        const daily = {};
-                        forecastData.list.forEach(item => {
-                            const date = item.dt_txt.split(' ')[0];
-                            if (!daily[date]) {
-                                daily[date] = { items: [], tempMin: Infinity, tempMax: -Infinity, rain: 0 };
-                            }
-                            daily[date].items.push(item);
-                            daily[date].tempMin = Math.min(daily[date].tempMin, item.main.temp_min);
-                            daily[date].tempMax = Math.max(daily[date].tempMax, item.main.temp_max);
-                            daily[date].rain += (item.rain ? item.rain['3h'] || 0 : 0);
-                        });
-
+                        const dailyForecast = payload.daily || [];
                         const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
                         const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                        const today = new Date().toISOString().split('T')[0];
 
-                        this.forecast = Object.entries(daily)
-                            .filter(([date]) => date !== today)
+                        this.forecast = dailyForecast
                             .slice(0, 5)
-                            .map(([date, data]) => {
-                                // Pick midday entry or the middle one
-                                const midday = data.items.find(i => i.dt_txt.includes('12:00:00')) || data.items[Math.floor(data.items.length / 2)];
-                                const d = new Date(date);
+                            .map(item => {
+                                const d = new Date((item.dt || 0) * 1000);
                                 return {
                                     dayName: dayNames[d.getDay()],
                                     date: monthNames[d.getMonth()] + ' ' + d.getDate(),
-                                    tempMin: Math.round(data.tempMin),
-                                    tempMax: Math.round(data.tempMax),
-                                    description: midday.weather[0].description,
-                                    icon: midday.weather[0].icon,
-                                    humidity: midday.main.humidity,
-                                    wind: midday.wind.speed,
-                                    rain: Math.round(data.rain * 10) / 10
+                                    tempMin: Math.round(item.temp?.min ?? 0),
+                                    tempMax: Math.round(item.temp?.max ?? 0),
+                                    description: item.weather?.[0]?.description || 'N/A',
+                                    icon: item.weather?.[0]?.icon || '01d',
+                                    humidity: '--',
+                                    wind: '--',
+                                    rain: Math.round(((item.pop || 0) * 100) * 10) / 10
                                 };
                             });
 

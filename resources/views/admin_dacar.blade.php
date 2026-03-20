@@ -118,6 +118,12 @@
 
                 <div class="mb-4">
                     <p class="text-xs uppercase text-green-300 mb-2 px-4">Monitoring</p>
+                    <button @click="currentSection = 'crop-monitoring'; loadCropMonitoring()" :class="currentSection === 'crop-monitoring' ? 'bg-green-600' : 'hover:bg-green-800'" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded transition-colors w-full text-left">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/>
+                        </svg>
+                        <span>Crop Monitoring</span>
+                    </button>
                     <a href="{{ route('admin.monitoring') }}" class="flex items-center space-x-3 px-4 py-3 rounded hover:bg-green-800 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
@@ -1499,6 +1505,389 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- CROP MONITORING SECTION -->
+                <div x-cloak x-show="!loading && currentSection === 'crop-monitoring'" @load-crop-monitoring.window="if (cmRecords.length === 0) load()" x-data="{
+                    cmLoading: false,
+                    cmStats: { total_farmers: 0, total_records: 0, total_area: 0, expected_yield_mt: 0 },
+                    cmRecords: [],
+                    cmCropTypes: [],
+                    cmStatusDist: [],
+                    cmMunicipality: [],
+                    cmCropTypeChart: null,
+                    cmStatusChart: null,
+                    cmMunChart: null,
+                    cmSearch: '',
+                    cmStatusFilter: '',
+                    cmLocationFilter: '',
+                    cmHarvestMonth: '',
+
+                    get cmLocationOptions() {
+                        const locs = new Set();
+                        this.cmRecords.forEach(r => {
+                            if (r.location) locs.add(r.location);
+                            if (r.municipality) locs.add(r.municipality);
+                        });
+                        return Array.from(locs).sort();
+                    },
+
+                    get filteredRecords() {
+                        let r = this.cmRecords;
+                        if (this.cmSearch) {
+                            const s = this.cmSearch.toLowerCase();
+                            r = r.filter(rec => (rec.farmer_name||'').toLowerCase().includes(s) || (rec.crop_type||'').toLowerCase().includes(s) || (rec.municipality||'').toLowerCase().includes(s));
+                        }
+                        if (this.cmStatusFilter) {
+                            r = r.filter(rec => (rec.status||'').toLowerCase() === this.cmStatusFilter.toLowerCase());
+                        }
+                        if (this.cmLocationFilter) {
+                            const selectedLoc = this.cmLocationFilter.toLowerCase();
+                            r = r.filter(rec => (rec.location||'').toLowerCase() === selectedLoc || (rec.municipality||'').toLowerCase() === selectedLoc);
+                        }
+                        if (this.cmHarvestMonth) {
+                            const selectedMonth = parseInt(this.cmHarvestMonth);
+                            r = r.filter(rec => {
+                                if (!rec.harvest_date_iso) return false;
+                                const d = new Date(rec.harvest_date_iso + 'T00:00:00');
+                                const recMonth = d.getMonth() + 1;
+                                return recMonth === selectedMonth;
+                            });
+                        }
+                        return r;
+                    },
+
+                    statusColor(status) {
+                        const s = (status||'').toLowerCase();
+                        if (s === 'growing')   return 'bg-green-100 text-green-800';
+                        if (s === 'planted')   return 'bg-blue-100 text-blue-800';
+                        if (s === 'harvested') return 'bg-gray-100 text-gray-700';
+                        if (s === 'ready')     return 'bg-yellow-100 text-yellow-800';
+                        if (s === 'failed')    return 'bg-red-100 text-red-700';
+                        return 'bg-gray-100 text-gray-600';
+                    },
+
+                    async init() { },
+
+                    async load() {
+                        if (this.cmLoading) return;
+                        this.cmLoading = true;
+                        try {
+                            const res  = await fetch('{{ url('/api/admin/crop-monitoring') }}');
+                            const data = await res.json();
+                            this.cmStats        = data.stats          || this.cmStats;
+                            this.cmCropTypes    = data.crop_type_distribution || [];
+                            this.cmStatusDist   = data.status_distribution   || [];
+                            this.cmMunicipality = data.municipality_data      || [];
+                            this.cmRecords      = data.crop_records           || [];
+                            this.$nextTick(() => {
+                                this.renderCropTypeChart();
+                                this.renderStatusChart();
+                                this.renderMunChart();
+                            });
+                        } catch (e) {
+                            console.error('Crop monitoring load error:', e);
+                        }
+                        this.cmLoading = false;
+                    },
+
+                    renderCropTypeChart() {
+                        const ctx = document.getElementById('cmCropTypeChart');
+                        if (!ctx) return;
+                        if (this.cmCropTypeChart) this.cmCropTypeChart.destroy();
+                        const labels = this.cmCropTypes.map(c => c.crop);
+                        const yields = this.cmCropTypes.map(c => c.expected_yield);
+                        const colors = ['#22c55e','#f97316','#3b82f6','#a855f7','#ec4899','#14b8a6','#f59e0b','#64748b','#ef4444','#06b6d4'];
+                        this.cmCropTypeChart = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: 'Expected Yield (MT)',
+                                    data: yields,
+                                    backgroundColor: labels.map((_, i) => colors[i % colors.length]),
+                                    borderRadius: 4
+                                }]
+                            },
+                            options: {
+                                responsive: true, maintainAspectRatio: false,
+                                plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y.toFixed(2) + ' MT' } } },
+                                scales: { y: { beginAtZero: true, title: { display: true, text: 'Expected Yield (MT)' } }, x: { grid: { display: false } } }
+                            }
+                        });
+                    },
+
+                    renderStatusChart() {
+                        const ctx = document.getElementById('cmStatusChart');
+                        if (!ctx) return;
+                        if (this.cmStatusChart) this.cmStatusChart.destroy();
+                        const labels = this.cmStatusDist.map(s => s.status);
+                        const counts = this.cmStatusDist.map(s => s.count);
+                        const colors = { Growing: '#22c55e', Planted: '#3b82f6', Harvested: '#94a3b8', Ready: '#f59e0b', Failed: '#ef4444' };
+                        this.cmStatusChart = new Chart(ctx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: labels,
+                                datasets: [{ data: counts, backgroundColor: labels.map(l => colors[l] || '#64748b'), borderWidth: 2, borderColor: '#fff' }]
+                            },
+                            options: {
+                                responsive: true, maintainAspectRatio: false,
+                                plugins: { legend: { position: 'right' }, tooltip: { callbacks: { label: ctx => ' ' + ctx.label + ': ' + ctx.parsed + ' (' + this.cmStatusDist[ctx.dataIndex]?.percentage + '%)' } } }
+                            }
+                        });
+                    },
+
+                    renderMunChart() {
+                        const ctx = document.getElementById('cmMunChart');
+                        if (!ctx) return;
+                        if (this.cmMunChart) this.cmMunChart.destroy();
+                        const labels = this.cmMunicipality.map(m => m.municipality);
+                        const yields = this.cmMunicipality.map(m => m.expected_yield);
+                        const areas  = this.cmMunicipality.map(m => m.total_area);
+                        this.cmMunChart = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: labels,
+                                datasets: [
+                                    { label: 'Expected Yield (MT)', data: yields, backgroundColor: 'rgba(34,197,94,0.8)', borderRadius: 3 },
+                                    { label: 'Total Area (ha)',    data: areas,  backgroundColor: 'rgba(59,130,246,0.6)', borderRadius: 3 }
+                                ]
+                            },
+                            options: {
+                                indexAxis: 'y',
+                                responsive: true, maintainAspectRatio: false,
+                                plugins: { legend: { position: 'top' } },
+                                scales: { x: { beginAtZero: true }, y: { grid: { display: false } } }
+                            }
+                        });
+                    }
+                }" x-init="init()">
+
+                    <!-- Header -->
+                    <div class="mb-6 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">Farmer Crop Production Dashboard</h2>
+                            <p class="text-sm text-gray-500">Real-time crop input data from registered farmers</p>
+                        </div>
+                        <button @click="load()" :disabled="cmLoading" class="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-60">
+                            <svg class="w-4 h-4" :class="cmLoading ? 'animate-spin' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
+                            <span x-text="cmLoading ? 'Loading...' : 'Refresh'"></span>
+                        </button>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div x-show="cmStats.total_records === 0 && !cmLoading" class="mb-6 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg px-4 py-3 text-sm flex items-center gap-2">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        No crop data found. Click <strong class="mx-1">Refresh</strong> to load data.
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white rounded-xl border border-gray-200 p-5 stat-card">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-sm text-gray-500 font-medium">Total Farmers</p>
+                                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                </div>
+                            </div>
+                            <p class="text-3xl font-bold text-gray-800" x-text="cmStats.total_farmers"></p>
+                            <p class="text-xs text-blue-600 mt-1">Active Farmers</p>
+                        </div>
+                        <div class="bg-white rounded-xl border border-gray-200 p-5 stat-card">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-sm text-gray-500 font-medium">Total Crop Records</p>
+                                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                </div>
+                            </div>
+                            <p class="text-3xl font-bold text-gray-800" x-text="cmStats.total_records"></p>
+                            <p class="text-xs text-green-600 mt-1">Planted crops</p>
+                        </div>
+                        <div class="bg-white rounded-xl border border-gray-200 p-5 stat-card">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-sm text-gray-500 font-medium">Total Area</p>
+                                <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+                                </div>
+                            </div>
+                            <p class="text-3xl font-bold text-gray-800" x-text="cmStats.total_area.toFixed(1)"></p>
+                            <p class="text-xs text-purple-600 mt-1">Hectares</p>
+                        </div>
+                        <div class="bg-white rounded-xl border border-gray-200 p-5 stat-card">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-sm text-gray-500 font-medium">Expected Yield</p>
+                                <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                                </div>
+                            </div>
+                            <p class="text-3xl font-bold text-gray-800" x-text="cmStats.expected_yield_mt.toFixed(1)"></p>
+                            <p class="text-xs text-yellow-600 mt-1">Metric Tons</p>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <!-- Crop Production by Type -->
+                        <div class="bg-white rounded-xl border border-gray-200 p-5">
+                            <h3 class="text-base font-semibold text-gray-800 mb-1">Crop Production by Type</h3>
+                            <p class="text-xs text-gray-500 mb-4">Distribution of crops planted by farmers</p>
+                            <div class="h-64">
+                                <canvas id="cmCropTypeChart"></canvas>
+                            </div>
+                        </div>
+                        <!-- Status Distribution -->
+                        <div class="bg-white rounded-xl border border-gray-200 p-5">
+                            <h3 class="text-base font-semibold text-gray-800 mb-1">Crop Status Distribution</h3>
+                            <p class="text-xs text-gray-500 mb-4">Current status of all planted crops</p>
+                            <div class="h-64">
+                                <canvas id="cmStatusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Municipality Chart -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+                        <h3 class="text-base font-semibold text-gray-800 mb-1">Production by Municipality</h3>
+                        <p class="text-xs text-gray-500 mb-4">Top producing municipalities by expected yield</p>
+                        <div class="h-72">
+                            <canvas id="cmMunChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Crop Records Table -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-5">
+                        <div class="mb-4">
+                            <div class="mb-4">
+                                <h3 class="text-base font-semibold text-gray-800">Detailed Crop Records</h3>
+                                <p class="text-xs text-gray-500">Complete list of all farmer crop inputs</p>
+                            </div>
+
+                            <!-- Filters Grid -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <!-- Search -->
+                                <div class="relative">
+                                    <input type="text" x-model="cmSearch" placeholder="Search farmer, crop..." class="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:ring-2 focus:ring-green-500">
+                                    <svg class="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                </div>
+
+                                <!-- Status Filter -->
+                                <select x-model="cmStatusFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 bg-white">
+                                    <option value="">All Status</option>
+                                    <option value="Growing">Growing</option>
+                                    <option value="Planted">Planted</option>
+                                    <option value="Harvested">Harvested</option>
+                                    <option value="Ready">Ready</option>
+                                    <option value="Failed">Failed</option>
+                                </select>
+
+                                <!-- Location Filter Dropdown -->
+                                <select x-model="cmLocationFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 bg-white">
+                                    <option value="">All Locations</option>
+                                    <template x-for="loc in cmLocationOptions" :key="loc">
+                                        <option :value="loc" x-text="loc"></option>
+                                    </template>
+                                </select>
+
+                                <!-- Harvest Month -->
+                                <select x-model="cmHarvestMonth" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 bg-white">
+                                    <option value="">All Harvest Months</option>
+                                    <option value="1">January</option>
+                                    <option value="2">February</option>
+                                    <option value="3">March</option>
+                                    <option value="4">April</option>
+                                    <option value="5">May</option>
+                                    <option value="6">June</option>
+                                    <option value="7">July</option>
+                                    <option value="8">August</option>
+                                    <option value="9">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Empty state -->
+                        <div x-show="cmRecords.length === 0 && !cmLoading" class="text-center py-16">
+                            <svg class="w-16 h-16 mx-auto text-gray-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/></svg>
+                            <p class="text-gray-400">No crop records yet. Click Refresh to load.</p>
+                        </div>
+
+                        <!-- Table -->
+                        <div x-show="cmRecords.length > 0" class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b border-gray-200">
+                                        <th class="text-left text-xs font-semibold text-gray-500 uppercase pb-3 pr-4">Farmer</th>
+                                        <th class="text-left text-xs font-semibold text-gray-500 uppercase pb-3 pr-4">Crop</th>
+                                        <th class="text-left text-xs font-semibold text-gray-500 uppercase pb-3 pr-4">Location</th>
+                                        <th class="text-right text-xs font-semibold text-gray-500 uppercase pb-3 pr-4">Area (ha)</th>
+                                        <th class="text-left text-xs font-semibold text-gray-500 uppercase pb-3 pr-4">Planting Date</th>
+                                        <th class="text-right text-xs font-semibold text-gray-500 uppercase pb-3 pr-4">Expected Yield (MT)</th>
+                                        <th class="text-center text-xs font-semibold text-gray-500 uppercase pb-3">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <template x-for="rec in filteredRecords" :key="rec.id">
+                                        <tr class="hover:bg-gray-50 transition">
+                                            <td class="py-3 pr-4">
+                                                <div class="font-medium text-gray-800" x-text="rec.farmer_name"></div>
+                                                <div class="text-xs text-gray-400" x-text="'ID: ' + rec.farmer_role"></div>
+                                            </td>
+                                            <td class="py-3 pr-4">
+                                                <div class="font-medium text-gray-700" x-text="rec.crop_type"></div>
+                                                <div class="text-xs text-gray-400" x-text="rec.variety"></div>
+                                            </td>
+                                            <td class="py-3 pr-4">
+                                                <div class="text-gray-700" x-text="rec.municipality || '—'"></div>
+                                            </td>
+                                            <td class="py-3 pr-4 text-right font-medium text-gray-700" x-text="rec.area_planted"></td>
+                                            <td class="py-3 pr-4 text-gray-600" x-text="rec.planting_date || '—'"></td>
+                                            <td class="py-3 pr-4 text-right">
+                                                <span class="font-semibold text-green-700" x-text="rec.expected_yield_mt.toFixed(2)"></span>
+                                            </td>
+                                            <td class="py-3 text-center">
+                                                <span :class="statusColor(rec.status)" class="px-2 py-1 text-xs font-semibold rounded-full" x-text="rec.status"></span>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                            <!-- Filtered count -->
+                            <div class="mt-4 text-xs text-gray-500 flex items-center justify-between">
+                                <div x-text="'Showing ' + filteredRecords.length + ' of ' + cmRecords.length + ' records'"></div>
+                                <div x-show="cmSearch || cmStatusFilter || cmLocationFilter || cmHarvestMonth" class="flex items-center gap-2 flex-wrap justify-end">
+                                    <span class="text-xs text-gray-400">Active filters:</span>
+                                    <template x-if="cmSearch">
+                                        <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs">
+                                            <span x-text="'Search: ' + cmSearch"></span>
+                                            <button @click="cmSearch = ''" class="hover:text-red-600">✕</button>
+                                        </span>
+                                    </template>
+                                    <template x-if="cmStatusFilter">
+                                        <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs">
+                                            <span x-text="'Status: ' + cmStatusFilter"></span>
+                                            <button @click="cmStatusFilter = ''" class="hover:text-red-600">✕</button>
+                                        </span>
+                                    </template>
+                                    <template x-if="cmLocationFilter">
+                                        <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs">
+                                            <span x-text="'Location: ' + cmLocationFilter"></span>
+                                            <button @click="cmLocationFilter = ''" class="hover:text-red-600">✕</button>
+                                        </span>
+                                    </template>
+                                    <template x-if="cmHarvestMonth">
+                                        <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs">
+                                            <span x-text="'Harvest Month: ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][cmHarvestMonth-1]"></span>
+                                            <button @click="cmHarvestMonth = ''" class="hover:text-red-600">✕</button>
+                                        </span>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </main>
         </div>
     </div>
@@ -1553,6 +1942,10 @@
                     seasonalAdjustment: []
                 },
 
+                loadCropMonitoring() {
+                    window.dispatchEvent(new CustomEvent('load-crop-monitoring'));
+                },
+
                 async init() {
                     console.log('===== DA OFFICER DASHBOARD INITIALIZING =====');
                     console.log('Current URL:', window.location.href);
@@ -1560,14 +1953,20 @@
                     
                     // Handle URL hash for navigation
                     const hash = window.location.hash.substring(1); // Remove the # symbol
-                    if (hash && ['dashboard', 'market-prices', 'announcements', 'inbox'].includes(hash)) {
+                    if (hash && ['dashboard', 'market-prices', 'announcements', 'inbox', 'crop-monitoring'].includes(hash)) {
                         this.currentSection = hash;
                         console.log('Navigating to section from URL hash:', hash);
+                        if (hash === 'crop-monitoring') {
+                            this.$nextTick(() => window.dispatchEvent(new CustomEvent('load-crop-monitoring')));
+                        }
                     }
                     
                     // Keep URL hash in sync with active section
                     this.$watch('currentSection', value => {
                         window.location.hash = value;
+                        if (value === 'crop-monitoring') {
+                            this.$nextTick(() => window.dispatchEvent(new CustomEvent('load-crop-monitoring')));
+                        }
                     });
                     
                     await this.loadDashboardData();

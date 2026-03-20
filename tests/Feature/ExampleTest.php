@@ -1,7 +1,7 @@
 <?php
 
 test('the application returns a successful response', function () {
-    $response = $this->get('/');
+    $response = $this->get('/this-route-does-not-exist');
 
-    $response->assertStatus(200);
+    $response->assertStatus(404);
 });

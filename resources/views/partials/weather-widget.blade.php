@@ -90,7 +90,7 @@ function weatherWidget() {
         
         async fetchWeatherData() {
             try {
-                const response = await fetch('/api/pagasa/widget', {
+                const response = await fetch('{{ url('/api/pagasa/widget') }}', {
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                     }

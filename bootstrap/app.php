@@ -16,9 +16,6 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->validateCsrfTokens(except: [
-            'admin/api/import',
-            'admin/api/datasets/*',
-            'api/planting/*',
             'api/translate',
             'api/translate/batch',
             'api/translate/detect',
