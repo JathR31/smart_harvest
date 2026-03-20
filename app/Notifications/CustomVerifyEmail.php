@@ -13,8 +13,10 @@ class CustomVerifyEmail extends BaseVerifyEmail
     public function toMail($notifiable): MailMessage
     {
         $verificationUrl = $this->verificationUrl($notifiable);
+        $fromAddress = config('mail.from.address') ?: 'no-reply@smartharvest.app';
 
         return (new MailMessage)
+            ->from($fromAddress, 'SmartHarvest')
             ->subject('Verify Your SmartHarvest Account')
             ->greeting('Welcome to SmartHarvest!')
             ->line('Thank you for registering with SmartHarvest - Optimize Your Planting with Data.')

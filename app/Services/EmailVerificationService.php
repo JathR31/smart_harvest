@@ -64,7 +64,9 @@ class EmailVerificationService
                 'verificationUrl' => $verificationUrl,
                 'expiresIn' => '60 minutes'
             ], function ($message) use ($user) {
+                $fromAddress = config('mail.from.address') ?: 'no-reply@smartharvest.app';
                 $message->to($user->email, $user->name)
+                    ->from($fromAddress, 'SmartHarvest')
                     ->subject('Verify Your SmartHarvest Account');
             });
             
@@ -112,7 +114,9 @@ class EmailVerificationService
                 'otpCode' => $otpCode,
                 'expiresIn' => '10 minutes'
             ], function ($message) use ($user) {
+                $fromAddress = config('mail.from.address') ?: 'no-reply@smartharvest.app';
                 $message->to($user->email, $user->name)
+                    ->from($fromAddress, 'SmartHarvest')
                     ->subject('SmartHarvest - Your Verification Code');
             });
             

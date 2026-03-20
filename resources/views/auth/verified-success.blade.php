@@ -31,7 +31,7 @@
             </button>
             
             <p class="text-xs text-gray-500 mt-6">
-                SmartHarvest Provincial Rice Monitoring System
+                SmartHarvest
             </p>
         </div>
     </div>

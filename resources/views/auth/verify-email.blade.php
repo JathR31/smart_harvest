@@ -81,7 +81,7 @@
 
         <div class="mt-6 text-center">
             <p class="text-xs text-gray-400">
-                SmartHarvest Provincial Rice Monitoring System
+                SmartHarvest
             </p>
         </div>
     </div>
