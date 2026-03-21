@@ -1,9 +1,9 @@
 # SmartHarvest Data Sync Script for Windows
-# Syncs local database changes to production (Laravel Cloud/Render)
+# Syncs local database changes to production (Laravel Cloud)
 # Usage: .\sync-production.ps1
 
 Write-Host "==========================================" -ForegroundColor Cyan
-Write-Host "SmartHarvest Data Sync Tool" -ForegroundColor Cyan
+Write-Host "SmartHarvest Data Sync Tool (Laravel Cloud)" -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -30,7 +30,7 @@ function Export-LocalDatabase {
 # Function to sync to production
 function Sync-ToProduction {
     Write-Host ""
-    Write-Host "📤 Syncing LOCAL → PRODUCTION" -ForegroundColor Yellow
+    Write-Host "📤 Syncing LOCAL → PRODUCTION (Laravel Cloud)" -ForegroundColor Yellow
     Write-Host ""
     
     # Step 1: Export local database
@@ -60,14 +60,15 @@ function Sync-ToProduction {
     Write-Host ""
     Write-Host "✅ Git push complete!" -ForegroundColor Green
     Write-Host ""
-    Write-Host "Next steps - YOUR CI/CD PIPELINE WILL AUTOMATICALLY:" -ForegroundColor Cyan
-    Write-Host "  1. Pull latest code from GitHub"
-    Write-Host "  2. Run migrations: php artisan migrate --force"
-    Write-Host "  3. Run seeder: php artisan db:seed --class=MigrateProductionDataSeeder --force"
+    Write-Host "Next steps - LARAVEL CLOUD WILL AUTOMATICALLY DEPLOY:" -ForegroundColor Cyan
+    Write-Host "  1. Detect your push on GitHub"
+    Write-Host "  2. Build and deploy your application"
+    Write-Host "  3. Run migrations: php artisan migrate --force"
+    Write-Host "  4. Run seeder: php artisan db:seed --class=MigrateProductionDataSeeder --force"
     Write-Host ""
     Write-Host "Monitor deployment at:" -ForegroundColor Yellow
-    Write-Host "  📊 Render Dashboard → smartharvest → Logs"
-    Write-Host "  🔗 https://dashboard.render.com"
+    Write-Host "  📊 Laravel Cloud Dashboard → Deployments"
+    Write-Host "  🔗 https://cloud.laravel.com"
     Write-Host "  📌 Or check GitHub Actions: https://github.com/JathR31/smart_harvest/actions"
     Write-Host ""
     Write-Host "⏱️  Deployment usually completes in 5-10 minutes" -ForegroundColor Cyan
@@ -76,12 +77,15 @@ function Sync-ToProduction {
 # Function to sync FROM production
 function Sync-FromProduction {
     Write-Host ""
-    Write-Host "📥 Syncing PRODUCTION → LOCAL" -ForegroundColor Yellow
+    Write-Host "📥 Syncing PRODUCTION → LOCAL (from Laravel Cloud)" -ForegroundColor Yellow
     Write-Host ""
     
     # Get production credentials
-    Write-Host "Enter your Render database credentials:" -ForegroundColor Cyan
-    $dbHost = Read-Host "  DB Host (dpg-xxx.render.com)"
+    Write-Host "Enter your Laravel Cloud database credentials:" -ForegroundColor Cyan
+    Write-Host "  (Find these in Laravel Cloud Dashboard → Database)" -ForegroundColor Gray
+    Write-Host ""
+    
+    $dbHost = Read-Host "  DB Host"
     $dbUser = Read-Host "  DB User"
     $dbName = Read-Host "  DB Name"
     

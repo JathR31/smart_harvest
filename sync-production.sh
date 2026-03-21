@@ -29,14 +29,15 @@ if [ "$direction" = "local->prod" ]; then
     git push origin main
     
     echo "4. Deploying to production..."
-    echo "   ⚠️  Your CI/CD pipeline (GitHub Actions) will automatically:"
-    echo "   - Pull latest code"
+    echo "   ⚠️  Your CI/CD pipeline (GitHub Actions + Laravel Cloud) will automatically:"
+    echo "   - Detect your push on GitHub"
+    echo "   - Build and deploy your application"
     echo "   - Run migrations: php artisan migrate --force"
     echo "   - Run seeder: php artisan db:seed --class=MigrateProductionDataSeeder --force"
     echo ""
     echo "   Check your deployment logs at:"
-    echo "   - Render Dashboard → smartharvest → Logs"
-    echo "   - Or GitHub Actions → smart_harvest repo → Actions tab"
+    echo "   - Laravel Cloud Dashboard → Deployments"
+    echo "   - Or GitHub Actions: https://github.com/JathR31/smart_harvest/actions"
     echo ""
     
 elif [ "$direction" = "prod->local" ]; then
@@ -44,12 +45,12 @@ elif [ "$direction" = "prod->local" ]; then
     echo "📥 Syncing PRODUCTION data → LOCAL"
     echo ""
     echo "Steps:"
-    echo "1. Get production database credentials"
-    read -p "Enter Render DB Host (dpg-xxx.render.com): " db_host
-    read -p "Enter Render DB User: " db_user
-    read -sp "Enter Render DB Password: " db_pass
+    echo "1. Get production database credentials (from Laravel Cloud Dashboard)"
+    read -p "Enter Laravel Cloud DB Host: " db_host
+    read -p "Enter Laravel Cloud DB User: " db_user
+    read -sp "Enter Laravel Cloud DB Password: " db_pass
     echo ""
-    read -p "Enter Render DB Name: " db_name
+    read -p "Enter Laravel Cloud DB Name: " db_name
     
     echo "2. Exporting production database..."
     mysqldump -h $db_host -u $db_user -p"$db_pass" $db_name > backup_prod_$(date +%Y%m%d_%H%M%S).sql

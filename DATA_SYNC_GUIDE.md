@@ -2,7 +2,7 @@
 
 ## 🎯 Overview
 
-This guide shows you how to synchronize data between your **local development environment (XAMPP)** and **production (Laravel Cloud/Render)**.
+This guide shows you how to synchronize data between your **local development environment (XAMPP)** and **production (Laravel Cloud)**.
 
 ---
 
@@ -80,8 +80,9 @@ git push origin main
 When your code is pushed:
 
 1. **GitHub Actions** automatically triggers
-2. **Render CI/CD pipeline:**
-   - Pulls latest code
+2. **Laravel Cloud CI/CD pipeline:**
+   - Detects your push on the main branch
+   - Builds and deploys your application
    - Runs: `php artisan migrate --force`
    - Runs: `php artisan db:seed --class=MigrateProductionDataSeeder --force`
 3. **Result:** All new/updated data appears in production
@@ -113,25 +114,26 @@ The script will:
 
 ### Get Production Credentials
 
-From **Render Dashboard:**
+From **Laravel Cloud Dashboard:**
 
-1. Go: https://dashboard.render.com
-2. Click **smartharvest** → **Info**
-3. Under "Connections" find:
+1. Go: https://cloud.laravel.com
+2. Click your **smart_harvest** project
+3. Go to **Database** section
+4. Find your connection details:
    ```
-   DB_HOST=dpg-xxxxxxxx.render.com
-   DB_USER=smartharvest_user
-   DB_PASSWORD=xxxxxxxxxxxxx
+   DB_HOST=your-database-host.com
+   DB_USER=your_username
+   DB_PASSWORD=your_password
    DB_NAME=smartharvest
    ```
 
 ### Manual Method
 
 ```powershell
-# You'll need these from Render Dashboard:
-$dbHost = "dpg-xxxxxxxx.render.com"
-$dbUser = "smartharvest_user"
-$dbPass = "your_password_here"
+# You'll need these from Laravel Cloud Dashboard:
+$dbHost = "your-database-host.com"
+$dbUser = "your_username"
+$dbPass = "your_password"
 $dbName = "smartharvest"
 
 # Backup original local database first!
@@ -204,18 +206,20 @@ C:\xampp\mysql\bin\mysql.exe -u root -p smartharvest
 # Then enter password
 ```
 
-### Problem: Render deployment failed
+### Problem: Laravel Cloud deployment failed
 
 **Check logs:**
-1. Go: https://dashboard.render.com
-2. Click **smartharvest** service
-3. Scroll to **Logs** tab
-4. Look for error messages
+1. Go: https://cloud.laravel.com
+2. Click your **smart_harvest** project
+3. Go to **Deployments** tab
+4. Click the failed deployment
+5. Look for error messages in the logs
 
 **Common issues:**
-- Missing environment variables (check `.env` on Render)
+- Missing environment variables (check `.env` in Laravel Cloud dashboard)
 - Database connection timeout (check credentials)
-- Migration errors (look at migration files)
+- Migration errors (check migration files)
+- Application key not set (run `php artisan key:generate --show`)
 
 ### Problem: Seeder says "Table not found"
 
