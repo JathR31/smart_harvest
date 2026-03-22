@@ -10,6 +10,10 @@ Route::match(['GET', 'HEAD'], '/', function () {
     return view('homepage'); 
 })->name('homepage');
 
+// Email Testing Routes (for debugging)
+Route::get('/api/test-email', [\App\Http\Controllers\EmailTestController::class, 'testEmail'])->name('test.email');
+Route::get('/api/test-verification-email', [\App\Http\Controllers\EmailTestController::class, 'testVerificationEmail'])->name('test.verification.email');
+
 // You would also have routes for login, admin, and register (Get Started)
 Route::get('/login', function () {
     // If already authenticated, redirect to appropriate dashboard
