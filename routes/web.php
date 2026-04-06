@@ -10,14 +10,16 @@ Route::match(['GET', 'HEAD'], '/', function () {
     return view('homepage'); 
 })->name('homepage');
 
-// Email Testing Routes (for debugging)
-Route::get('/api/test-email', [\App\Http\Controllers\EmailTestController::class, 'testEmail'])->name('test.email');
-Route::get('/api/test-verification-email', [\App\Http\Controllers\EmailTestController::class, 'testVerificationEmail'])->name('test.verification.email');
+if (app()->environment(['local', 'testing'])) {
+    // Email Testing Routes (for debugging)
+    Route::get('/api/test-email', [\App\Http\Controllers\EmailTestController::class, 'testEmail'])->name('test.email');
+    Route::get('/api/test-verification-email', [\App\Http\Controllers\EmailTestController::class, 'testVerificationEmail'])->name('test.verification.email');
 
-// Account Recovery Routes (for troubleshooting login issues)
-Route::get('/api/list-users', [\App\Http\Controllers\AccountRecoveryController::class, 'listUsers'])->name('list.users');
-Route::get('/api/reset-password', [\App\Http\Controllers\AccountRecoveryController::class, 'resetUserPassword'])->name('reset.password');
-Route::get('/api/create-test-user', [\App\Http\Controllers\AccountRecoveryController::class, 'createTestUser'])->name('create.test.user');
+    // Account Recovery Routes (for troubleshooting login issues)
+    Route::get('/api/list-users', [\App\Http\Controllers\AccountRecoveryController::class, 'listUsers'])->name('list.users');
+    Route::get('/api/reset-password', [\App\Http\Controllers\AccountRecoveryController::class, 'resetUserPassword'])->name('reset.password');
+    Route::get('/api/create-test-user', [\App\Http\Controllers\AccountRecoveryController::class, 'createTestUser'])->name('create.test.user');
+}
 
 // You would also have routes for login, admin, and register (Get Started)
 Route::get('/login', function () {

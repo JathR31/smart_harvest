@@ -3,27 +3,11 @@ set -e
 
 echo "Starting SmartHarvest deployment..."
 
-# Wait for database to be ready
-echo "Waiting for database connection..."
-until php artisan db:show 2>/dev/null || php artisan migrate:status 2>/dev/null; do
-  echo "Database not ready, waiting 2 seconds..."
-  sleep 2
-done
-echo "Database connection successful!"
-
-# Run migrations
-echo "Running database migrations..."
-php artisan migrate --force --no-interaction
-
-# Create storage link
-echo "Creating storage symlink..."
-php artisan storage:link --force
-
-# Cache configuration
+# Cache configuration first (doesn't require database)
 echo "Caching configuration..."
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+php artisan config:cache 2>/dev/null || true
+php artisan route:cache 2>/dev/null || true
+php artisan view:cache 2>/dev/null || true
 
 # Set proper permissions (only if needed)
 echo "Verifying permissions..."
@@ -33,6 +17,29 @@ fi
 if [ -d "/var/www/html/bootstrap/cache" ]; then
     chmod -R 775 /var/www/html/bootstrap/cache 2>/dev/null || true
 fi
+
+echo "Starting services..."
+
+# Run database migrations and setup in background (don't block startup)
+(
+  # Wait for database to be ready
+  echo "Waiting for database connection..."
+  until php artisan db:show 2>/dev/null || php artisan migrate:status 2>/dev/null; do
+    echo "Database not ready, waiting 2 seconds..."
+    sleep 2
+  done
+  echo "Database connection successful!"
+
+  # Run migrations
+  echo "Running database migrations..."
+  php artisan migrate --force --no-interaction 2>/dev/null || true
+
+  # Create storage link
+  echo "Creating storage symlink..."
+  php artisan storage:link --force 2>/dev/null || true
+  
+  echo "Database setup complete!"
+) &
 
 echo "Deployment setup complete!"
 

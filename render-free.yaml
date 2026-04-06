@@ -11,8 +11,11 @@ services:
     plan: free  # FREE TIER - Spins down after 15min inactivity
     region: singapore
     
-    # Health check endpoint
-    healthCheckPath: /
+    # Health check endpoint with proper timeouts
+    healthCheckPath: /up
+    healthCheckTimeout: 30  # Increased timeout for startup
+    healthCheckInitialDelay: 10  # Wait 10s before first check
+    healthCheckInterval: 10  # Check every 10s
     
     envVars:
       # Application
@@ -26,6 +29,8 @@ services:
         sync: false
       - key: APP_KEY
         sync: false
+      - key: FORCE_HTTPS
+        value: true
       
       # Database - PostgreSQL (Free Tier)
       - key: DB_CONNECTION
@@ -44,7 +49,9 @@ services:
       # Session/Cache/Queue (use database)
       - key: SESSION_DRIVER
         value: database
-      - key: CACHE_DRIVER
+      - key: SESSION_SECURE_COOKIE
+        value: true
+      - key: CACHE_STORE
         value: database
       - key: QUEUE_CONNECTION
         value: database

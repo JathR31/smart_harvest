@@ -12,6 +12,27 @@ This guide will help you migrate all your local XAMPP data to your Laravel Cloud
 ✅ Laravel Cloud credentials (you already have these)  
 ✅ Git repository set up  
 
+> ⚠️ Never commit raw production DB host/user/password to this repository. Use environment variables or local-only files.
+
+### Set Cloud DB Credentials (PowerShell session)
+
+```powershell
+$env:CLOUD_DB_HOST = "your-cloud-db-host"
+$env:CLOUD_DB_USER = "your-cloud-db-user"
+$env:CLOUD_DB_PASS = "your-cloud-db-password"
+$env:CLOUD_DB_NAME = "smartharvest"
+```
+
+### Use Local phpMyAdmin with Cloud DB (optional)
+
+Your deployed app cannot directly use your local phpMyAdmin unless your machine is publicly reachable.  
+But your local phpMyAdmin can connect to the cloud DB if your IP is whitelisted:
+
+- Server: `$env:CLOUD_DB_HOST`
+- Username: `$env:CLOUD_DB_USER`
+- Password: `$env:CLOUD_DB_PASS`
+- Port: `3306`
+
 ---
 
 ## Step 1: Find Your Public IP Address
@@ -66,9 +87,9 @@ Now test if your local machine can connect to Laravel Cloud database:
 
 ```powershell
 C:\xampp\mysql\bin\mysql.exe `
-  -h db-a1587856-038a-4a04-ad0c-2a84753adb9b.ap-southeast-1.public.db.laravel.cloud `
-  -u uneugpobxruqa95g `
-  -p"cQrOnGXpNT7arHKVy8mW" `
+  -h $env:CLOUD_DB_HOST `
+  -u $env:CLOUD_DB_USER `
+  -p"$env:CLOUD_DB_PASS" `
   -e "SELECT 1 AS test_connection;"
 ```
 
@@ -141,10 +162,10 @@ $backupFile = "backup_local_$timestamp.sql"
 
 # Read the backup and import to cloud
 Get-Content $backupFile | C:\xampp\mysql\bin\mysql.exe `
-  -h db-a1587856-038a-4a04-ad0c-2a84753adb9b.ap-southeast-1.public.db.laravel.cloud `
-  -u uneugpobxruqa95g `
-  -p"cQrOnGXpNT7arHKVy8mW" `
-  smartharvest
+  -h $env:CLOUD_DB_HOST `
+  -u $env:CLOUD_DB_USER `
+  -p"$env:CLOUD_DB_PASS" `
+  $env:CLOUD_DB_NAME
 ```
 
 **Expected:** No errors shown = successful import ✅
@@ -153,10 +174,10 @@ Get-Content $backupFile | C:\xampp\mysql\bin\mysql.exe `
 
 ```powershell
 C:\xampp\mysql\bin\mysql.exe `
-  -h db-a1587856-038a-4a04-ad0c-2a84753adb9b.ap-southeast-1.public.db.laravel.cloud `
-  -u uneugpobxruqa95g `
-  -p"cQrOnGXpNT7arHKVy8mW" `
-  smartharvest `
+  -h $env:CLOUD_DB_HOST `
+  -u $env:CLOUD_DB_USER `
+  -p"$env:CLOUD_DB_PASS" `
+  $env:CLOUD_DB_NAME `
   -e "SELECT COUNT(*) AS user_count FROM users;"
 ```
 
@@ -270,7 +291,7 @@ Once deployment is complete:
 
 **Test Cloud connection:**
 ```powershell
-C:\xampp\mysql\bin\mysql.exe -h db-a1587856-038a-4a04-ad0c-2a84753adb9b.ap-southeast-1.public.db.laravel.cloud -u uneugpobxruqa95g -p"cQrOnGXpNT7arHKVy8mW" -e "SELECT 1;"
+C:\xampp\mysql\bin\mysql.exe -h $env:CLOUD_DB_HOST -u $env:CLOUD_DB_USER -p"$env:CLOUD_DB_PASS" -e "SELECT 1;"
 ```
 
 **Export local database:**
@@ -280,7 +301,7 @@ C:\xampp\mysql\bin\mysqldump.exe -u root smartharvest > local_backup.sql
 
 **Import to Cloud:**
 ```powershell
-Get-Content local_backup.sql | C:\xampp\mysql\bin\mysql.exe -h db-a1587856-038a-4a04-ad0c-2a84753adb9b.ap-southeast-1.public.db.laravel.cloud -u uneugpobxruqa95g -p"cQrOnGXpNT7arHKVy8mW" smartharvest
+Get-Content local_backup.sql | C:\xampp\mysql\bin\mysql.exe -h $env:CLOUD_DB_HOST -u $env:CLOUD_DB_USER -p"$env:CLOUD_DB_PASS" $env:CLOUD_DB_NAME
 ```
 
 **Commit and push:**

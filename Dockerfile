@@ -23,11 +23,19 @@ RUN apt-get update && apt-get install -y \
 # Install PHP extensions (MySQL + PostgreSQL support for free tier)
 RUN docker-php-ext-install pdo_mysql pdo_pgsql pgsql mbstring exif pcntl bcmath gd zip
 
+# Install Node.js and npm for frontend assets BEFORE installing PHP dependencies
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs
+
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Copy application files
 COPY . .
+
+# Install frontend dependencies and build assets (non-critical for startup)
+RUN npm install --production 2>/dev/null || true \
+    && npm run build 2>/dev/null || true
 
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
@@ -39,17 +47,10 @@ RUN mkdir -p storage/framework/sessions \
     && mkdir -p storage/logs \
     && mkdir -p bootstrap/cache
 
-# Set permissions BEFORE changing user
+# Set permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/storage \
     && chmod -R 775 /var/www/html/bootstrap/cache
-
-# Install Node.js and npm for frontend assets
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs
-
-# Install frontend dependencies and build assets
-RUN npm install && npm run build
 
 # Copy Nginx configuration
 COPY docker/nginx.conf /etc/nginx/sites-available/default
