@@ -6,7 +6,8 @@ echo "Starting SmartHarvest deployment..."
 # Cache configuration first (doesn't require database)
 echo "Caching configuration..."
 php artisan config:cache 2>/dev/null || true
-php artisan route:cache 2>/dev/null || true
+# Note: Route caching can cause issues, disabled for stability
+# Routes are optimized by PHP opcoding naturally
 php artisan view:cache 2>/dev/null || true
 
 # Set proper permissions (only if needed)
