@@ -30,6 +30,8 @@ class User extends Authenticatable
         'email',
         'username',
         'password',
+        'email_verified_at',
+        'password_set_at',
         'role',
         'is_superadmin',
         'admin_type',

@@ -3903,36 +3903,56 @@ Route::post('/register', function (Request $request) {
     ]);
 
     try {
-        // Create user array
+        \Log::info('Registration attempt', ['email' => $validated['email']]);
+        
+        // Create minimal user data - only required fields
         $userData = [
             'name' => $validated['full_name'],
             'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'location' => $validated['municipality'],
-            'role' => 'Farmer',
-            'status' => 'active',
-            'email_verified_at' => now(), // Auto-verified on registration
-            'password_set_at' => now(), // Password is set during registration
+            'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
         ];
+        
+        // Add optional fields only if they're safe
+        $userData['location'] = $validated['municipality'];
+        $userData['role'] = 'Farmer';
+        $userData['status'] = 'active';
+        $userData['email_verified_at'] = now();
+        $userData['password_set_at'] = now();
         
         // Add phone if provided
         if (!empty($validated['phone_number'])) {
             $userData['phone_number'] = '+63' . $validated['phone_number'];
         }
         
+        \Log::info('Creating user with data', array_keys($userData));
+        
         // Create the user
         $user = \App\Models\User::create($userData);
         
+        \Log::info('User created successfully', ['id' => $user->id, 'email' => $user->email]);
+        
         // Auto login
-        Auth::login($user);
+        \Illuminate\Support\Facades\Auth::login($user);
         $request->session()->regenerate();
 
         // Redirect to dashboard
         return redirect()->route('dashboard')
             ->with('message', 'Account created successfully! Welcome to SmartHarvest.');
+    } catch (\Illuminate\Database\QueryException $dbError) {
+        \Log::error('Database error during registration', [
+            'error' => $dbError->getMessage(),
+            'sql' => $dbError->getSql() ?? 'N/A',
+            'trace' => $dbError->getTraceAsString()
+        ]);
+        return back()->withInput()->withErrors(['error' => 'Database error: ' . $dbError->getMessage()]);
     } catch (\Exception $e) {
-        \Log::error('Registration error: ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
-        return back()->withInput()->withErrors(['error' => 'Registration failed. Please try again.']);
+        \Log::error('Registration error', [
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        return back()->withInput()->withErrors(['error' => 'Registration failed: ' . $e->getMessage()]);
     }
 })->name('register.attempt');
 
