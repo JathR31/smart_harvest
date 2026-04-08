@@ -3903,90 +3903,42 @@ Route::get('/register', function () {
 
 // POST handler for user registration
 Route::post('/register', function (Request $request) {
-    // Verify reCAPTCHA token
-    if ($request->filled('recaptcha_token')) {
-        $recaptchaSecret = config('services.recaptcha.secret_key');
-        try {
-            $response = Http::post('https://www.google.com/recaptcha/api/siteverify', [
-                'secret' => $recaptchaSecret,
-                'response' => $request->input('recaptcha_token'),
-            ]);
-            
-            $result = $response->json();
-            
-            // Check if reCAPTCHA validation failed or score is too low (< 0.5)
-            if (!$result['success'] || ($result['score'] ?? 0) < 0.5) {
-                return back()->withErrors(['recaptcha' => 'reCAPTCHA validation failed. Please try again.'])->withInput();
-            }
-        } catch (\Exception $e) {
-            return back()->withErrors(['recaptcha' => 'Error validating reCAPTCHA. Please try again.'])->withInput();
-        }
-    }
-    
-    // First validate common fields
-    $validationRules = [
+    // Simple validation for form
+    $validated = $request->validate([
         'full_name' => 'required|string|max:255',
+        'email' => 'required|email|unique:users,email|max:255',
+        'password' => 'required|string|min:8|confirmed',
         'municipality' => 'required|string',
         'phone_number' => 'nullable|string|regex:/^[9][0-9]{9}$/',
-        'verification_method' => 'required|in:email,sms',
-    ];
-    
-    // Make email required only for email verification, optional for SMS
-    if ($request->verification_method === 'email') {
-        $validationRules['email'] = 'required|email|unique:users,email|max:255';
-    } else {
-        $validationRules['email'] = 'nullable|email|unique:users,email|max:255';
-    }
-    
-    $validated = $request->validate($validationRules);
+        'terms' => 'required|accepted',
+    ]);
 
-    // If SMS verification is chosen, phone number is required
-    if ($validated['verification_method'] === 'sms') {
-        if (empty($validated['phone_number'])) {
-            return back()->withErrors(['phone_number' => 'Phone number is required for SMS verification.'])->withInput();
-        }
-        
-        // Format phone number to +639XXXXXXXXX
-        $fullPhone = '+63' . $validated['phone_number'];
-        
-        // Check if phone number is already registered
-        $existingPhone = \App\Models\User::where('phone_number', $fullPhone)->first();
-        if ($existingPhone) {
-            return back()->withErrors(['phone_number' => 'This phone number is already registered.'])->withInput();
-        }
-        
-        // Generate placeholder email if not provided or if N/A
-        if (empty($validated['email']) || strtoupper($validated['email']) === 'N/A') {
-            $validated['email'] = 'sms_' . $validated['phone_number'] . '@smartharvest.local';
-        }
-    }
-
-    // Create user with temporary random password
+    // Create user array
     $userData = [
         'name' => $validated['full_name'],
         'email' => $validated['email'],
+        'password' => Hash::make($validated['password']),
         'location' => $validated['municipality'],
         'role' => 'Farmer',
         'status' => 'active',
-        'password' => Hash::make(\Illuminate\Support\Str::random(32)), // Temporary password
-        'verification_method' => $validated['verification_method'],
+        'email_verified_at' => now(), // Auto-verified on registration
     ];
     
-    // Add phone number if provided
+    // Add phone if provided
     if (!empty($validated['phone_number'])) {
         $userData['phone_number'] = '+63' . $validated['phone_number'];
     }
     
-    // Auto-verify email
-    $user->email_verified_at = now();
-    $user->save();
+    // Create the user
+    $user = \App\Models\User::create($userData);
     
+    // Auto login
     Auth::login($user);
     $request->session()->regenerate();
 
-    // Redirect to password setup
-    return redirect()->route('password.setup')
-        ->with('message', 'Account created successfully! Please set your password to continue.');
+    // Redirect to dashboard
+    return redirect()->route('dashboard')
+        ->with('message', 'Account created successfully! Welcome to SmartHarvest.');
 })->name('register.attempt');
 
 // OTP Verification Routes
