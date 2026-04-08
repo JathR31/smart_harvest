@@ -3922,6 +3922,7 @@ Route::post('/register', function (Request $request) {
         'role' => 'Farmer',
         'status' => 'active',
         'email_verified_at' => now(), // Auto-verified on registration
+        'password_set_at' => now(), // Password is set during registration
     ];
     
     // Add phone if provided
