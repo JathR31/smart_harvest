@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Socialite\Facades\Socialite;
 use Exception;
 
@@ -46,7 +47,7 @@ class GoogleAuthController extends Controller
                     $updateData = [];
                     
                     // Check if OAuth columns exist in schema
-                    if (\Schema::hasColumn('users', 'google_id')) {
+                    if (Schema::hasColumn('users', 'google_id')) {
                         $updateData['google_id'] = $googleUser->id;
                         $updateData['google_avatar'] = $googleUser->avatar;
                         $updateData['auth_method'] = 'google';
@@ -67,24 +68,24 @@ class GoogleAuthController extends Controller
                 ];
                 
                 // Add standard fields only if they exist
-                if (\Schema::hasColumn('users', 'role')) {
+                if (Schema::hasColumn('users', 'role')) {
                     $userData['role'] = 'Farmer';
                 }
-                if (\Schema::hasColumn('users', 'status')) {
+                if (Schema::hasColumn('users', 'status')) {
                     $userData['status'] = 'active';
                 }
-                if (\Schema::hasColumn('users', 'location')) {
+                if (Schema::hasColumn('users', 'location')) {
                     $userData['location'] = 'La Trinidad';
                 }
-                if (\Schema::hasColumn('users', 'email_verified_at')) {
+                if (Schema::hasColumn('users', 'email_verified_at')) {
                     $userData['email_verified_at'] = now();
                 }
-                if (\Schema::hasColumn('users', 'password_set_at')) {
+                if (Schema::hasColumn('users', 'password_set_at')) {
                     $userData['password_set_at'] = now();
                 }
                 
                 // Add OAuth fields only if they exist
-                if (\Schema::hasColumn('users', 'google_id')) {
+                if (Schema::hasColumn('users', 'google_id')) {
                     $userData['google_id'] = $googleUser->id;
                     $userData['google_avatar'] = $googleUser->avatar;
                     $userData['auth_method'] = 'google';
@@ -98,7 +99,7 @@ class GoogleAuthController extends Controller
 
             // Try to update last login
             try {
-                if (\Schema::hasColumn('users', 'last_login')) {
+                if (Schema::hasColumn('users', 'last_login')) {
                     $user->update(['last_login' => now()]);
                 }
             } catch (\Exception $e) {
