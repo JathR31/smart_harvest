@@ -63,24 +63,6 @@ Route::post('/login', function (Request $request) {
 
     if (Auth::attempt($credentials, $remember)) {
         $user = Auth::user();
-        
-        // Check if user is verified based on their verification method
-        if ($user->verification_method === 'sms') {
-            if (!$user->hasVerifiedPhone()) {
-                Auth::logout();
-                return back()->withErrors([
-                    'email' => 'Please verify your phone number before logging in.'
-                ])->withInput();
-            }
-        } else {
-            if (!$user->hasVerifiedEmail()) {
-                Auth::logout();
-                return back()->withErrors([
-                    'email' => 'Please verify your email address before logging in. Check your inbox for the verification link.'
-                ])->withInput();
-            }
-        }
-        
         $request->session()->regenerate();
         
         // Update last login timestamp
@@ -191,7 +173,7 @@ Route::get('/setup-password', function () {
         return redirect()->route(Auth::user()->role === 'Admin' ? 'admin.dashboard' : 'dashboard');
     }
     return view('auth.setup-password');
-})->middleware(['auth', 'verified'])->name('password.setup');
+})->middleware('auth')->name('password.setup');
 
 Route::post('/setup-password', function (Request $request) {
     $validated = $request->validate([
@@ -205,7 +187,7 @@ Route::post('/setup-password', function (Request $request) {
     
     return redirect()->route($user->role === 'Admin' ? 'admin.dashboard' : 'dashboard')
         ->with('message', 'Password set successfully! Welcome to SmartHarvest.');
-})->middleware(['auth', 'verified'])->name('password.setup.store');
+})->middleware('auth')->name('password.setup.store');
 
 // =============================================================================
 // FORGOT PASSWORD ROUTES (Email Code Verification)
@@ -3995,42 +3977,16 @@ Route::post('/register', function (Request $request) {
         $userData['phone_number'] = '+63' . $validated['phone_number'];
     }
     
-    $user = \App\Models\User::create($userData);
+    // Auto-verify email
+    $user->email_verified_at = now();
+    $user->save();
     
     Auth::login($user);
     $request->session()->regenerate();
 
-    // Send verification based on chosen method
-    if ($validated['verification_method'] === 'sms') {
-        // Generate and send OTP
-        $otpCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        $user->otp_code = $otpCode;
-        $user->otp_expires_at = now()->addMinutes(10);
-        $user->otp_attempts = 0;
-        $user->save();
-        
-        $smsService = new \App\Services\SMSService();
-        $result = $smsService->sendOTP($user->phone_number, $otpCode);
-        
-        if ($result['success']) {
-            return redirect()->route('otp.verify.show')
-                ->with('message', $result['message']);
-        } else {
-            // Fallback to email if SMS fails
-            $user->verification_method = 'email';
-            $user->save();
-            $user->sendEmailVerificationNotification();
-            
-            return redirect()->route('verification.notice')
-                ->with('error', 'SMS service unavailable. We sent an email verification instead.');
-        }
-    } else {
-        // Send email verification notification
-        $user->sendEmailVerificationNotification();
-        
-        return redirect()->route('verification.notice')
-            ->with('message', 'Please check your email to verify your account. You will set your password after verification.');
-    }
+    // Redirect to password setup
+    return redirect()->route('password.setup')
+        ->with('message', 'Account created successfully! Please set your password to continue.');
 })->name('register.attempt');
 
 // OTP Verification Routes
