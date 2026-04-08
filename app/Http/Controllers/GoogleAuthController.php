@@ -72,7 +72,7 @@ class GoogleAuthController extends Controller
                     $userData['role'] = 'Farmer';
                 }
                 if (Schema::hasColumn('users', 'status')) {
-                    $userData['status'] = 'active';
+                    $userData['status'] = 'Active';
                 }
                 if (Schema::hasColumn('users', 'location')) {
                     $userData['location'] = 'La Trinidad';

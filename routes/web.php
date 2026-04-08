@@ -3915,7 +3915,7 @@ Route::post('/register', function (Request $request) {
         // Add optional fields only if they're safe
         $userData['location'] = $validated['municipality'];
         $userData['role'] = 'Farmer';
-        $userData['status'] = 'active';
+        $userData['status'] = 'Active';
         $userData['email_verified_at'] = now();
         $userData['password_set_at'] = now();
         
