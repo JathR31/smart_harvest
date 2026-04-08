@@ -3318,17 +3318,6 @@ Route::get('/dashboard', function (Illuminate\Http\Request $request) {
         return redirect()->route('admin.dashboard');
     }
     
-    // Check if email is verified (skip for admins viewing as farmer)
-    if (!$viewAsFarmer && !$user->hasVerifiedEmail()) {
-        return redirect()->route('verification.notice');
-    }
-    
-    // Check if password is set (skip for admins viewing as farmer)
-    if (!$viewAsFarmer && $user->password_set_at === null) {
-        return redirect()->route('password.setup')
-            ->with('message', 'Please set your password to continue.');
-    }
-    
     $userMunicipality = $user->location ?? 'La Trinidad';
     return view('dashboard', [
         'userMunicipality' => $userMunicipality,
