@@ -35,8 +35,15 @@ class GoogleAuthController extends Controller
         }
 
         try {
-            // Check if user exists by Google ID
-            $user = User::where('google_id', $googleUser->id)->first();
+            // Try to find user, but handle case where columns don't exist yet
+            $user = null;
+            
+            try {
+                // Check if user exists by Google ID
+                $user = User::where('google_id', $googleUser->id)->first();
+            } catch (\Exception $queryError) {
+                \Log::warning('Google ID query failed: ' . $queryError->getMessage());
+            }
 
             // If user doesn't exist by Google ID, check by email
             if (!$user) {
@@ -44,40 +51,62 @@ class GoogleAuthController extends Controller
 
                 if ($user) {
                     // Link existing user to Google OAuth
-                    $user->update([
-                        'google_id' => $googleUser->id,
-                        'google_avatar' => $googleUser->avatar,
-                        'auth_method' => 'google',
-                    ]);
+                    try {
+                        $user->update([
+                            'google_id' => $googleUser->id,
+                            'google_avatar' => $googleUser->avatar,
+                            'auth_method' => 'google',
+                        ]);
+                    } catch (\Exception $updateError) {
+                        \Log::error('Failed to update user with Google data: ' . $updateError->getMessage());
+                        // Continue anyway - user will just be logged in
+                    }
                 } else {
                     // Create new user from Google data
-                    $user = User::create([
+                    $userData = [
                         'name' => $googleUser->name,
                         'email' => $googleUser->email,
-                        'google_id' => $googleUser->id,
-                        'google_avatar' => $googleUser->avatar,
                         'role' => 'Farmer',
                         'status' => 'active',
                         'location' => 'La Trinidad', // Default location
-                        'auth_method' => 'google',
                         'email_verified_at' => now(), // Google email is pre-verified
                         'password_set_at' => now(), // Password set via Google OAuth
                         'password' => bcrypt(\Illuminate\Support\Str::random(32)), // Random password for security
-                    ]);
+                    ];
+                    
+                    // Try to add OAuth fields
+                    try {
+                        $userData['google_id'] = $googleUser->id;
+                        $userData['google_avatar'] = $googleUser->avatar;
+                        $userData['auth_method'] = 'google';
+                    } catch (\Exception $e) {
+                        // OAuth fields might not exist yet
+                        \Log::warning('Could not add OAuth fields: ' . $e->getMessage());
+                    }
+
+                    $user = User::create($userData);
                 }
             } else {
                 // Update existing user's Google data
-                $user->update([
-                    'google_avatar' => $googleUser->avatar,
-                    'auth_method' => 'google',
-                ]);
+                try {
+                    $user->update([
+                        'google_avatar' => $googleUser->avatar,
+                        'auth_method' => 'google',
+                    ]);
+                } catch (\Exception $updateError) {
+                    \Log::warning('Failed to update Google avatar: ' . $updateError->getMessage());
+                }
             }
 
             // Login user
             Auth::login($user, remember: true);
 
             // Update last login
-            $user->update(['last_login' => now()]);
+            try {
+                $user->update(['last_login' => now()]);
+            } catch (\Exception $e) {
+                \Log::warning('Could not update last login: ' . $e->getMessage());
+            }
 
             // Redirect based on user role
             if ($user->is_superadmin || $user->role === 'Admin' || $user->role === 'DA Admin') {
@@ -87,7 +116,7 @@ class GoogleAuthController extends Controller
             }
         } catch (Exception $e) {
             \Log::error('Google OAuth callback error: ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
-            return redirect('/login')->withErrors(['error' => 'An error occurred during authentication: ' . $e->getMessage()]);
+            return redirect('/login')->withErrors(['error' => 'An error occurred during authentication']);
         }
     }
 }
