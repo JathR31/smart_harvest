@@ -14,6 +14,11 @@ class GoogleAuthController extends Controller
      */
     public function redirect()
     {
+        // Check if Google OAuth is properly configured
+        if (!env('GOOGLE_CLIENT_ID') || !env('GOOGLE_CLIENT_SECRET') || !env('GOOGLE_REDIRECT_URI')) {
+            return redirect('/login')->withErrors(['error' => 'Google OAuth is not configured. Please use email registration instead.']);
+        }
+        
         return Socialite::driver('google')->redirect();
     }
 

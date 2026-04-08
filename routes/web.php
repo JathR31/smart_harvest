@@ -3902,33 +3902,38 @@ Route::post('/register', function (Request $request) {
         'terms' => 'required|accepted',
     ]);
 
-    // Create user array
-    $userData = [
-        'name' => $validated['full_name'],
-        'email' => $validated['email'],
-        'password' => Hash::make($validated['password']),
-        'location' => $validated['municipality'],
-        'role' => 'Farmer',
-        'status' => 'active',
-        'email_verified_at' => now(), // Auto-verified on registration
-        'password_set_at' => now(), // Password is set during registration
-    ];
-    
-    // Add phone if provided
-    if (!empty($validated['phone_number'])) {
-        $userData['phone_number'] = '+63' . $validated['phone_number'];
-    }
-    
-    // Create the user
-    $user = \App\Models\User::create($userData);
-    
-    // Auto login
-    Auth::login($user);
-    $request->session()->regenerate();
+    try {
+        // Create user array
+        $userData = [
+            'name' => $validated['full_name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'location' => $validated['municipality'],
+            'role' => 'Farmer',
+            'status' => 'active',
+            'email_verified_at' => now(), // Auto-verified on registration
+            'password_set_at' => now(), // Password is set during registration
+        ];
+        
+        // Add phone if provided
+        if (!empty($validated['phone_number'])) {
+            $userData['phone_number'] = '+63' . $validated['phone_number'];
+        }
+        
+        // Create the user
+        $user = \App\Models\User::create($userData);
+        
+        // Auto login
+        Auth::login($user);
+        $request->session()->regenerate();
 
-    // Redirect to dashboard
-    return redirect()->route('dashboard')
-        ->with('message', 'Account created successfully! Welcome to SmartHarvest.');
+        // Redirect to dashboard
+        return redirect()->route('dashboard')
+            ->with('message', 'Account created successfully! Welcome to SmartHarvest.');
+    } catch (\Exception $e) {
+        \Log::error('Registration error: ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
+        return back()->withInput()->withErrors(['error' => 'Registration failed. Please try again.']);
+    }
 })->name('register.attempt');
 
 // OTP Verification Routes
