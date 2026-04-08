@@ -25,57 +25,64 @@ class GoogleAuthController extends Controller
         try {
             $googleUser = Socialite::driver('google')->user();
         } catch (Exception $e) {
+            \Log::error('Google OAuth error: ' . $e->getMessage());
             return redirect('/login')->withErrors(['error' => 'Failed to authenticate with Google']);
         }
 
-        // Check if user exists by Google ID
-        $user = User::where('google_id', $googleUser->id)->first();
+        try {
+            // Check if user exists by Google ID
+            $user = User::where('google_id', $googleUser->id)->first();
 
-        // If user doesn't exist by Google ID, check by email
-        if (!$user) {
-            $user = User::where('email', $googleUser->email)->first();
+            // If user doesn't exist by Google ID, check by email
+            if (!$user) {
+                $user = User::where('email', $googleUser->email)->first();
 
-            if ($user) {
-                // Link existing user to Google OAuth
-                $user->update([
-                    'google_id' => $googleUser->id,
-                    'google_avatar' => $googleUser->avatar,
-                    'auth_method' => 'google',
-                ]);
+                if ($user) {
+                    // Link existing user to Google OAuth
+                    $user->update([
+                        'google_id' => $googleUser->id,
+                        'google_avatar' => $googleUser->avatar,
+                        'auth_method' => 'google',
+                    ]);
+                } else {
+                    // Create new user from Google data
+                    $user = User::create([
+                        'name' => $googleUser->name,
+                        'email' => $googleUser->email,
+                        'google_id' => $googleUser->id,
+                        'google_avatar' => $googleUser->avatar,
+                        'role' => 'Farmer',
+                        'status' => 'active',
+                        'location' => 'La Trinidad', // Default location
+                        'auth_method' => 'google',
+                        'email_verified_at' => now(), // Google email is pre-verified
+                        'password_set_at' => now(), // Password set via Google OAuth
+                        'password' => bcrypt(\Illuminate\Support\Str::random(32)), // Random password for security
+                    ]);
+                }
             } else {
-                // Create new user from Google data
-                $user = User::create([
-                    'name' => $googleUser->name,
-                    'email' => $googleUser->email,
-                    'google_id' => $googleUser->id,
+                // Update existing user's Google data
+                $user->update([
                     'google_avatar' => $googleUser->avatar,
-                    'role' => 'Farmer',
-                    'status' => 'active',
                     'auth_method' => 'google',
-                    'email_verified_at' => now(), // Google email is pre-verified
-                    'password_set_at' => now(), // Password set via Google OAuth
-                    'password' => bcrypt(\Illuminate\Support\Str::random(32)), // Random password for security
                 ]);
             }
-        } else {
-            // Update existing user's Google data
-            $user->update([
-                'google_avatar' => $googleUser->avatar,
-                'auth_method' => 'google',
-            ]);
-        }
 
-        // Login user
-        Auth::login($user, remember: true);
+            // Login user
+            Auth::login($user, remember: true);
 
-        // Update last login
-        $user->update(['last_login' => now()]);
+            // Update last login
+            $user->update(['last_login' => now()]);
 
-        // Redirect based on user role
-        if ($user->is_superadmin || $user->role === 'Admin' || $user->role === 'DA Admin') {
-            return redirect()->route('admin.dashboard');
-        } else {
-            return redirect()->route('dashboard');
+            // Redirect based on user role
+            if ($user->is_superadmin || $user->role === 'Admin' || $user->role === 'DA Admin') {
+                return redirect()->route('admin.dashboard');
+            } else {
+                return redirect()->route('dashboard');
+            }
+        } catch (Exception $e) {
+            \Log::error('Google OAuth callback error: ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
+            return redirect('/login')->withErrors(['error' => 'An error occurred during authentication: ' . $e->getMessage()]);
         }
     }
 }
