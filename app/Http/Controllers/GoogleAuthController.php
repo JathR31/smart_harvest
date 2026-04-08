@@ -53,6 +53,7 @@ class GoogleAuthController extends Controller
                     'status' => 'active',
                     'auth_method' => 'google',
                     'email_verified_at' => now(), // Google email is pre-verified
+                    'password_set_at' => now(), // Password set via Google OAuth
                     'password' => bcrypt(\Illuminate\Support\Str::random(32)), // Random password for security
                 ]);
             }
