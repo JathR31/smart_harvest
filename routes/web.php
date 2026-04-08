@@ -21,6 +21,10 @@ if (app()->environment(['local', 'testing'])) {
     Route::get('/api/create-test-user', [\App\Http\Controllers\AccountRecoveryController::class, 'createTestUser'])->name('create.test.user');
 }
 
+// Google OAuth Routes
+Route::get('/auth/google', [\App\Http\Controllers\GoogleAuthController::class, 'redirect'])->name('auth.google');
+Route::get('/auth/google/callback', [\App\Http\Controllers\GoogleAuthController::class, 'callback'])->name('auth.google.callback');
+
 // You would also have routes for login, admin, and register (Get Started)
 Route::get('/login', function () {
     // If already authenticated, redirect to appropriate dashboard

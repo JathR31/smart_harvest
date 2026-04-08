@@ -61,6 +61,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'years_experience',
         'bio',
         'last_login',
+        // OAuth fields
+        'google_id',
+        'google_avatar',
+        'auth_method',
         // DA Admin-specific fields
         'office',
         'position',
