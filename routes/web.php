@@ -3921,6 +3921,26 @@ Route::get('/register', function () {
 
 // POST handler for user registration
 Route::post('/register', function (Request $request) {
+    // Verify reCAPTCHA token
+    if ($request->filled('recaptcha_token')) {
+        $recaptchaSecret = config('services.recaptcha.secret_key');
+        try {
+            $response = Http::post('https://www.google.com/recaptcha/api/siteverify', [
+                'secret' => $recaptchaSecret,
+                'response' => $request->input('recaptcha_token'),
+            ]);
+            
+            $result = $response->json();
+            
+            // Check if reCAPTCHA validation failed or score is too low (< 0.5)
+            if (!$result['success'] || ($result['score'] ?? 0) < 0.5) {
+                return back()->withErrors(['recaptcha' => 'reCAPTCHA validation failed. Please try again.'])->withInput();
+            }
+        } catch (\Exception $e) {
+            return back()->withErrors(['recaptcha' => 'Error validating reCAPTCHA. Please try again.'])->withInput();
+        }
+    }
+    
     // First validate common fields
     $validationRules = [
         'full_name' => 'required|string|max:255',

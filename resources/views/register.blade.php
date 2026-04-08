@@ -223,6 +223,9 @@
             <button type="submit" class="w-full mt-6 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition duration-300 shadow-md shadow-green-200" data-translate data-translate-id="create-account">
                 Create Account
             </button>
+
+            <!-- reCAPTCHA token (hidden) -->
+            <input type="hidden" name="recaptcha_token" id="recaptcha_token">
         </form>
 
         <!-- Login / Back to Main Site -->
@@ -351,6 +354,29 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             SmartHarvestTranslation.init();
+        });
+    </script>
+
+    <!-- reCAPTCHA v3 Script -->
+    <script src="https://www.google.com/recaptcha/api.js?render={{ config('services.recaptcha.site_key') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('traditional-register');
+            
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Execute reCAPTCHA
+                grecaptcha.ready(function() {
+                    grecaptcha.execute('{{ config('services.recaptcha.site_key') }}', {action: 'register'}).then(function(token) {
+                        // Set the token in the hidden input
+                        document.getElementById('recaptcha_token').value = token;
+                        
+                        // Submit the form
+                        form.submit();
+                    });
+                });
+            });
         });
     </script>
 </body>
