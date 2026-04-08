@@ -3,6 +3,17 @@ set -e
 
 echo "Starting SmartHarvest deployment..."
 
+# Railway injects PORT for routing/health checks; default to 80 for local Docker runs.
+APP_PORT="${PORT:-80}"
+
+# Update nginx listener to match the runtime port expected by the platform.
+if [ -f "/etc/nginx/sites-available/default" ]; then
+  sed -i "s/listen 80;/listen ${APP_PORT};/" /etc/nginx/sites-available/default
+  sed -i "s/listen \[::\]:80;/listen [::]:${APP_PORT};/" /etc/nginx/sites-available/default
+fi
+
+echo "Using web port: ${APP_PORT}"
+
 # Cache configuration first (doesn't require database)
 echo "Caching configuration..."
 php artisan config:cache 2>/dev/null || true
