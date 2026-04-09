@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class CropDataSeeder extends Seeder
 {
@@ -23,7 +24,21 @@ class CropDataSeeder extends Seeder
         
         $batch = [];
         $count = 0;
-        $userId = 1; // Default user ID for imported data
+
+        // Use an existing user for ownership; create a fallback user for fresh databases.
+        $userId = DB::table('users')->value('id');
+        if (!$userId) {
+            $timestamp = now();
+            $userId = DB::table('users')->insertGetId([
+                'name' => 'SmartHarvest Seeder',
+                'email' => 'seeder@smartharvest.local',
+                'password' => Hash::make(bin2hex(random_bytes(16))),
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ]);
+
+            $this->command->warn("No users found. Created fallback user with ID {$userId}.");
+        }
         
         while (($row = fgetcsv($file)) !== false) {
             if (count($row) < 9) continue; // Skip incomplete rows
