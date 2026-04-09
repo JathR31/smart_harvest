@@ -24,18 +24,25 @@ class MarketPriceSeeder extends Seeder
         }
         $creatorId = $daOfficer ? $daOfficer->id : null;
 
+        if (!$creatorId) {
+            $this->command->error('No user found for created_by. Seed at least one user first.');
+            return;
+        }
+
+        $priceDate = now()->toDateString();
+
         // Crops from the ML dataset - prices to be inputted by DA Officer
         $crops = [
-            ['crop_name' => 'CABBAGE', 'variety' => 'Highland Cabbage'],
-            ['crop_name' => 'CHINESE CABBAGE', 'variety' => 'Pechay Baguio'],
-            ['crop_name' => 'LETTUCE', 'variety' => 'Iceberg Lettuce'],
-            ['crop_name' => 'CAULIFLOWER', 'variety' => 'White Cauliflower'],
-            ['crop_name' => 'BROCCOLI', 'variety' => 'Green Broccoli'],
-            ['crop_name' => 'SNAP BEANS', 'variety' => 'Baguio Beans'],
-            ['crop_name' => 'GARDEN PEAS', 'variety' => 'Sweet Peas'],
-            ['crop_name' => 'SWEET PEPPER', 'variety' => 'Bell Pepper'],
-            ['crop_name' => 'WHITE POTATO', 'variety' => 'Benguet Potato'],
-            ['crop_name' => 'CARROTS', 'variety' => 'Orange Carrots'],
+            ['crop_name' => 'CABBAGE', 'variety' => 'Highland Cabbage', 'price_per_kg' => 25.00],
+            ['crop_name' => 'CHINESE CABBAGE', 'variety' => 'Pechay Baguio', 'price_per_kg' => 30.00],
+            ['crop_name' => 'LETTUCE', 'variety' => 'Iceberg Lettuce', 'price_per_kg' => 35.00],
+            ['crop_name' => 'CAULIFLOWER', 'variety' => 'White Cauliflower', 'price_per_kg' => 45.00],
+            ['crop_name' => 'BROCCOLI', 'variety' => 'Green Broccoli', 'price_per_kg' => 60.00],
+            ['crop_name' => 'SNAP BEANS', 'variety' => 'Baguio Beans', 'price_per_kg' => 55.00],
+            ['crop_name' => 'GARDEN PEAS', 'variety' => 'Sweet Peas', 'price_per_kg' => 50.00],
+            ['crop_name' => 'SWEET PEPPER', 'variety' => 'Bell Pepper', 'price_per_kg' => 80.00],
+            ['crop_name' => 'WHITE POTATO', 'variety' => 'Benguet Potato', 'price_per_kg' => 28.00],
+            ['crop_name' => 'CARROTS', 'variety' => 'Orange Carrots', 'price_per_kg' => 30.00],
         ];
 
         foreach ($crops as $crop) {
@@ -43,13 +50,13 @@ class MarketPriceSeeder extends Seeder
                 ['crop_name' => $crop['crop_name']],
                 [
                     'variety' => $crop['variety'],
-                    'price_per_kg' => null,
+                    'price_per_kg' => $crop['price_per_kg'],
                     'previous_price' => null,
                     'price_trend' => 'stable',
                     'demand_level' => 'moderate',
                     'market_location' => 'La Trinidad Trading Post',
                     'created_by' => $creatorId,
-                    'price_date' => null,
+                    'price_date' => $priceDate,
                     'is_active' => true,
                     'notes' => 'Price to be set by DA Officer',
                 ]
