@@ -46,6 +46,11 @@ echo "Starting services..."
   echo "Running database migrations..."
   php artisan migrate --force --no-interaction 2>/dev/null || true
 
+  # Run seeders for default users and data
+  echo "Running database seeders..."
+  php artisan db:seed --class=SuperadminSeeder --force --no-interaction 2>/dev/null || true
+  php artisan db:seed --class=DAOfficerSeeder --force --no-interaction 2>/dev/null || true
+
   # Create storage link
   echo "Creating storage symlink..."
   php artisan storage:link --force 2>/dev/null || true

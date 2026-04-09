@@ -17,6 +17,8 @@ class DatabaseSeeder extends Seeder
     {
         // Run all seeders in order
         $this->call([
+            SuperadminSeeder::class,
+            DAOfficerSeeder::class,
             SampleUsersSeeder::class,
             CropDataSeeder::class,
             ClimatePatternSeeder::class,
