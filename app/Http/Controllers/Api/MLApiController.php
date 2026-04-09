@@ -32,17 +32,26 @@ class MLApiController extends Controller
                 return response()->json($result['data']);
             }
             
+            // Fallback if ML API is unavailable
+            \Log::warning('ML API unavailable, returning default yield data');
             return response()->json([
-                'error' => 'ML API returned an error',
-                'ml_api_connected' => false
-            ], 500);
+                'average_yield' => 12500,
+                'yield_trend' => 'stable',
+                'expected_yield' => 13000,
+                'ml_api_connected' => false,
+                'status' => 'using_fallback_data'
+            ], 200);
             
         } catch (\Exception $e) {
             \Log::error('ML Yield Analysis error: ' . $e->getMessage());
+            // Return fallback data instead of error
             return response()->json([
-                'error' => 'Failed to fetch yield analysis',
-                'ml_api_connected' => false
-            ], 500);
+                'average_yield' => 12500,
+                'yield_trend' => 'stable',
+                'expected_yield' => 13000,
+                'ml_api_connected' => false,
+                'status' => 'using_fallback_data'
+            ], 200);
         }
     }
 
