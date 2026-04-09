@@ -122,7 +122,7 @@ class DAOfficerApiController extends Controller
     }
 
     /**
-     * Get Yield Analysis with ML Predictions
+     * Get Yield Analysis with ML Predictions - Now with better error handling
      */
     public function getYieldAnalysis(Request $request)
     {
@@ -130,37 +130,53 @@ class DAOfficerApiController extends Controller
             $municipality = $request->query('municipality', 'La Trinidad');
             $mlMunicipality = strtoupper(str_replace(' ', '', $municipality));
             
-            // Try to get ML-based yield analysis
-            $mlResult = $this->mlService->getTopCrops(['MUNICIPALITY' => $mlMunicipality]);
-            
             $chartData = [];
             $insights = [];
+            $mlConnected = false;
             
-            if ($mlResult['status'] === 'success' && isset($mlResult['data'])) {
-                // Process ML data for chart
-                $chartData = $this->processMLYieldData($mlResult['data']);
-                $insights = $this->generateMLInsights($mlResult['data']);
-            } else {
-                // Fallback to database data
+            // Try to get ML-based yield analysis
+            try {
+                $mlResult = $this->mlService->getTopCrops(['MUNICIPALITY' => $mlMunicipality]);
+                
+                if ($mlResult['status'] === 'success' && isset($mlResult['data'])) {
+                    // Process ML data for chart
+                    $chartData = $this->processMLYieldData($mlResult['data']);
+                    $insights = $this->generateMLInsights($mlResult['data']);
+                    $mlConnected = true;
+                }
+            } catch (\Exception $mlException) {
+                Log::warning('ML API unavailable for yield analysis: ' . $mlException->getMessage());
+                // Fall through to database fallback
+            }
+            
+            // If no ML data, use database fallback
+            if (empty($chartData)) {
                 $chartData = $this->getDatabaseYieldData($municipality);
                 $insights = $this->generateDatabaseInsights($municipality);
+                $mlConnected = false;
+            }
+            
+            // If still no data, use fallback
+            if (empty($chartData)) {
+                $chartData = $this->getFallbackChartData();
+                $insights = $this->getFallbackInsights();
             }
             
             return response()->json([
                 'chartData' => $chartData,
                 'insights' => $insights,
-                'ml_connected' => $mlResult['status'] === 'success'
-            ]);
+                'ml_connected' => $mlConnected
+            ], 200);
             
         } catch (\Exception $e) {
-            Log::error('Yield Analysis error: ' . $e->getMessage());
+            Log::error('Yield Analysis error: ' . $e->getMessage() . '\n' . $e->getTraceAsString());
             
-            // Return fallback data
+            // Always return fallback data instead of error
             return response()->json([
                 'chartData' => $this->getFallbackChartData(),
                 'insights' => $this->getFallbackInsights(),
                 'ml_connected' => false
-            ]);
+            ], 200);
         }
     }
 

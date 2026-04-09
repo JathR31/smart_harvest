@@ -2010,9 +2010,9 @@
                             crops: [
                                 { variety: 'Cabbage', currentYield: 7.8, targetYield: 8.0, achievement: 97, activeFarms: 487, estRevenue: 18500000, yoyChange: 12 },
                                 { variety: 'Carrots', currentYield: 5.5, targetYield: 6.5, achievement: 84, activeFarms: 356, estRevenue: 12300000, yoyChange: 8 },
-                                { variety: 'Tomato', currentYield: 4.8, targetYield: 5.5, achievement: 87, activeFarms: 298, estRevenue: 11800000, yoyChange: -3 },
                                 { variety: 'White Potato', currentYield: 6.4, targetYield: 7.0, achievement: 92, activeFarms: 412, estRevenue: 15200000, yoyChange: 15 },
-                                { variety: 'Beans', currentYield: 4.1, targetYield: 4.5, achievement: 91, activeFarms: 245, estRevenue: 9800000, yoyChange: 5 }
+                                { variety: 'Beans', currentYield: 4.1, targetYield: 4.5, achievement: 91, activeFarms: 245, estRevenue: 9800000, yoyChange: 5 },
+                                { variety: 'Lettuce', currentYield: 3.2, targetYield: 3.8, achievement: 84, activeFarms: 189, estRevenue: 8100000, yoyChange: 3 }
                             ],
                             year: new Date().getFullYear(),
                             ml_connected: false
@@ -2267,7 +2267,6 @@
                         { name: 'Bell Pepper', price: 80, unit: 'per kg', change: 10, demand: 'High' },
                         { name: 'Broccoli', price: 60, unit: 'per kg', change: -3, demand: 'Medium' },
                         { name: 'Snap Beans', price: 55, unit: 'per kg', change: 2, demand: 'High' },
-                        { name: 'Tomato', price: 40, unit: 'per kg', change: 5, demand: 'High' },
                         { name: 'Lettuce', price: 35, unit: 'per kg', change: -2, demand: 'Medium' },
                         { name: 'Carrot', price: 30, unit: 'per kg', change: 8, demand: 'Medium' },
                         { name: 'White Potato', price: 28, unit: 'per kg', change: 12, demand: 'High' },
