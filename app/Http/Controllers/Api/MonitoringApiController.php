@@ -300,12 +300,11 @@ class MonitoringApiController extends Controller
     {
         try {
             $municipality = $request->query('municipality', 'La Trinidad');
-
             $forecastData = $this->fetchForecast($municipality);
             $forecast = [];
 
             if ($forecastData && isset($forecastData['list'])) {
-                // Group 3-hour intervals by day
+                // Group 3-hour intervals by day using real API data
                 $daily = [];
                 $today = Carbon::now()->format('Y-m-d');
 
@@ -338,17 +337,17 @@ class MonitoringApiController extends Controller
 
                 // Limit to 7 days max
                 $forecast = array_slice($forecast, 0, 7);
-            }
-
-            // If no forecast data, return demo data
-            if (empty($forecast)) {
+                $isLive = true;
+            } else {
+                // No live forecast data - use realistic demo forecast for Cordillera
                 $forecast = $this->getDemoRainfallForecast();
+                $isLive = false;
             }
 
             return response()->json([
                 'forecast'     => $forecast,
                 'municipality' => $municipality,
-                'source'       => count($forecast) > 0 ? (empty($forecastData) ? 'Demo Forecast' : 'OpenWeatherMap (Live)') : 'No data',
+                'source'       => $isLive ? 'OpenWeatherMap (Live)' : 'Demo Forecast',
                 'last_updated' => Carbon::now()->toIso8601String(),
             ]);
 
@@ -389,23 +388,30 @@ class MonitoringApiController extends Controller
     {
         try {
             $municipalities = [];
-            $hasRealData = false;
 
             foreach ($this->municipalityCoords as $muni => $coords) {
                 $weather = $this->fetchWeather($muni);
 
                 if ($weather) {
-                    $hasRealData = true;
+                    // Use real weather data from OpenWeatherMap
                     $rainfall    = round($weather['rain_1h'], 1);
                     $temperature = round($weather['temp'], 1);
                     $humidity    = round($weather['humidity']);
                     $status      = $this->determineClimateStatus($weather);
+                    $description = $weather['description'] ?? 'Partly Cloudy';
+                    $wind_speed  = round($weather['wind_speed'], 1);
+                    $icon        = $weather['icon'] ?? '02d';
+                    $source      = 'live';
                 } else {
-                    // Fallback with demo data
-                    $rainfall    = rand(1, 5);
-                    $temperature = rand(18, 24);
-                    $humidity    = rand(65, 80);
-                    $status      = 'Favorable'; // Default favorable status for Cordillera
+                    // Generate realistic demo data for Cordillera region
+                    $rainfall    = rand(0, 8);
+                    $temperature = rand(16, 25);
+                    $humidity    = rand(60, 85);
+                    $status      = ['Favorable', 'Normal', 'Normal'][rand(0, 2)]; // Mostly favorable/normal
+                    $description = ['Partly Cloudy', 'Overcast', 'Clear Sky', 'Light Rain'][rand(0, 3)];
+                    $wind_speed  = rand(1, 5);
+                    $icon        = ['02d', '03d', '01d', '10d'][rand(0, 3)];
+                    $source      = 'demo';
                 }
 
                 $municipalities[] = [
@@ -414,9 +420,10 @@ class MonitoringApiController extends Controller
                     'rainfall'    => $rainfall,
                     'temperature' => $temperature,
                     'humidity'    => $humidity,
-                    'description' => $weather['description'] ?? 'Partly Cloudy',
-                    'wind_speed'  => $weather['wind_speed'] ?? rand(2, 4),
-                    'icon'        => $weather['icon'] ?? '02d',
+                    'description' => $description,
+                    'wind_speed'  => $wind_speed,
+                    'icon'        => $icon,
+                    'data_source' => $source,
                 ];
             }
 
@@ -426,15 +433,24 @@ class MonitoringApiController extends Controller
                 return ($priority[$a['status']] ?? 3) <=> ($priority[$b['status']] ?? 3);
             });
 
+            // Check if using live or demo data
+            $hasLiveData = false;
+            foreach ($municipalities as $muni) {
+                if ($muni['data_source'] === 'live') {
+                    $hasLiveData = true;
+                    break;
+                }
+            }
+
             return response()->json([
                 'municipalities' => $municipalities,
-                'source'         => $hasRealData ? 'OpenWeatherMap (Live)' : 'Demo Data',
+                'source'         => $hasLiveData ? 'OpenWeatherMap (Live)' : 'Demo Data',
                 'last_updated'   => Carbon::now()->toIso8601String(),
             ]);
 
         } catch (\Exception $e) {
             Log::error('Municipality Status Error: ' . $e->getMessage());
-            // Return demo data on error
+            // Return demo data on error - still return all municipalities
             return response()->json([
                 'municipalities' => $this->getDemoMunicipalityStatus(),
                 'source'         => 'Demo Data (Error Recovery)',
