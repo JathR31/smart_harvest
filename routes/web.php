@@ -2008,187 +2008,204 @@ Route::get('/api/farmer/my-crops', function () {
 })->middleware('auth')->name('api.farmer.my-crops.index');
 
 Route::post('/api/farmer/my-crops', function (Request $request) {
-    if (!Auth::check()) {
-        return response()->json(['error' => 'Unauthorized'], 401);
-    }
+    try {
+        if (!Auth::check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
 
-    $validated = $request->validate([
-        'crop_type' => 'required|string|max:255',
-        'variety' => 'nullable|string|max:255',
-        'planting_date' => 'required|date',
-        'expected_harvest_date' => 'nullable|date|after_or_equal:planting_date',
-        'area_planted' => 'required|numeric|min:0.01',
-        'municipality' => 'nullable|string|max:255',
-        'plot_location' => 'nullable|string|max:255',
-        'seed_source' => 'nullable|string|max:255',
-        'notes' => 'nullable|string|max:2000',
-    ]);
+        $validated = $request->validate([
+            'crop_type' => 'required|string|max:255',
+            'variety' => 'nullable|string|max:255',
+            'planting_date' => 'required|date',
+            'expected_harvest_date' => 'nullable|date|after_or_equal:planting_date',
+            'area_planted' => 'required|numeric|min:0.01',
+            'municipality' => 'nullable|string|max:255',
+            'plot_location' => 'nullable|string|max:255',
+            'seed_source' => 'nullable|string|max:255',
+            'notes' => 'nullable|string|max:2000',
+        ]);
 
-    $user = Auth::user();
-    $municipality = $validated['municipality'] ?? ($user->location ?? 'La Trinidad');
+        $user = Auth::user();
+        $municipality = $validated['municipality'] ?? ($user->location ?? 'La Trinidad');
 
-    $areaPlanted = (float)$validated['area_planted'];
-    $plantingDate = \Carbon\Carbon::parse($validated['planting_date']);
-    $mlMunicipality = strtoupper(str_replace(' ', '', $municipality));
-    $mlCrop = strtoupper(trim($validated['crop_type']));
-    $mlMonth = strtoupper($plantingDate->format('M'));
-    $mlYear = (int)$plantingDate->format('Y');
+        $areaPlanted = (float)$validated['area_planted'];
+        $plantingDate = \Carbon\Carbon::parse($validated['planting_date']);
+        $mlMunicipality = strtoupper(str_replace(' ', '', $municipality));
+        $mlCrop = strtoupper(trim($validated['crop_type']));
+        $mlMonth = strtoupper($plantingDate->format('M'));
+        $mlYear = (int)$plantingDate->format('Y');
 
-    $predictedProductionMt = 0;
-    $mlConfidence = null;
-    $mlConnected = false;
+        $predictedProductionMt = 0;
+        $mlConfidence = null;
+        $mlConnected = false;
 
-    $monthCodes = [
-        1 => 'JAN', 2 => 'FEB', 3 => 'MAR', 4 => 'APR', 5 => 'MAY', 6 => 'JUN',
-        7 => 'JUL', 8 => 'AUG', 9 => 'SEP', 10 => 'OCT', 11 => 'NOV', 12 => 'DEC'
-    ];
+        $monthCodes = [
+            1 => 'JAN', 2 => 'FEB', 3 => 'MAR', 4 => 'APR', 5 => 'MAY', 6 => 'JUN',
+            7 => 'JUL', 8 => 'AUG', 9 => 'SEP', 10 => 'OCT', 11 => 'NOV', 12 => 'DEC'
+        ];
 
-    $durationDaysMap = [
-        'CABBAGE' => 78,
-        'CHINESE CABBAGE' => 68,
-        'CAULIFLOWER' => 105,
-        'BROCCOLI' => 80,
-        'LETTUCE' => 52,
-        'WHITE POTATO' => 105,
-        'POTATO' => 105,
-        'CARROTS' => 82,
-        'CARROT' => 82,
-        'SNAP BEANS' => 58,
-        'GARDEN PEAS' => 68,
-        'SWEET PEPPER' => 105,
-        'SAYOTE' => 120,
-    ];
+        $durationDaysMap = [
+            'CABBAGE' => 78,
+            'CHINESE CABBAGE' => 68,
+            'CAULIFLOWER' => 105,
+            'BROCCOLI' => 80,
+            'LETTUCE' => 52,
+            'WHITE POTATO' => 105,
+            'POTATO' => 105,
+            'CARROTS' => 82,
+            'CARROT' => 82,
+            'SNAP BEANS' => 58,
+            'GARDEN PEAS' => 68,
+            'SWEET PEPPER' => 105,
+            'SAYOTE' => 120,
+        ];
 
-    $resolveMlHarvestDate = function ($mlServiceInstance) use ($plantingDate, $mlCrop, $mlMunicipality, $areaPlanted, $monthCodes, $durationDaysMap) {
-        $bestMonthDate = null;
-        $bestProduction = 0;
+        $resolveMlHarvestDate = function ($mlServiceInstance) use ($plantingDate, $mlCrop, $mlMunicipality, $areaPlanted, $monthCodes, $durationDaysMap) {
+            $bestMonthDate = null;
+            $bestProduction = 0;
 
-        if ($mlServiceInstance) {
-            for ($offset = 0; $offset < 12; $offset++) {
-                $targetDate = $plantingDate->copy()->startOfMonth()->addMonths($offset);
-                $monthNumber = (int)$targetDate->format('n');
-                $year = (int)$targetDate->format('Y');
+            if ($mlServiceInstance) {
+                for ($offset = 0; $offset < 12; $offset++) {
+                    $targetDate = $plantingDate->copy()->startOfMonth()->addMonths($offset);
+                    $monthNumber = (int)$targetDate->format('n');
+                    $year = (int)$targetDate->format('Y');
 
-                try {
-                    $result = $mlServiceInstance->predict([
-                        'MUNICIPALITY' => $mlMunicipality,
-                        'CROP' => $mlCrop,
-                        'FARM_TYPE' => 'IRRIGATED',
-                        'YEAR' => $year,
-                        'Area_planted_ha' => $areaPlanted,
-                        'MONTH' => $monthCodes[$monthNumber],
-                    ]);
+                    try {
+                        $result = $mlServiceInstance->predict([
+                            'MUNICIPALITY' => $mlMunicipality,
+                            'CROP' => $mlCrop,
+                            'FARM_TYPE' => 'IRRIGATED',
+                            'YEAR' => $year,
+                            'Area_planted_ha' => $areaPlanted,
+                            'MONTH' => $monthCodes[$monthNumber],
+                        ]);
 
-                    if ($result['status'] === 'success' && isset($result['data']['prediction'])) {
-                        $monthProduction = (float)($result['data']['prediction']['production_mt'] ?? 0);
-                        if ($monthProduction > $bestProduction) {
-                            $bestProduction = $monthProduction;
-                            $bestMonthDate = $targetDate->copy()->endOfMonth();
+                        if ($result['status'] === 'success' && isset($result['data']['prediction'])) {
+                            $monthProduction = (float)($result['data']['prediction']['production_mt'] ?? 0);
+                            if ($monthProduction > $bestProduction) {
+                                $bestProduction = $monthProduction;
+                                $bestMonthDate = $targetDate->copy()->endOfMonth();
+                            }
                         }
+                    } catch (\Exception $monthError) {
+                        // continue scanning months
+                        \Log::debug('ML month prediction error: ' . $monthError->getMessage());
                     }
-                } catch (\Exception $monthError) {
-                    // continue scanning months
                 }
+            }
+
+            if ($bestMonthDate) {
+                return $bestMonthDate->format('Y-m-d');
+            }
+
+            $durationDays = $durationDaysMap[$mlCrop] ?? 90;
+            return $plantingDate->copy()->addDays($durationDays)->format('Y-m-d');
+        };
+
+        $mlService = null;
+
+        try {
+            $mlService = new \App\Services\MLApiService();
+            $predictionResult = $mlService->predict([
+                'MUNICIPALITY' => $mlMunicipality,
+                'CROP' => $mlCrop,
+                'FARM_TYPE' => 'IRRIGATED',
+                'YEAR' => $mlYear,
+                'Area_planted_ha' => $areaPlanted,
+                'MONTH' => $mlMonth,
+            ]);
+
+            if (
+                $predictionResult['status'] === 'success' &&
+                isset($predictionResult['data']['prediction'])
+            ) {
+                $prediction = $predictionResult['data']['prediction'];
+                $predictedProductionMt = (float)($prediction['production_mt'] ?? 0);
+                $mlConfidence = isset($prediction['confidence_score'])
+                    ? round((float)$prediction['confidence_score'] * 100, 1)
+                    : null;
+                $mlConnected = $predictedProductionMt > 0;
+            }
+        } catch (\Exception $e) {
+            \Log::warning('My crops ML prediction failed: ' . $e->getMessage());
+            $mlConnected = false;
+        }
+
+        // Fallback to historical average (MT/ha) from validated records in municipality
+        if ($predictedProductionMt <= 0) {
+            try {
+                $historicalMtPerHa = \App\Models\CropData::whereRaw('UPPER(REPLACE(municipality, " ", "")) = ?', [$mlMunicipality])
+                    ->whereRaw('UPPER(crop_type) = ?', [$mlCrop])
+                    ->whereNotNull('yield_amount')
+                    ->where('yield_amount', '>', 0)
+                    ->whereNotNull('area_planted')
+                    ->where('area_planted', '>', 0)
+                    ->selectRaw('AVG((yield_amount / 1000) / area_planted) as avg_mt_per_ha')
+                    ->value('avg_mt_per_ha');
+
+                $predictedProductionMt = round(((float)$historicalMtPerHa) * $areaPlanted, 2);
+            } catch (\Exception $e) {
+                \Log::warning('Historical data lookup failed: ' . $e->getMessage());
+            }
+            
+            if ($predictedProductionMt <= 0) {
+                $predictedProductionMt = round(15 * $areaPlanted, 2);
             }
         }
 
-        if ($bestMonthDate) {
-            return $bestMonthDate->format('Y-m-d');
-        }
+        $resolvedHarvestDate = $validated['expected_harvest_date'] ?? $resolveMlHarvestDate($mlService);
 
-        $durationDays = $durationDaysMap[$mlCrop] ?? 90;
-        return $plantingDate->copy()->addDays($durationDays)->format('Y-m-d');
-    };
-
-    $mlService = null;
-
-    try {
-        $mlService = new \App\Services\MLApiService();
-        $predictionResult = $mlService->predict([
-            'MUNICIPALITY' => $mlMunicipality,
-            'CROP' => $mlCrop,
-            'FARM_TYPE' => 'IRRIGATED',
-            'YEAR' => $mlYear,
-            'Area_planted_ha' => $areaPlanted,
-            'MONTH' => $mlMonth,
-        ]);
-
-        if (
-            $predictionResult['status'] === 'success' &&
-            isset($predictionResult['data']['prediction'])
-        ) {
-            $prediction = $predictionResult['data']['prediction'];
-            $predictedProductionMt = (float)($prediction['production_mt'] ?? 0);
-            $mlConfidence = isset($prediction['confidence_score'])
-                ? round((float)$prediction['confidence_score'] * 100, 1)
-                : null;
-            $mlConnected = $predictedProductionMt > 0;
-        }
-    } catch (\Exception $e) {
-        \Log::warning('My crops ML prediction failed: ' . $e->getMessage());
-    }
-
-    // Fallback to historical average (MT/ha) from validated records in municipality
-    if ($predictedProductionMt <= 0) {
-        $historicalMtPerHa = \App\Models\CropData::whereRaw('UPPER(REPLACE(municipality, " ", "")) = ?', [$mlMunicipality])
-            ->whereRaw('UPPER(crop_type) = ?', [$mlCrop])
-            ->whereNotNull('yield_amount')
-            ->where('yield_amount', '>', 0)
-            ->whereNotNull('area_planted')
-            ->where('area_planted', '>', 0)
-            ->selectRaw('AVG((yield_amount / 1000) / area_planted) as avg_mt_per_ha')
-            ->value('avg_mt_per_ha');
-
-        $predictedProductionMt = round(((float)$historicalMtPerHa) * $areaPlanted, 2);
-        if ($predictedProductionMt <= 0) {
-            $predictedProductionMt = round(15 * $areaPlanted, 2);
-        }
-    }
-
-    $resolvedHarvestDate = $validated['expected_harvest_date'] ?? $resolveMlHarvestDate($mlService);
-
-    $structuredNotes = [
-        'note_text' => $validated['notes'] ?? '',
-        'seed_source' => $validated['seed_source'] ?? null,
-        'plot_location' => $validated['plot_location'] ?? null,
-        'ml_connected' => $mlConnected,
-        'ml_confidence' => $mlConfidence,
-        'ml_harvest_date' => $resolvedHarvestDate,
-    ];
-
-    $record = \App\Models\CropData::create([
-        'user_id' => $user->id,
-        'crop_type' => $validated['crop_type'],
-        'variety' => $validated['variety'] ?? null,
-        'municipality' => $municipality,
-        'area_planted' => $areaPlanted,
-        'yield_amount' => round($predictedProductionMt * 1000, 2), // stored in kg
-        'planting_date' => $validated['planting_date'],
-        'harvest_date' => $resolvedHarvestDate,
-        'status' => 'Growing',
-        'notes' => json_encode($structuredNotes),
-        'validation_status' => 'Pending',
-    ]);
-
-    return response()->json([
-        'message' => 'Crop record created successfully.',
-        'record' => [
-            'id' => $record->id,
-            'crop_type' => $record->crop_type,
-            'variety' => $record->variety,
-            'municipality' => $record->municipality,
-            'area_planted' => round((float)$record->area_planted, 2),
-            'expected_yield_mt' => round(((float)$record->yield_amount) / 1000, 2),
-            'planting_date' => optional($record->planting_date)->format('Y-m-d'),
-            'expected_harvest_date' => optional($record->harvest_date)->format('Y-m-d'),
-            'status' => $record->status,
-            'notes' => $validated['notes'] ?? '',
+        $structuredNotes = [
+            'note_text' => $validated['notes'] ?? '',
             'seed_source' => $validated['seed_source'] ?? null,
             'plot_location' => $validated['plot_location'] ?? null,
             'ml_connected' => $mlConnected,
             'ml_confidence' => $mlConfidence,
-        ],
-    ]);
+            'ml_harvest_date' => $resolvedHarvestDate,
+        ];
+
+        $record = \App\Models\CropData::create([
+            'user_id' => $user->id,
+            'crop_type' => $validated['crop_type'],
+            'variety' => $validated['variety'] ?? null,
+            'municipality' => $municipality,
+            'area_planted' => $areaPlanted,
+            'yield_amount' => round($predictedProductionMt * 1000, 2), // stored in kg
+            'planting_date' => $validated['planting_date'],
+            'harvest_date' => $resolvedHarvestDate,
+            'status' => 'Growing',
+            'notes' => json_encode($structuredNotes),
+            'validation_status' => 'Pending',
+        ]);
+
+        return response()->json([
+            'message' => 'Crop record created successfully.',
+            'record' => [
+                'id' => $record->id,
+                'crop_type' => $record->crop_type,
+                'variety' => $record->variety,
+                'municipality' => $record->municipality,
+                'area_planted' => round((float)$record->area_planted, 2),
+                'expected_yield_mt' => round(((float)$record->yield_amount) / 1000, 2),
+                'planting_date' => optional($record->planting_date)->format('Y-m-d'),
+                'expected_harvest_date' => optional($record->harvest_date)->format('Y-m-d'),
+                'status' => $record->status,
+                'notes' => $validated['notes'] ?? '',
+                'seed_source' => $validated['seed_source'] ?? null,
+                'plot_location' => $validated['plot_location'] ?? null,
+                'ml_connected' => $mlConnected,
+                'ml_confidence' => $mlConfidence,
+            ],
+        ]);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json(['error' => 'Validation failed', 'messages' => $e->errors()], 422);
+    } catch (\Exception $e) {
+        \Log::error('Crop creation error: ' . $e->getMessage() . '\n' . $e->getTraceAsString());
+        return response()->json([
+            'error' => 'Failed to create crop record',
+            'message' => $e->getMessage()
+        ], 500);
+    }
 })->middleware('auth')->name('api.farmer.my-crops.store');
 
 Route::put('/api/farmer/my-crops/{id}', function (Request $request, $id) {
