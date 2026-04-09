@@ -4,11 +4,10 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\User;
-use App\Models\Crop;
+use App\Models\CropData;
 use App\Models\MarketPrice;
 use App\Models\Announcement;
-use Illuminate\Support\Facades\Hash;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class MigrateProductionDataSeeder extends Seeder
 {
@@ -21,8 +20,14 @@ class MigrateProductionDataSeeder extends Seeder
      */
     public function run(): void
     {
-        // Disable foreign key checks to allow data insertion
-        \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        $driver = DB::connection()->getDriverName();
+        $foreignKeysTemporarilyDisabled = false;
+
+        // MySQL supports session-level FK toggle. PostgreSQL on managed hosts often does not.
+        if ($driver === 'mysql') {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+            $foreignKeysTemporarilyDisabled = true;
+        }
 
         try {
             // 1. Migrate Users
@@ -42,8 +47,9 @@ class MigrateProductionDataSeeder extends Seeder
             echo "\n❌ Migration error: " . $e->getMessage() . "\n";
             throw $e;
         } finally {
-            // Re-enable foreign key checks
-            \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            if ($foreignKeysTemporarilyDisabled) {
+                DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            }
         }
     }
 
@@ -91,7 +97,7 @@ class MigrateProductionDataSeeder extends Seeder
     {
         echo "Migrating crops...";
 
-        $crops = Crop::all();
+        $crops = CropData::all();
 
         if ($crops->isEmpty()) {
             echo " (No crops found)\n";
@@ -99,20 +105,27 @@ class MigrateProductionDataSeeder extends Seeder
         }
 
         foreach ($crops as $crop) {
-            $exists = Crop::where('farmer_id', $crop->farmer_id)
-                ->where('crop_name', $crop->crop_name)
+            $exists = CropData::where('user_id', $crop->user_id)
+                ->where('crop_type', $crop->crop_type)
+                ->whereDate('planting_date', $crop->planting_date)
                 ->exists();
 
             if (!$exists) {
-                Crop::create([
-                    'farmer_id' => $crop->farmer_id,
-                    'crop_name' => $crop->crop_name,
+                CropData::create([
+                    'user_id' => $crop->user_id,
+                    'crop_type' => $crop->crop_type,
+                    'variety' => $crop->variety,
+                    'municipality' => $crop->municipality,
                     'area_planted' => $crop->area_planted ?? null,
-                    'planting_date' => $crop->planting_date ?? null,
-                    'expected_harvest_date' => $crop->expected_harvest_date ?? null,
-                    'status' => $crop->status ?? 'growing',
-                    'municipality' => $crop->municipality ?? null,
-                    'variety' => $crop->variety ?? null,
+                    'yield_amount' => $crop->yield_amount ?? null,
+                    'planting_date' => $crop->planting_date,
+                    'harvest_date' => $crop->harvest_date,
+                    'status' => $crop->status ?? 'Planning',
+                    'temperature' => $crop->temperature,
+                    'rainfall' => $crop->rainfall,
+                    'humidity' => $crop->humidity,
+                    'notes' => $crop->notes,
+                    'validation_status' => $crop->validation_status ?? 'Pending',
                     'created_at' => $crop->created_at,
                     'updated_at' => $crop->updated_at,
                 ]);
@@ -131,24 +144,38 @@ class MigrateProductionDataSeeder extends Seeder
 
         $prices = MarketPrice::all();
 
+        $defaultCreatorId = User::whereIn('role', ['DA Admin', 'Admin'])->value('id')
+            ?? User::value('id');
+
         if ($prices->isEmpty()) {
             echo " (No market prices found)\n";
             return;
         }
 
+        if (!$defaultCreatorId) {
+            echo " (Skipped: no users available for created_by)\n";
+            return;
+        }
+
         foreach ($prices as $price) {
+            $resolvedDate = $price->price_date ? $price->price_date->toDateString() : now()->toDateString();
             $exists = MarketPrice::where('crop_name', $price->crop_name)
-                ->where('market', $price->market ?? 'General')
-                ->whereDate('date', $price->date->toDateString())
+                ->whereDate('price_date', $resolvedDate)
                 ->exists();
 
             if (!$exists) {
                 MarketPrice::create([
+                    'created_by' => $price->created_by ?? $defaultCreatorId,
                     'crop_name' => $price->crop_name,
-                    'market' => $price->market ?? 'General',
-                    'price' => $price->price,
-                    'date' => $price->date,
-                    'unit' => $price->unit ?? 'kg',
+                    'variety' => $price->variety,
+                    'price_per_kg' => $price->price_per_kg ?? 0,
+                    'previous_price' => $price->previous_price,
+                    'price_trend' => $price->price_trend ?? 'stable',
+                    'market_location' => $price->market_location ?? 'La Trinidad Trading Post',
+                    'demand_level' => $price->demand_level ?? 'moderate',
+                    'price_date' => $resolvedDate,
+                    'notes' => $price->notes,
+                    'is_active' => $price->is_active ?? true,
                     'created_at' => $price->created_at,
                     'updated_at' => $price->updated_at,
                 ]);
@@ -167,22 +194,36 @@ class MigrateProductionDataSeeder extends Seeder
 
         $announcements = Announcement::all();
 
+        $defaultCreatorId = User::whereIn('role', ['DA Admin', 'Admin'])->value('id')
+            ?? User::value('id');
+
         if ($announcements->isEmpty()) {
             echo " (No announcements found)\n";
             return;
         }
 
+        if (!$defaultCreatorId) {
+            echo " (Skipped: no users available for created_by)\n";
+            return;
+        }
+
         foreach ($announcements as $announcement) {
+            $creatorId = $announcement->created_by ?? $defaultCreatorId;
             $exists = Announcement::where('title', $announcement->title)
-                ->where('user_id', $announcement->user_id)
+                ->where('created_by', $creatorId)
                 ->exists();
 
             if (!$exists) {
                 Announcement::create([
-                    'user_id' => $announcement->user_id,
+                    'created_by' => $creatorId,
                     'title' => $announcement->title,
                     'content' => $announcement->content ?? '',
-                    'is_published' => $announcement->is_published ?? false,
+                    'type' => $announcement->type ?? 'general',
+                    'priority' => $announcement->priority ?? 'normal',
+                    'is_active' => $announcement->is_active ?? true,
+                    'published_at' => $announcement->published_at,
+                    'expires_at' => $announcement->expires_at,
+                    'target_municipalities' => $announcement->target_municipalities,
                     'created_at' => $announcement->created_at,
                     'updated_at' => $announcement->updated_at,
                 ]);
