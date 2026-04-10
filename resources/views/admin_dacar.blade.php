@@ -1527,7 +1527,7 @@
                     
                     // Handle URL hash for navigation
                     const hash = window.location.hash.substring(1); // Remove the # symbol
-                    if (hash && ['dashboard', 'market-prices', 'announcements', 'inbox', 'crop-monitoring'].includes(hash)) {
+                    if (hash && ['dashboard', 'market-prices', 'announcements', 'crop-monitoring'].includes(hash)) {
                         this.currentSection = hash;
                         console.log('Navigating to section from URL hash:', hash);
                         if (hash === 'crop-monitoring') {
