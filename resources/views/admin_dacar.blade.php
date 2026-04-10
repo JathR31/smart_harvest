@@ -1095,7 +1095,15 @@
                         <div class="w-1/3 border-r border-gray-200 flex flex-col bg-gray-50">
                             <!-- Header -->
                             <div class="p-4 border-b border-gray-200 bg-white">
-                                <h3 class="font-semibold text-gray-800 mb-3">Messages</h3>
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="font-semibold text-gray-800">Messages</h3>
+                                    <button @click="showNewMessageModal = true" class="bg-green-600 text-white px-3 py-1.5 rounded-full hover:bg-green-700 transition flex items-center gap-2 text-sm font-semibold">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                        </svg>
+                                        New Message
+                                    </button>
+                                </div>
                                 <input type="text" x-model="searchFilter" @input="filterConversations()" placeholder="Search conversations..." class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
                             </div>
 
@@ -1187,6 +1195,56 @@
                                     </div>
                                 </div>
                             </template>
+                        </div>
+                    </div>
+
+                    <!-- New Message Modal -->
+                    <div x-data="inboxMessenger()" x-show="showNewMessageModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                        <div class="bg-white rounded-xl shadow-2xl p-6 w-96">
+                            <div class="mb-4">
+                                <h2 class="text-xl font-bold text-gray-800">Start New Conversation</h2>
+                                <p class="text-sm text-gray-600 mt-1">Send a message to a farmer</p>
+                            </div>
+
+                            <form @submit.prevent="sendNewMessage()" class="space-y-4">
+                                <!-- Recipient Selection -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Select Farmer</label>
+                                    <select x-model="newMessage.recipient_id" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                        <option value="">Choose a farmer...</option>
+                                        <template x-for="officer in officers" :key="officer.id">
+                                            <option :value="officer.id" x-text="officer.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+
+                                <!-- Subject -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Subject</label>
+                                    <input type="text" x-model="newMessage.subject" placeholder="Message subject" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                </div>
+
+                                <!-- Content -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Message</label>
+                                    <textarea x-model="newMessage.content" placeholder="Type your message..." rows="4" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"></textarea>
+                                </div>
+
+                                <!-- SMS Checkbox -->
+                                <label class="flex items-center gap-2 text-sm text-gray-700">
+                                    <input type="checkbox" x-model="newMessage.send_sms" class="w-4 h-4 text-green-600 rounded">
+                                    <span>Also send as SMS</span>
+                                </label>
+
+                                <!-- Buttons -->
+                                <div class="flex gap-3 justify-end pt-4">
+                                    <button type="button" @click="showNewMessageModal = false" class="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-semibold">Cancel</button>
+                                    <button type="submit" :disabled="sending" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60 transition font-semibold">
+                                        <span x-show="!sending">Send Message</span>
+                                        <span x-show="sending">Sending...</span>
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -2287,6 +2345,14 @@
                 replyContent: '',
                 sendSMS: false,
                 sending: false,
+                officers: [],
+                showNewMessageModal: false,
+                newMessage: {
+                    recipient_id: '',
+                    subject: '',
+                    content: '',
+                    send_sms: false
+                },
                 quickReplyTemplates: [
                     'Thank you for the report',
                     'Please provide farm location',
@@ -2306,6 +2372,7 @@
 
                 async init() {
                     await this.loadConversations();
+                    await this.loadOfficers();
                     // Auto-refresh every 10 seconds
                     setInterval(() => this.loadConversations(), 10000);
                 },
@@ -2319,6 +2386,17 @@
                         }
                     } catch (error) {
                         console.error('Error loading conversations:', error);
+                    }
+                },
+
+                async loadOfficers() {
+                    try {
+                        const response = await fetch('/api/farmers');
+                        if (response.ok) {
+                            this.officers = await response.json();
+                        }
+                    } catch (error) {
+                        console.error('Error loading farmers:', error);
                     }
                 },
 
@@ -2336,6 +2414,44 @@
 
                 filterConversations() {
                     // Reactive filtering handled by computed property
+                },
+
+                async sendNewMessage() {
+                    if (!this.newMessage.recipient_id || !this.newMessage.subject || !this.newMessage.content) {
+                        alert('Please fill in all fields');
+                        return;
+                    }
+
+                    this.sending = true;
+                    try {
+                        const response = await fetch('/api/messages', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || ''
+                            },
+                            body: JSON.stringify({
+                                receiver_id: this.newMessage.recipient_id,
+                                subject: this.newMessage.subject,
+                                content: this.newMessage.content,
+                                send_sms: this.newMessage.send_sms
+                            })
+                        });
+
+                        if (response.ok) {
+                            alert('Message sent successfully!');
+                            this.showNewMessageModal = false;
+                            this.newMessage = { recipient_id: '', subject: '', content: '', send_sms: false };
+                            await this.loadConversations();
+                        } else {
+                            alert('Error sending message. Please try again.');
+                        }
+                    } catch (error) {
+                        console.error('Error sending message:', error);
+                        alert('Error: ' + error.message);
+                    } finally {
+                        this.sending = false;
+                    }
                 },
 
                 async sendMessage() {
