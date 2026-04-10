@@ -97,7 +97,7 @@
                 <a href="#" @click.prevent="showSection = 'inbox'" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition" :class="{'active': showSection === 'inbox'}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                     <span data-translate data-translate-id="menu-inbox">Inbox</span>
-                    <span x-show="unreadMessages > 0" class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5" x-text="unreadMessages"></span>
+                    <span x-show="unreadMessages.length > 0" class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5" x-text="unreadMessages.length"></span>
                 </a>
             </div>
 
@@ -1363,7 +1363,6 @@
                 selectedMunicipality: '{{ $userMunicipality ?? "La Trinidad" }}',
                 showSection: new URLSearchParams(window.location.search).get('tab') || 'dashboard',
                 unreadAnnouncements: 0,
-                unreadMessages: 0,
                 announcements: [],
                 priorityFilter: 'all',
                 sortOrder: 'newest',
@@ -1509,7 +1508,7 @@
                         if (response.ok) {
                             const data = await response.json();
                             this.messages = { received: data.received, sent: data.sent };
-                            this.unreadMessages = data.unread_count;
+                            // unreadMessages is computed from the received messages via getter
                         }
                     } catch (error) {
                         console.error('Error loading messages:', error);

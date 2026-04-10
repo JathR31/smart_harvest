@@ -76,7 +76,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                         </svg>
                         <span>Inbox</span>
-                        <span x-show="unreadMessages > 0" class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold" x-text="unreadMessages"></span>
+                        <span x-show="unreadMessages > 0" class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold" x-text="typeof unreadMessages === 'number' ? unreadMessages : 0"></span>
                     </button>
                 </div>
 
@@ -2004,9 +2004,23 @@
                     await this.loadCropPerformance();
                     await this.loadEnhancedCropPerformance();
                     await this.loadPriceInsights();
+                    await this.loadUnreadMessageCount();
                     this.loading = false;
                     
                     console.log('===== DASHBOARD INITIALIZATION COMPLETE =====');
+                },
+
+                async loadUnreadMessageCount() {
+                    try {
+                        const response = await fetch(this.baseUrl + '/api/messages');
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.unreadMessages = data.unread_count || 0;
+                        }
+                    } catch (error) {
+                        console.error('Error loading unread message count:', error);
+                        this.unreadMessages = 0;
+                    }
                 },
 
                 async loadEnhancedCropPerformance() {
