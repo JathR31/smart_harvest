@@ -1035,20 +1035,6 @@
                 
                 async selectConversation(conversation) {
                     try {
-                        const response = await fetch(`{{ url('/api/messages') }}/${message.id}`);
-                        if (response.ok) {
-                            const data = await response.json();
-                            this.selectedMessage = data;
-                            this.showMessageModal = true;
-                            await this.loadMessages();
-                        }
-                    } catch (error) {
-                        console.error('Error loading message:', error);
-                    }
-                },
-                
-                async selectConversation(conversation) {
-                    try {
                         const response = await fetch(`{{ url('/api/messages') }}/${conversation.id}`);
                         if (response.ok) {
                             const data = await response.json();
