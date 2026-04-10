@@ -158,7 +158,7 @@ class MessageController extends Controller
         $user = Auth::user();
         
         $validator = Validator::make($request->all(), [
-            'receiver_id' => 'required|exists:users,id',
+            'receiver_id' => 'required|string',
             'subject' => 'required|string|max:255',
             'content' => 'required|string',
             'priority' => 'in:low,normal,high,urgent',
@@ -174,11 +174,62 @@ class MessageController extends Controller
         
         $data = $validator->validated();
         $sendSMS = $data['send_sms'] ?? false;
+        $receiverId = $data['receiver_id'];
+        
+        // Handle "DA" (all officers) special case
+        if ($receiverId === 'DA') {
+            // Get all officers (Admin, DA Admin, and Superadmins)
+            $officers = User::where(function ($query) {
+                $query->whereIn('role', ['Admin', 'DA Admin'])
+                      ->orWhere('is_superadmin', true);
+            })->pluck('id')->toArray();
+            
+            if (empty($officers)) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['receiver_id' => 'No DA officers found']
+                ], 422);
+            }
+            
+            // Create messages for each officer
+            $messages = [];
+            foreach ($officers as $officerId) {
+                $message = Message::create([
+                    'sender_id' => $user->id,
+                    'receiver_id' => $officerId,
+                    'subject' => $data['subject'],
+                    'content' => $data['content'],
+                    'priority' => $data['priority'] ?? 'normal',
+                    'sent_as_sms' => $sendSMS,
+                    'sms_status' => $sendSMS ? 'pending' : 'not_sent',
+                ]);
+                
+                if ($sendSMS) {
+                    $this->sendMessageAsSMS($message);
+                }
+                
+                $messages[] = $message;
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Message sent to all DA officers!',
+                'count' => count($messages)
+            ], 201);
+        }
+        
+        // Normal case - send to single recipient
+        if (!User::where('id', $receiverId)->exists()) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['receiver_id' => 'User not found']
+            ], 422);
+        }
         
         // Create the message
         $message = Message::create([
             'sender_id' => $user->id,
-            'receiver_id' => $data['receiver_id'],
+            'receiver_id' => $receiverId,
             'subject' => $data['subject'],
             'content' => $data['content'],
             'priority' => $data['priority'] ?? 'normal',
@@ -309,6 +360,7 @@ class MessageController extends Controller
      */
     public function getFarmers()
     {
+        // Get all farmer role users
         $farmers = User::where('role', 'Farmer')
             ->select('id', 'name', 'email', 'phone_number', 'municipality')
             ->orderBy('name')
@@ -319,11 +371,16 @@ class MessageController extends Controller
 
     /**
      * Get list of DA officers (for farmers to send messages to)
+     * Includes all Admin, DA Admin, and Superadmin users
      */
     public function getOfficers()
     {
-        $officers = User::whereIn('role', ['Admin', 'DA Admin'])
-            ->select('id', 'name', 'email', 'phone_number', 'municipality')
+        // Get all admin/DA admin users - the complete list
+        $officers = User::where(function ($query) {
+                $query->whereIn('role', ['Admin', 'DA Admin'])
+                      ->orWhere('is_superadmin', true);
+            })
+            ->select('id', 'name', 'email', 'phone_number', 'municipality', 'role')
             ->orderBy('name')
             ->get();
         

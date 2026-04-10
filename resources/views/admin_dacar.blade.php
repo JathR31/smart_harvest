@@ -1084,102 +1084,77 @@
 
                 <!-- INBOX SECTION -->
                 <div x-cloak x-show="!loading && currentSection === 'inbox'" x-data="{
-                    inboxTab: 'received',
-                    messagesList: { received: [], sent: [] },
-                    showComposeModal: false,
-                    showMessageModal: false,
-                    showReplyModal: false,
-                    selectedMessage: null,
+                    conversations: [],
+                    selectedConversation: null,
                     replyContent: '',
                     sendSMS: false,
-                    newMessage: { receiver_id: '', subject: '', content: '', send_sms: false },
-                    farmers: [],
+                    newConversationRecipient: '',
+                    newConversationContent: '',
+                    showNewConversation: false,
+                    recipients: [],
+                    searchFilter: '',
                     
-                    get unreadMessages() {
-                        return this.messagesList.received.filter(m => !m.is_read);
-                    },
-                    
-                    get readMessages() {
-                        return this.messagesList.received.filter(m => m.is_read);
+                    get filteredConversations() {
+                        if (!this.searchFilter) return this.conversations;
+                        return this.conversations.filter(c => 
+                            c.name.toLowerCase().includes(this.searchFilter.toLowerCase()) ||
+                            (c.subject && c.subject.toLowerCase().includes(this.searchFilter.toLowerCase()))
+                        );
                     },
                     
                     init() {
-                        this.loadMessages();
-                        this.loadFarmers();
+                        this.loadConversations();
+                        this.loadRecipients();
                     },
                     
-                    async loadMessages() {
+                    async loadConversations() {
                         try {
-                            const response = await fetch('{{ url("/api/messages") }}');
+                            const response = await fetch('{{ url(\"/api/messages\") }}');
                             if (response.ok) {
                                 const data = await response.json();
-                                this.messagesList = { received: data.received || [], sent: data.sent || [] };
+                                this.conversations = data.received || [];
                             }
                         } catch (error) {
-                            console.error('Error loading messages:', error);
+                            console.error('Error loading conversations:', error);
                         }
                     },
                     
-                    async loadFarmers() {
+                    async loadRecipients() {
                         try {
-                            const response = await fetch('{{ url("/api/farmers") }}');
+                            const response = await fetch('{{ url(\"/api/farmers\") }}');
                             if (response.ok) {
-                                this.farmers = await response.json();
+                                const farmers = await response.json();
+                                // Combine farmers with DA option
+                                this.recipients = [
+                                    { id: 'DA', name: 'DA (All Officers)', is_group: true },
+                                    ...farmers
+                                ];
                             }
                         } catch (error) {
-                            console.error('Error loading farmers:', error);
+                            console.error('Error loading recipients:', error);
                         }
                     },
                     
-                    async sendMessage() {
+                    async selectConversation(conversation) {
                         try {
-                            const response = await fetch('{{ url("/api/messages") }}', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
-                                },
-                                body: JSON.stringify(this.newMessage)
-                            });
-                            
-                            if (response.ok) {
-                                await this.loadMessages();
-                                this.showComposeModal = false;
-                                this.newMessage = { receiver_id: '', subject: '', content: '', send_sms: false };
-                                const result = await response.json();
-                                alert(result.message || 'Message sent successfully!');
-                            } else {
-                                const error = await response.json();
-                                alert(error.errors ? JSON.stringify(error.errors) : 'Error sending message');
-                            }
-                        } catch (error) {
-                            console.error('Error sending message:', error);
-                            alert('Error sending message');
-                        }
-                    },
-                    
-                    async viewMessage(message) {
-                        try {
-                            const response = await fetch(`{{ url('/api/messages') }}/${message.id}`);
+                            const response = await fetch(`{{ url('/api/messages') }}/${conversation.id}`);
                             if (response.ok) {
                                 const data = await response.json();
-                                this.selectedMessage = data;
-                                this.showMessageModal = true;
-                                await this.loadMessages();
+                                this.selectedConversation = data;
+                                this.replyContent = '';
+                                this.sendSMS = false;
+                                await this.loadConversations();
                             }
                         } catch (error) {
-                            console.error('Error loading message:', error);
+                            console.error('Error loading conversation:', error);
                         }
                     },
                     
-                    async submitReply() {
-                        if (!this.replyContent.trim()) {
-                            alert('Please enter a message');
-                            return;
-                        }
+                    async sendReply() {
+                        if (!this.replyContent.trim()) return;
                         
                         try {
-                            const response = await fetch(`{{ url('/api/messages') }}/${this.selectedMessage.message.id}/reply`, {
+                            const response = await fetch(`{{ url('/api/messages') }}/${this.selectedConversation.message.id}/reply`, {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -1194,329 +1169,155 @@
                             if (response.ok) {
                                 this.replyContent = '';
                                 this.sendSMS = false;
-                                this.showReplyModal = false;
-                                alert('Reply sent successfully!' + (this.sendSMS ? ' SMS sent.' : ''));
-                                await this.viewMessage(this.selectedMessage.message);
-                                await this.loadMessages();
+                                await this.selectConversation(this.selectedConversation.message);
+                                await this.loadConversations();
                             }
                         } catch (error) {
                             console.error('Error sending reply:', error);
-                            alert('Error sending reply');
+                            alert('Error sending message');
+                        }
+                    },
+                    
+                    async startNewConversation() {
+                        if (!this.newConversationRecipient || !this.newConversationContent.trim()) {
+                            alert('Please select a recipient and type a message');
+                            return;
+                        }
+                        
+                        try {
+                            const response = await fetch('{{ url(\"/api/messages\") }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                                },
+                                body: JSON.stringify({
+                                    receiver_id: this.newConversationRecipient,
+                                    subject: 'Message',
+                                    content: this.newConversationContent,
+                                    send_sms: false
+                                })
+                            });
+                            
+                            if (response.ok) {
+                                this.showNewConversation = false;
+                                this.newConversationRecipient = '';
+                                this.newConversationContent = '';
+                                await this.loadConversations();
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            alert('Error sending message');
                         }
                     }
                 }">
-                    <div class="mb-6 flex items-center justify-between">
-                        <div>
-                            <h2 class="text-2xl font-bold text-gray-800">Inbox</h2>
-                            <p class="text-gray-600 text-sm">Communicate with farmers</p>
-                        </div>
-                        <button @click="showComposeModal = true" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                            </svg>
-                            New Message
-                        </button>
-                    </div>
-
-                    <!-- Tabs -->
-                    <div class="flex gap-2 mb-4">
-                        <button @click="inboxTab = 'received'" :class="inboxTab === 'received' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'" class="px-4 py-2 rounded-lg font-medium">
-                            Received (<span x-text="messagesList.received.length"></span>)
-                        </button>
-                        <button @click="inboxTab = 'sent'" :class="inboxTab === 'sent' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'" class="px-4 py-2 rounded-lg font-medium">
-                            Sent (<span x-text="messagesList.sent.length"></span>)
-                        </button>
-                    </div>
-
-                    <!-- Messages List -->
-                    <div class="space-y-3">
-                        <template x-if="inboxTab === 'received'">
-                            <div>
-                                <!-- Unread Messages Section -->
-                                <div x-show="unreadMessages.length > 0" class="mb-6">
-                                    <div class="flex items-center justify-between mb-3 pb-2 border-b-2 border-green-500">
-                                        <h3 class="text-sm font-bold text-green-700 uppercase tracking-wide flex items-center gap-2">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-                                            </svg>
-                                            New Messages
-                                        </h3>
-                                        <span class="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full" x-text="unreadMessages.length"></span>
+                    <div class="h-full bg-white rounded-lg shadow-md overflow-hidden flex" style="height: 600px;">
+                        <!-- Left Panel: Conversations List -->
+                        <div class="w-80 border-r border-gray-200 flex flex-col bg-gray-50">
+                            <div class="p-4 border-b border-gray-200">
+                                <div class="flex items-center gap-2 mb-4">
+                                    <h2 class="text-xl font-bold text-gray-800">Messages</h2>
+                                    <button @click="showNewConversation = !showNewConversation" class="ml-auto bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 transition">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <input type="text" x-model="searchFilter" placeholder="Search conversations..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500">
+                            </div>
+                            
+                            <!-- New Conversation Input -->
+                            <div x-show="showNewConversation" class="border-b border-gray-200 bg-white p-4 space-y-3">
+                                <select x-model="newConversationRecipient" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500">
+                                    <option value="">Select recipient...</option>
+                                    <template x-for="recipient in recipients" :key="recipient.id">
+                                        <option :value="recipient.id" x-text="recipient.name"></option>
+                                    </template>
+                                </select>
+                                <textarea x-model="newConversationContent" placeholder="Type your message..." rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500"></textarea>
+                                <div class="flex gap-2">
+                                    <button @click="startNewConversation()" class="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 text-sm font-medium">Send</button>
+                                    <button @click="showNewConversation = false; newConversationContent = ''" class="flex-1 bg-gray-300 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-400 text-sm font-medium">Cancel</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Conversations List -->
+                            <div class="overflow-y-auto flex-1">
+                                <template x-if="filteredConversations.length === 0">
+                                    <div class="p-4 text-center text-gray-500 text-sm">No conversations yet</div>
+                                </template>
+                                
+                                <template x-for="conversation in filteredConversations" :key="conversation.id">
+                                    <div @click="selectConversation(conversation)" :class="selectedConversation?.message?.id === conversation.id ? 'bg-green-100 border-l-4 border-green-600' : 'hover:bg-gray-100'" class="p-3 cursor-pointer border-b border-gray-100 transition">
+                                        <div class="flex items-center gap-3">
+                                            <div :class="!conversation.is_read ? 'bg-green-600' : 'bg-gray-400'" class="w-3 h-3 rounded-full flex-shrink-0"></div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="font-semibold text-gray-800 text-sm truncate" x-text="conversation.sender_name || 'Farmer'"></p>
+                                                <p class="text-xs text-gray-600 truncate" x-text="conversation.subject"></p>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-1" x-text="conversation.created_at"></p>
                                     </div>
-                                    <template x-for="message in unreadMessages" :key="message.id">
-                                        <div @click="viewMessage(message)" class="bg-green-50 border-2 border-green-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer mb-2">
-                                            <div class="flex items-start justify-between">
-                                                <div class="flex items-center gap-3 flex-1">
-                                                    <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
-                                                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                </template>
+                            </div>
+                        </div>
+                        
+                        <!-- Right Panel: Message Thread -->
+                        <div class="flex-1 flex flex-col">
+                            <template x-if="selectedConversation">
+                                <!-- Message Header -->
+                                <div class="border-b border-gray-200 p-4 bg-white">
+                                    <p class="font-bold text-gray-800" x-text="selectedConversation.message?.subject"></p>
+                                    <p class="text-xs text-gray-500">From: <span x-text="selectedConversation.message?.sender_name"></span></p>
+                                </div>
+                                
+                                <!-- Messages Thread -->
+                                <div class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+                                    <template x-for="msg in selectedConversation?.conversation" :key="msg.id">
+                                        <div :class="msg.is_mine ? 'flex-row-reverse' : ''" class="flex gap-3">
+                                            <div :class="msg.is_mine ? 'bg-green-600 text-white' : 'bg-white border border-gray-200'" class="max-w-xs px-4 py-2 rounded-lg">
+                                                <p class="text-sm" x-text="msg.content"></p>
+                                                <div class="flex items-center justify-between gap-2 mt-1">
+                                                    <p class="text-xs" :class="msg.is_mine ? 'text-green-100' : 'text-gray-500'" x-text="msg.created_at"></p>
+                                                    <template x-if="msg.sent_as_sms">
+                                                        <svg class="w-3 h-3" :class="msg.is_mine ? 'text-green-100' : 'text-blue-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
                                                         </svg>
-                                                    </div>
-                                                    <div class="flex-1">
-                                                        <div class="flex items-center gap-2 mb-1">
-                                                            <span class="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                                                            <h4 class="font-bold text-gray-800" x-text="message.sender_name || 'Farmer'"></h4>
-                                                        </div>
-                                                        <p class="text-sm text-gray-800 font-semibold" x-text="message.subject"></p>
-                                                        <p class="text-xs text-gray-600 mt-1 line-clamp-2" x-text="(message.content || '')"></p>
-                                                        <template x-if="message.reply_count > 0">
-                                                            <div class="mt-2 flex items-center text-xs text-green-600">
-                                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
-                                                                </svg>
-                                                                <span x-text="message.reply_count + ' ' + (message.reply_count === 1 ? 'reply' : 'replies')"></span>
-                                                            </div>
-                                                        </template>
-                                                    </div>
-                                                </div>
-                                                <div class="text-right ml-4">
-                                                    <span class="text-xs text-gray-500" x-text="message.created_at"></span>
-                                                    <div class="mt-2">
-                                                        <span class="inline-block px-2 py-1 bg-green-500 text-white text-xs rounded-full font-medium">NEW</span>
-                                                    </div>
+                                                    </template>
                                                 </div>
                                             </div>
                                         </div>
                                     </template>
                                 </div>
                                 
-                                <!-- Divider -->
-                                <div x-show="unreadMessages.length > 0 && readMessages.length > 0" class="my-6">
-                                    <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-300">
-                                        <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide flex items-center gap-2">
+                                <!-- Reply Input -->
+                                <div class="border-t border-gray-200 p-4 bg-white">
+                                    <div class="flex gap-2">
+                                        <textarea x-model="replyContent" placeholder="Type your reply..." rows="2" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500"></textarea>
+                                        <button @click="sendReply()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2 self-end">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
                                             </svg>
-                                            Previous Messages
-                                        </h3>
-                                        <span class="text-xs text-gray-500" x-text="readMessages.length + ' read'"></span>
+                                        </button>
                                     </div>
-                                </div>
-                                
-                                <!-- Read Messages Section -->
-                                <template x-for="message in readMessages" :key="message.id">
-                                    <div @click="viewMessage(message)" class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer mb-2">
-                                        <div class="flex items-start justify-between">
-                                            <div class="flex items-center gap-3 flex-1">
-                                                <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                                                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                                    </svg>
-                                                </div>
-                                                <div class="flex-1">
-                                                    <h4 class="font-medium text-gray-700" x-text="message.sender_name || 'Farmer'"></h4>
-                                                    <p class="text-sm text-gray-600 font-medium" x-text="message.subject"></p>
-                                                    <p class="text-xs text-gray-500 mt-1 line-clamp-2" x-text="(message.content || '')"></p>
-                                                    <template x-if="message.reply_count > 0">
-                                                        <div class="mt-2 flex items-center text-xs text-gray-600">
-                                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
-                                                            </svg>
-                                                            <span x-text="message.reply_count + ' ' + (message.reply_count === 1 ? 'reply' : 'replies')"></span>
-                                                        </div>
-                                                    </template>
-                                                </div>
-                                            </div>
-                                            <span class="text-xs text-gray-400" x-text="message.created_at"></span>
-                                        </div>
-                                    </div>
-                                </template>
-                                
-                                <!-- Empty State -->
-                                <div x-show="messagesList.received.length === 0" class="bg-white rounded-lg border border-gray-200 p-12 text-center">
-                                    <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                                    </svg>
-                                    <p class="text-gray-500">No messages received yet.</p>
-                                </div>
-                            </div>
-                        </template>
-
-                        <template x-if="inboxTab === 'sent'">
-                            <div>
-                                <template x-for="message in messagesList.sent" :key="message.id">
-                                    <div @click="viewMessage(message)" class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer mb-2">
-                                        <div class="flex items-start justify-between">
-                                            <div class="flex items-center gap-3 flex-1">
-                                                <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                                                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                                    </svg>
-                                                </div>
-                                                <div class="flex-1">
-                                                    <h4 class="font-semibold text-gray-800">To: <span x-text="message.receiver_name || 'Farmer'"></span></h4>
-                                                    <p class="text-sm text-gray-600 font-medium" x-text="message.subject"></p>
-                                                    <p class="text-xs text-gray-500 mt-1 line-clamp-2" x-text="(message.content || '')"></p>
-                                                    <div class="mt-2 flex items-center gap-3">
-                                                        <template x-if="message.sent_as_sms">
-                                                            <span class="inline-flex items-center text-xs text-blue-600">
-                                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                                                                </svg>
-                                                                SMS sent
-                                                            </span>
-                                                        </template>
-                                                        <template x-if="message.reply_count > 0">
-                                                            <span class="inline-flex items-center text-xs text-gray-600">
-                                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
-                                                                </svg>
-                                                                <span x-text="message.reply_count + ' ' + (message.reply_count === 1 ? 'reply' : 'replies')"></span>
-                                                            </span>
-                                                        </template>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <span class="text-xs text-gray-400" x-text="message.created_at"></span>
-                                        </div>
-                                    </div>
-                                </template>
-                                <div x-show="messagesList.sent.length === 0" class="bg-white rounded-lg border border-gray-200 p-12 text-center">
-                                    <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                                    </svg>
-                                    <p class="text-gray-500">No messages sent yet.</p>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-
-                    <!-- Compose Modal -->
-                    <div x-show="showComposeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="showComposeModal = false">
-                        <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
-                            <h3 class="text-lg font-bold mb-4">Compose Message</h3>
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">To (Farmer)</label>
-                                    <select x-model="newMessage.receiver_id" class="w-full border border-gray-300 rounded-lg px-3 py-2">
-                                        <option value="">Select farmer...</option>
-                                        <template x-for="farmer in farmers" :key="farmer.id">
-                                            <option :value="farmer.id" x-text="farmer.name"></option>
-                                        </template>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-                                    <input type="text" x-model="newMessage.subject" class="w-full border border-gray-300 rounded-lg px-3 py-2">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                                    <textarea x-model="newMessage.content" rows="6" class="w-full border border-gray-300 rounded-lg px-3 py-2"></textarea>
-                                </div>
-                                <div class="flex items-center space-x-2 bg-blue-50 p-3 rounded-lg">
-                                    <input type="checkbox" x-model="newMessage.send_sms" id="send-sms-da-compose" class="w-5 h-5 text-green-600 rounded focus:ring-green-500">
-                                    <label for="send-sms-da-compose" class="flex-1">
-                                        <span class="text-sm font-medium text-gray-700 flex items-center">
-                                            <svg class="w-4 h-4 mr-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                                            </svg>
-                                            Send as SMS
-                                        </span>
-                                        <p class="text-xs text-gray-500 ml-5">Also send this message via text message</p>
+                                    <label class="flex items-center gap-2 mt-2 text-xs text-gray-600">
+                                        <input type="checkbox" x-model="sendSMS" class="w-4 h-4 text-green-600 rounded">
+                                        <span>Also send as SMS</span>
                                     </label>
                                 </div>
-                                <div class="flex gap-2">
-                                    <button @click="sendMessage()" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Send</button>
-                                    <button @click="showComposeModal = false" class="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">Cancel</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- View Message Modal -->
-                    <div x-show="showMessageModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="showMessageModal = false">
-                        <div class="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-                            <div class="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-xl">
-                                <div class="flex justify-between items-start">
-                                    <div class="flex-1">
-                                        <h3 class="text-xl font-bold text-gray-800" x-text="selectedMessage?.message?.subject"></h3>
-                                        <p class="text-sm text-gray-500 mt-1" x-text="selectedMessage?.message?.created_at"></p>
-                                    </div>
-                                    <button @click="showMessageModal = false" class="text-gray-400 hover:text-gray-600">
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
+                            </template>
                             
-                            <div class="p-6">
-                                <!-- Conversation Thread -->
-                                <div class="space-y-4">
-                                    <template x-for="msg in selectedMessage?.conversation" :key="msg.id">
-                                        <div class="border-l-4 pl-4 py-3" :class="msg.is_mine ? 'border-green-500 bg-green-50' : 'border-blue-500 bg-blue-50'">
-                                            <div class="flex items-start justify-between mb-2">
-                                                <div>
-                                                    <p class="font-semibold text-gray-800" x-text="msg.is_mine ? 'You' : msg.sender_name"></p>
-                                                    <p class="text-xs text-gray-500">To: <span x-text="msg.receiver_name"></span></p>
-                                                </div>
-                                                <div class="text-right">
-                                                    <p class="text-xs text-gray-500" x-text="msg.created_at"></p>
-                                                    <template x-if="msg.sent_as_sms">
-                                                        <span class="inline-flex items-center text-xs text-blue-600 mt-1">
-                                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                                                            </svg>
-                                                            SMS
-                                                        </span>
-                                                    </template>
-                                                </div>
-                                            </div>
-                                            <p class="text-gray-700 whitespace-pre-wrap" x-text="msg.content"></p>
-                                        </div>
-                                    </template>
-                                </div>
-                                
-                                <!-- Reply Section -->
-                                <div class="mt-6 pt-6 border-t border-gray-200">
-                                    <button @click="showReplyModal = true" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg flex items-center justify-center space-x-2">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
-                                        </svg>
-                                        <span>Reply to this conversation</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Reply Modal -->
-                    <div x-show="showReplyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]" @click.self="showReplyModal = false">
-                        <div class="bg-white rounded-xl p-6 w-full max-w-lg mx-4">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-lg font-semibold text-gray-800">Reply to Message</h3>
-                                <button @click="showReplyModal = false" class="text-gray-500 hover:text-gray-700">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                    </svg>
-                                </button>
-                            </div>
-                            
-                            <form @submit.prevent="submitReply">
-                                <div class="space-y-4">
+                            <!-- No Conversation Selected -->
+                            <template x-if="!selectedConversation">
+                                <div class="flex-1 flex items-center justify-center text-gray-500 text-center">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Your Reply</label>
-                                        <textarea x-model="replyContent" rows="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Write your reply..." required></textarea>
-                                    </div>
-                                    <div class="flex items-center space-x-2 bg-blue-50 p-3 rounded-lg">
-                                        <input type="checkbox" x-model="sendSMS" id="send-sms-da-reply" class="w-5 h-5 text-green-600 rounded focus:ring-green-500">
-                                        <label for="send-sms-da-reply" class="flex-1">
-                                            <span class="text-sm font-medium text-gray-700 flex items-center">
-                                                <svg class="w-4 h-4 mr-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                                                </svg>
-                                                Send as SMS
-                                            </span>
-                                            <p class="text-xs text-gray-500 ml-5">Also send this reply via text message</p>
-                                        </label>
+                                        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                        </svg>
+                                        <p><span class="font-medium">Select a conversation</span> or start a new one</p>
                                     </div>
                                 </div>
-                                
-                                <div class="flex space-x-3 mt-6">
-                                    <button type="button" @click="showReplyModal = false" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
-                                    <button type="submit" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Send Reply</button>
-                                </div>
-                            </form>
+                            </template>
                         </div>
                     </div>
                 </div>
