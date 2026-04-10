@@ -453,23 +453,17 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                 @php
                     $team = [
-                        ['name' => 'Mary Keirstin Marziel Ante', 'role' => 'Project Member', 'title' => 'Frontend Developer', 'desc' => null, 'img' => 'image_dc2a1b.jpg'], // Using a real image placeholder here
-                        ['name' => 'Jathniel Rei Carbonell', 'role' => 'Project Member', 'title' => 'Backend Developer', 'desc' => null, 'img' => 'placeholder'],
-                        ['name' => 'John Paul Soriano', 'role' => 'Project Member', 'title' => 'Backend Developer', 'desc' => null, 'img' => 'placeholder'],
-                        ['name' => 'Anna Rhodora Quitaleg', 'role' => 'Project Lead', 'title' => 'Project Lead', 'desc' => '15 years developing precision farming technologies and irrigation systems', 'img' => 'placeholder'],
+                        ['name' => 'Mary Keirstin Marziel Ante', 'role' => 'Project Member', 'title' => 'Frontend Developer', 'desc' => null, 'img' => 'Kei.jpg'],
+                        ['name' => 'Jathniel Rei Carbonell', 'role' => 'Project Member', 'title' => 'Backend Developer', 'desc' => null, 'img' => 'jath face.jpg'],
+                        ['name' => 'John Paul Soriano', 'role' => 'Project Member', 'title' => 'Backend Developer', 'desc' => null, 'img' => 'jp face.jpg'],
+                        ['name' => 'Anna Rhodora Quitaleg', 'role' => 'Project Lead', 'title' => 'Project Lead', 'desc' => '15 years developing precision farming technologies and irrigation systems', 'img' => 'Maam Anna.jpg'],
                     ];
                 @endphp
 
                 @foreach ($team as $member)
                 <div class="p-4 bg-white rounded-xl shadow-lg border border-gray-100 text-center">
                     <div class="h-64 mb-4 overflow-hidden rounded-lg">
-                        @if ($member['img'] != 'placeholder')
-                            <img src="{{ asset('images/mary_ante.jpg') }}" alt="{{ $member['name'] }}" class="object-cover w-full h-full">
-                        @else
-                            <div class="w-full h-full bg-gray-100 flex items-center justify-center text-8xl text-gray-400">
-                                :)
-                            </div>
-                        @endif
+                        <img src="{{ asset('images/' . $member['img']) }}" alt="{{ $member['name'] }}" class="object-cover w-full h-full">
                     </div>
                     
                     <h4 class="text-lg font-medium text-gray-800">{{ $member['name'] }}</h4>
