@@ -71,6 +71,12 @@
                         </svg>
                         <span>Announcements</span>
                     </button>
+                    <button @click="currentSection = 'inbox'" :class="currentSection === 'inbox' ? 'bg-green-600' : 'hover:bg-green-800'" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded transition-colors w-full text-left">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        <span>Inbox</span>
+                    </button>
                 </div>
 
                 <div class="mb-4">
@@ -1075,6 +1081,116 @@
                     </div>
                 </div>
 
+                <!-- INBOX SECTION - Modern Messaging App -->
+                <div x-cloak x-show="!loading && currentSection === 'inbox'" class="space-y-6 p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">Inbox</h2>
+                            <p class="text-sm text-gray-500">Communicate with Farmers</p>
+                        </div>
+                    </div>
+
+                    <div x-data="inboxMessenger()" @init="init()" class="bg-white rounded-xl shadow-lg overflow-hidden flex" style="height: 700px;">
+                        <!-- Left Panel: Conversations List -->
+                        <div class="w-1/3 border-r border-gray-200 flex flex-col bg-gray-50">
+                            <!-- Header -->
+                            <div class="p-4 border-b border-gray-200 bg-white">
+                                <h3 class="font-semibold text-gray-800 mb-3">Messages</h3>
+                                <input type="text" x-model="searchFilter" @input="filterConversations()" placeholder="Search conversations..." class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            </div>
+
+                            <!-- Conversations List -->
+                            <div class="flex-1 overflow-y-auto">
+                                <template x-if="filteredConversations.length === 0">
+                                    <div class="p-4 text-center text-gray-500 text-sm">
+                                        <p class="font-medium">No conversations yet</p>
+                                        <p class="text-xs mt-1">Send a message to get started</p>
+                                    </div>
+                                </template>
+
+                                <template x-for="conv in filteredConversations" :key="conv.id">
+                                    <div @click="selectConversation(conv)" :class="selectedConversation?.id === conv.id ? 'bg-green-50 border-l-4 border-green-600' : 'hover:bg-gray-100'" class="p-3 cursor-pointer border-b border-gray-100 transition">
+                                        <div class="flex items-start gap-3">
+                                            <div :class="!conv.is_read ? 'bg-green-500' : 'bg-gray-400'" class="w-2 h-2 rounded-full flex-shrink-0 mt-2"></div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="font-semibold text-gray-800 text-sm" x-text="conv.sender_name"></p>
+                                                <p class="text-xs text-gray-600 truncate mt-0.5" x-text="conv.content"></p>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-gray-400 mt-2" x-text="formatDate(conv.created_at)"></p>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Right Panel: Chat Messages -->
+                        <div class="flex-1 flex flex-col bg-white">
+                            <template x-if="selectedConversation">
+                                <!-- Chat Header -->
+                                <div class="border-b border-gray-200 p-4 bg-gradient-to-r from-green-50 to-blue-50">
+                                    <p class="font-semibold text-gray-800" x-text="selectedConversation.sender_name"></p>
+                                    <p class="text-xs text-gray-500 mt-1" x-text="'Last message: ' + formatDate(selectedConversation.created_at)"></p>
+                                </div>
+
+                                <!-- Quick Reply Templates -->
+                                <div class="px-4 pt-3 pb-2 bg-gray-50 border-b border-gray-200">
+                                    <p class="text-xs font-semibold text-gray-600 mb-2">Quick Replies:</p>
+                                    <div class="flex flex-wrap gap-2">
+                                        <template x-for="template in quickReplyTemplates" :key="template">
+                                            <button @click="replyContent = template; $nextTick(() => sendMessage())" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded-full hover:bg-green-50 hover:border-green-500 transition">
+                                                <span x-text="template.substring(0, 20) + (template.length > 20 ? '...' : '')"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- Messages -->
+                                <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-white via-gray-50 to-gray-50" x-ref="messagesContainer">
+                                    <template x-for="msg in selectedConversation.messages || []" :key="msg.id">
+                                        <div :class="msg.is_mine ? 'flex justify-end' : 'flex justify-start'" class="flex">
+                                            <div :class="msg.is_mine ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-900'" class="max-w-xs px-4 py-2.5 rounded-lg break-words">
+                                                <p class="text-sm" x-text="msg.content"></p>
+                                                <p :class="msg.is_mine ? 'text-green-100' : 'text-gray-500'" class="text-xs mt-1" x-text="formatTime(msg.created_at)"></p>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <!-- Message Input -->
+                                <div class="border-t border-gray-200 p-4 bg-white">
+                                    <div class="flex gap-2">
+                                        <textarea x-model="replyContent" @keydown.enter.ctrl="sendMessage()" placeholder="Type a message... (Ctrl+Enter to send)" rows="2" class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"></textarea>
+                                        <button @click="sendMessage()" :disabled="!replyContent.trim() || sending" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-60 transition font-semibold flex items-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                                            </svg>
+                                            <span x-show="!sending">Send</span>
+                                            <span x-show="sending">Sending...</span>
+                                        </button>
+                                    </div>
+                                    <label class="flex items-center gap-2 mt-2 text-xs text-gray-600">
+                                        <input type="checkbox" x-model="sendSMS" class="w-4 h-4 text-green-600 rounded">
+                                        <span>Also send as SMS</span>
+                                    </label>
+                                </div>
+                            </template>
+
+                            <!-- No Conversation Selected -->
+                            <template x-if="!selectedConversation">
+                                <div class="flex-1 flex items-center justify-center text-gray-400">
+                                    <div class="text-center">
+                                        <svg class="w-20 h-20 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                        </svg>
+                                        <p class="font-semibold">Select a conversation</p>
+                                        <p class="text-sm mt-1">...or start a new one</p>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- CROP MONITORING SECTION -->
                 <div x-cloak x-show="!loading && currentSection === 'crop-monitoring'" @load-crop-monitoring.window="if (cmRecords.length === 0) load()" x-data="{
                     cmLoading: false,
@@ -1527,7 +1643,7 @@
                     
                     // Handle URL hash for navigation
                     const hash = window.location.hash.substring(1); // Remove the # symbol
-                    if (hash && ['dashboard', 'market-prices', 'announcements', 'crop-monitoring'].includes(hash)) {
+                    if (hash && ['dashboard', 'market-prices', 'announcements', 'inbox', 'crop-monitoring'].includes(hash)) {
                         this.currentSection = hash;
                         console.log('Navigating to section from URL hash:', hash);
                         if (hash === 'crop-monitoring') {
@@ -2159,6 +2275,145 @@
             });
             
             return false;
+        }
+    </script>
+
+    <script>
+        function inboxMessenger() {
+            return {
+                conversations: [],
+                selectedConversation: null,
+                searchFilter: '',
+                replyContent: '',
+                sendSMS: false,
+                sending: false,
+                quickReplyTemplates: [
+                    'Thank you for the report',
+                    'Please provide farm location',
+                    'Can you send photos?',
+                    'Schedule farm visit',
+                    'Information received'
+                ],
+
+                get filteredConversations() {
+                    if (!this.searchFilter.trim()) return this.conversations;
+                    const filter = this.searchFilter.toLowerCase();
+                    return this.conversations.filter(c => 
+                        c.sender_name.toLowerCase().includes(filter) ||
+                        (c.content && c.content.toLowerCase().includes(filter))
+                    );
+                },
+
+                async init() {
+                    await this.loadConversations();
+                    // Auto-refresh every 10 seconds
+                    setInterval(() => this.loadConversations(), 10000);
+                },
+
+                async loadConversations() {
+                    try {
+                        const response = await fetch('/api/messages');
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.conversations = data.sent || [];
+                        }
+                    } catch (error) {
+                        console.error('Error loading conversations:', error);
+                    }
+                },
+
+                selectConversation(conversation) {
+                    this.selectedConversation = conversation;
+                    this.replyContent = '';
+                    this.sendSMS = false;
+                    this.$nextTick(() => {
+                        const container = this.$refs.messagesContainer;
+                        if (container) {
+                            container.scrollTop = container.scrollHeight;
+                        }
+                    });
+                },
+
+                filterConversations() {
+                    // Reactive filtering handled by computed property
+                },
+
+                async sendMessage() {
+                    if (!this.replyContent.trim() || !this.selectedConversation) return;
+
+                    this.sending = true;
+                    try {
+                        const response = await fetch(`/api/messages/${this.selectedConversation.id}/reply`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || ''
+                            },
+                            body: JSON.stringify({
+                                content: this.replyContent,
+                                send_sms: this.sendSMS
+                            })
+                        });
+
+                        if (response.ok) {
+                            // Add message to local state immediately
+                            if (!this.selectedConversation.messages) {
+                                this.selectedConversation.messages = [];
+                            }
+                            this.selectedConversation.messages.push({
+                                id: Date.now(),
+                                content: this.replyContent,
+                                is_mine: true,
+                                created_at: new Date(),
+                                sent_as_sms: this.sendSMS
+                            });
+
+                            this.replyContent = '';
+                            this.sendSMS = false;
+
+                            // Auto-scroll to bottom
+                            this.$nextTick(() => {
+                                const container = this.$refs.messagesContainer;
+                                if (container) {
+                                    container.scrollTop = container.scrollHeight;
+                                }
+                            });
+
+                            // Reload conversations
+                            await this.loadConversations();
+                        } else {
+                            alert('Error sending message. Please try again.');
+                        }
+                    } catch (error) {
+                        console.error('Error sending message:', error);
+                        alert('Error: ' + error.message);
+                    } finally {
+                        this.sending = false;
+                    }
+                },
+
+                formatDate(dateString) {
+                    const date = new Date(dateString);
+                    const now = new Date();
+                    const diffTime = Math.abs(now - date);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    if (diffDays === 0) {
+                        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                    } else if (diffDays === 1) {
+                        return 'Yesterday';
+                    } else if (diffDays < 7) {
+                        return diffDays + ' days ago';
+                    } else {
+                        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    }
+                },
+
+                formatTime(dateString) {
+                    const date = new Date(dateString);
+                    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                }
+            };
         }
     </script>
 </body>
