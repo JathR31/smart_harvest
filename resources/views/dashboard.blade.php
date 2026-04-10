@@ -997,7 +997,7 @@
                         <div class="p-4 border-b border-gray-200 bg-white">
                             <div class="flex items-center justify-between mb-3">
                                 <h3 class="font-semibold text-gray-800">Messages</h3>
-                                <button @click="showNewMessageModal = true" class="flex items-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 active:scale-95 transition transform font-semibold text-sm">
+                                <button type="button" @click="openNewMessageModal()" class="flex items-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 active:scale-95 transition transform font-semibold text-sm">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                                     </svg>
@@ -1103,7 +1103,7 @@
                     <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4" @click.away="showNewMessageModal = false">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-lg font-semibold text-gray-800">New Message</h3>
-                            <button @click="showNewMessageModal = false" class="text-gray-500 hover:text-gray-700">
+                            <button type="button" @click="showNewMessageModal = false" class="text-gray-500 hover:text-gray-700 transition">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                 </svg>
@@ -1137,9 +1137,9 @@
                             </label>
 
                             <div class="flex gap-3 pt-2">
-                                <button @click="showNewMessageModal = false" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
-                                <button @click="sendNewMessage()" :disabled="!newMessage.recipient_id || !newMessage.subject || !newMessage.content || sending" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60 transition">
-                                    <span x-show="!sending">Send</span>
+                                <button type="button" @click="showNewMessageModal = false" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
+                                <button type="button" @click="sendNewMessage()" :disabled="!newMessage.recipient_id || !newMessage.subject || !newMessage.content || sending" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed transition">
+                                    <span x-show="!sending">Send Message</span>
                                     <span x-show="sending">Sending...</span>
                                 </button>
                             </div>
@@ -1874,6 +1874,11 @@
                     } catch (error) {
                         console.error('Error loading officers:', error);
                     }
+                },
+
+                openNewMessageModal() {
+                    console.log('Opening new message modal');
+                    this.showNewMessageModal = true;
                 },
 
                 selectConversation(conversation) {

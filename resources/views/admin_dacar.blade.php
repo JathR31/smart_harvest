@@ -1097,7 +1097,7 @@
                             <div class="p-4 border-b border-gray-200 bg-white">
                                 <div class="flex items-center justify-between mb-3">
                                     <h3 class="font-semibold text-gray-800">Messages</h3>
-                                    <button @click="showNewMessageModal = true" class="flex items-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 active:scale-95 transition transform font-semibold text-sm">
+                                    <button type="button" @click="openNewMessageModal()" class="flex items-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 active:scale-95 transition transform font-semibold text-sm">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                                         </svg>
@@ -1201,12 +1201,16 @@
                     <!-- New Message Modal -->
                     <div x-data="inboxMessenger()" x-show="showNewMessageModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                         <div class="bg-white rounded-xl shadow-2xl p-6 w-96">
-                            <div class="mb-4">
+                            <div class="flex justify-between items-center mb-4">
                                 <h2 class="text-xl font-bold text-gray-800">Start New Conversation</h2>
-                                <p class="text-sm text-gray-600 mt-1">Send a message to a farmer</p>
+                                <button type="button" @click="showNewMessageModal = false" class="text-gray-500 hover:text-gray-700 transition">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
                             </div>
 
-                            <form @submit.prevent="sendNewMessage()" class="space-y-4">
+                            <div class="space-y-4">
                                 <!-- Recipient Selection -->
                                 <div>
                                     <label class="block text-sm font-semibold text-gray-700 mb-2">Select Farmer</label>
@@ -1239,12 +1243,12 @@
                                 <!-- Buttons -->
                                 <div class="flex gap-3 justify-end pt-4">
                                     <button type="button" @click="showNewMessageModal = false" class="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-semibold">Cancel</button>
-                                    <button type="submit" :disabled="sending" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60 transition font-semibold">
+                                    <button type="button" @click="sendNewMessage()" :disabled="!newMessage.recipient_id || !newMessage.subject || !newMessage.content || sending" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed transition font-semibold">
                                         <span x-show="!sending">Send Message</span>
                                         <span x-show="sending">Sending...</span>
                                     </button>
                                 </div>
-                            </form>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2398,6 +2402,11 @@
                     } catch (error) {
                         console.error('Error loading farmers:', error);
                     }
+                },
+
+                openNewMessageModal() {
+                    console.log('Opening new message modal');
+                    this.showNewMessageModal = true;
                 },
 
                 selectConversation(conversation) {
