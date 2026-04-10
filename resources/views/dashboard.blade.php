@@ -1207,15 +1207,42 @@
                     
                     <form @submit.prevent="sendMessage">
                         <div class="space-y-4">
+                            <!-- Recipient Type Selector -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">To (DA Officer)</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Message To</label>
+                                <div class="flex space-x-2 mb-3">
+                                    <button type="button" @click="newMessage.recipientType = 'officer'; newMessage.receiver_id = '';" :class="newMessage.recipientType === 'officer' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'" class="px-4 py-2 rounded-lg font-medium transition">
+                                        DA Officer
+                                    </button>
+                                    <button type="button" @click="newMessage.recipientType = 'farmer'; newMessage.receiver_id = '';" :class="newMessage.recipientType === 'farmer' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'" class="px-4 py-2 rounded-lg font-medium transition">
+                                        Other Farmer
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Recipient Dropdown -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1" x-text="newMessage.recipientType === 'officer' ? 'Select DA Officer' : 'Select Farmer'"></label>
                                 <select x-model="newMessage.receiver_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" required>
-                                    <option value="">Select a DA Officer...</option>
-                                    <template x-for="officer in daOfficers" :key="officer.id">
-                                        <option :value="officer.id" x-text="officer.name"></option>
+                                    <template x-if="newMessage.recipientType === 'officer'">
+                                        <option value="">Choose a DA Officer...</option>
+                                    </template>
+                                    <template x-if="newMessage.recipientType === 'farmer'">
+                                        <option value="">Choose a Farmer...</option>
+                                    </template>
+                                    <template x-if="newMessage.recipientType === 'officer'">
+                                        <template x-for="officer in daOfficers" :key="officer.id">
+                                            <option :value="officer.id" x-text="officer.name + ' (' + (officer.municipality || 'N/A') + ')'"></option>
+                                        </template>
+                                    </template>
+                                    <template x-if="newMessage.recipientType === 'farmer'">
+                                        <template x-for="farmer in otherFarmers" :key="farmer.id">
+                                            <option :value="farmer.id" x-text="farmer.name + ' (' + (farmer.municipality || 'N/A') + ')'"></option>
+                                        </template>
                                     </template>
                                 </select>
                             </div>
+
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
                                 <input type="text" x-model="newMessage.subject" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Message subject..." required>
@@ -1391,8 +1418,9 @@
                 },
                 messages: { received: [], sent: [] },
                 daOfficers: [],
+                otherFarmers: [],
                 showComposeModal: false,
-                newMessage: { receiver_id: '', subject: '', content: '', send_sms: false },
+                newMessage: { receiver_id: '', subject: '', content: '', send_sms: false, recipientType: 'officer' },
                 municipalities: [
                     'Atok', 'Bakun', 'Bokod', 'Buguias', 'Itogon', 
                     'Kabayan', 'Kapangan', 'Kibungan', 'La Trinidad', 'Mankayan', 
@@ -1460,6 +1488,7 @@
                     this.loadMessages();
                     this.loadMyCrops();
                     this.loadOfficers();
+                    this.loadFarmers();
                     
                     // Initialize translation system
                     if (typeof SmartHarvestTranslation !== 'undefined') {
@@ -1518,9 +1547,25 @@
                         const response = await fetch(`{{ url('/api/officers') }}`);
                         if (response.ok) {
                             this.daOfficers = await response.json();
+                            console.log('Officers loaded:', this.daOfficers.length);
                         }
                     } catch (error) {
                         console.error('Error loading officers:', error);
+                    }
+                },
+
+                async loadFarmers() {
+                    try {
+                        const response = await fetch(`{{ url('/api/farmers') }}`);
+                        if (response.ok) {
+                            const allFarmers = await response.json();
+                            // Filter out current user
+                            const userId = parseInt(document.querySelector('[data-user-id]')?.dataset.userId || '0');
+                            this.otherFarmers = allFarmers.filter(f => f.id !== userId);
+                            console.log('Farmers loaded:', this.otherFarmers.length);
+                        }
+                    } catch (error) {
+                        console.error('Error loading farmers:', error);
                     }
                 },
 
@@ -1670,7 +1715,7 @@
                         
                         if (response.ok) {
                             this.showComposeModal = false;
-                            this.newMessage = { receiver_id: '', subject: '', content: '', send_sms: false };
+                            this.newMessage = { receiver_id: '', subject: '', content: '', send_sms: false, recipientType: 'officer' };
                             await this.loadMessages();
                             alert(result.message || 'Message sent successfully!');
                         } else {
