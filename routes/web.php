@@ -10,6 +10,15 @@ Route::match(['GET', 'HEAD'], '/', function () {
     return view('homepage'); 
 })->name('homepage');
 
+// Legal Pages
+Route::get('/terms-of-service', function () {
+    return view('terms-of-service');
+})->name('terms-of-service');
+
+Route::get('/privacy-policy', function () {
+    return view('privacy-policy');
+})->name('privacy-policy');
+
 if (app()->environment(['local', 'testing'])) {
     // Email Testing Routes (for debugging)
     Route::get('/api/test-email', [\App\Http\Controllers\EmailTestController::class, 'testEmail'])->name('test.email');
