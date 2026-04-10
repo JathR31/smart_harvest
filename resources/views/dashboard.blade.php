@@ -997,10 +997,11 @@
                         <div class="p-4 border-b border-gray-200 bg-white">
                             <div class="flex items-center justify-between mb-3">
                                 <h3 class="font-semibold text-gray-800">Messages</h3>
-                                <button @click="showNewMessageModal = true" class="bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 transition" title="New Message">
+                                <button @click="showNewMessageModal = true" class="flex items-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 active:scale-95 transition transform font-semibold text-sm">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                                     </svg>
+                                    <span>New</span>
                                 </button>
                             </div>
                             <input type="text" x-model="searchFilter" @input="filterConversations()" placeholder="Search conversations..." class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
