@@ -2753,7 +2753,7 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
         $mlService = new \App\Services\MLApiService();
         
         // Use working ML API endpoints: /api/predict for each crop
-        $allCrops = ['CABBAGE', 'CARROTS', 'WHITE POTATO', 'LETTUCE', 'BROCCOLI', 'CAULIFLOWER', 'CHINESE CABBAGE', 'SNAP BEANS', 'GARDEN PEAS', 'SWEET PEPPER'];
+        $allCrops = ['SAYOTE', 'CABBAGE', 'CARROTS', 'WHITE POTATO', 'LETTUCE', 'BROCCOLI', 'CAULIFLOWER', 'CHINESE CABBAGE', 'SNAP BEANS', 'GARDEN PEAS', 'SWEET PEPPER'];
         $currentYear = intval(date('Y'));
         $currentMonth = strtoupper(date('M'));
         
@@ -2768,6 +2768,7 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
 
         // Approximate mid-range growth duration in days
         $cropDurationDays = [
+            'SAYOTE' => 120,
             'CABBAGE' => 78,
             'CHINESE CABBAGE' => 68,
             'CAULIFLOWER' => 105,
@@ -2814,6 +2815,7 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
             
             // Crop-specific planting schedules for Benguet highland vegetables
             $cropSchedules = [
+                'SAYOTE' => ['planting' => 'Mar-May', 'harvest' => 'Jul-Sep', 'duration' => '120-150 days'],
                 'CABBAGE' => ['planting' => 'Oct-Dec', 'harvest' => 'Jan-Mar', 'duration' => '65-90 days'],
                 'CHINESE CABBAGE' => ['planting' => 'Oct-Dec', 'harvest' => 'Dec-Feb', 'duration' => '60-75 days'],
                 'CAULIFLOWER' => ['planting' => 'Sep-Nov', 'harvest' => 'Dec-Feb', 'duration' => '90-120 days'],
@@ -2869,10 +2871,19 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
                 
                 // Calculate yield per hectare from ML prediction
                 $predicted_yield = $production / 2.5; // production per planted area
+                
+                // Cap unrealistic yield values
+                if ($predicted_yield > 100) {
+                    $predicted_yield = 15; // Default reasonable value for highland vegetables
+                }
 
                 // Use best-month ML prediction when available
                 if ($bestMonth !== null && $bestMonthProduction > 0) {
                     $predicted_yield = $bestMonthProduction / 2.5;
+                    // Cap here too
+                    if ($predicted_yield > 100) {
+                        $predicted_yield = 15;
+                    }
                 }
                 
                 // Get previous year prediction for historical comparison
@@ -2947,6 +2958,7 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
             \Log::info('No ML data, using database fallback for municipality: ' . $dbMunicipality);
             
             $cropSchedules = [
+                'SAYOTE' => ['planting' => 'Mar-May', 'harvest' => 'Jul-Sep', 'duration' => '120-150 days'],
                 'CABBAGE' => ['planting' => 'Oct-Dec', 'harvest' => 'Jan-Mar', 'duration' => '65-90 days'],
                 'CHINESE CABBAGE' => ['planting' => 'Oct-Dec', 'harvest' => 'Dec-Feb', 'duration' => '60-75 days'],
                 'CAULIFLOWER' => ['planting' => 'Sep-Nov', 'harvest' => 'Dec-Feb', 'duration' => '90-120 days'],
@@ -2976,6 +2988,13 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
                 $recordCount = $data->record_count;
                 $baseConfidence = 65;
                 
+                // Cap unrealistic yield values (maximum 100 mt/ha for any crop)
+                $avg_yield = floatval($data->avg_yield);
+                if ($avg_yield > 100) {
+                    $avg_yield = min($avg_yield / 1000, 100); // Handle cases where data is in kg instead of mt
+                    if ($avg_yield > 100) $avg_yield = 15; // Default to reasonable value if still too high
+                }
+                
                 if ($recordCount >= 300) $baseConfidence += 20;
                 else if ($recordCount >= 200) $baseConfidence += 15;
                 else if ($recordCount >= 100) $baseConfidence += 10;
@@ -2990,8 +3009,8 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
                     'optimal_planting' => $schedule['planting'],
                     'expected_harvest' => $schedule['harvest'],
                     'duration' => $schedule['duration'],
-                    'yield_prediction' => round($data->avg_yield, 1) . ' mt/ha',
-                    'historical_yield' => round($data->avg_yield, 1) . ' mt/ha',
+                    'yield_prediction' => round($avg_yield, 1) . ' mt/ha',
+                    'historical_yield' => round($avg_yield, 1) . ' mt/ha',
                     'confidence' => $confidence_score >= 85 ? 'High' : ($confidence_score >= 70 ? 'Medium' : 'Low'),
                     'confidence_score' => $confidence_score,
                     'status' => $index < 2 ? 'Recommended' : 'Consider',
