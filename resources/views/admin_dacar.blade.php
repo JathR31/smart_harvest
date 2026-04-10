@@ -208,6 +208,21 @@
 
                 <!-- DASHBOARD SECTION -->
                 <div x-show="!loading && currentSection === 'dashboard'" x-cloak>
+                    <!-- Municipality Selector -->
+                    <div class="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <div class="flex items-center gap-4">
+                            <label for="municipality" class="text-sm font-semibold text-gray-700">Select Municipality:</label>
+                            <select x-model="selectedMunicipality" id="municipality" class="border-2 border-green-500 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600 bg-white font-medium">
+                                <template x-for="mun in municipalities" :key="mun">
+                                    <option :value="mun" x-text="mun"></option>
+                                </template>
+                            </select>
+                            <div class="ml-auto text-xs text-gray-500">
+                                <span class="font-semibold">All analytics below are based on the selected municipality and machine learning predictions</span>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Yield & Planting Schedule Analysis -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
                         <div class="mb-6 flex items-center justify-between">
@@ -222,7 +237,7 @@
                                         ML POWERED
                                     </span>
                                 </div>
-                                <p class="text-sm text-gray-500">Combined analysis showing optimal planting periods (May-June) based on historical yield data, rainfall patterns, and temperature trends</p>
+                                <p class="text-sm text-gray-500">Combined analysis showing optimal planting periods (May-June) based on historical yield data, rainfall patterns, and temperature trends for <span x-text="selectedMunicipality"></span></p>
                             </div>
                         </div>
                         
@@ -326,11 +341,11 @@
                                                 <path d="M13 7H7v6h6V7z"/>
                                                 <path fill-rule="evenodd" d="M7 2a1 1 0 012 0v1h2V2a1 1 0 112 0v1h2a2 2 0 012 2v2h1a1 1 0 110 2h-1v2h1a1 1 0 110 2h-1v2a2 2 0 01-2 2h-2v1a1 1 0 11-2 0v-1H9v1a1 1 0 11-2 0v-1H5a2 2 0 01-2-2v-2H2a1 1 0 110-2h1V9H2a1 1 0 010-2h1V5a2 2 0 012-2h2V2zM5 5h10v10H5V5z" clip-rule="evenodd"/>
                                             </svg>
-                                            ML
+                                            ML POWERED
                                         </span>
                                     </div>
                                 </div>
-                                <p class="text-sm text-gray-500">Average yield per hectare in <span x-text="enhancedCropPerformance.year || new Date().getFullYear()"></span></p>
+                                <p class="text-sm text-gray-500">Average yield per hectare in <span x-text="selectedMunicipality"></span> for <span x-text="enhancedCropPerformance.year || new Date().getFullYear()"></span></p>
                             </div>
                             
                             <!-- Horizontal Bar Chart -->
@@ -378,8 +393,8 @@
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-8">
                         <div class="flex items-center justify-between mb-4">
                             <div>
-                                <h3 class="text-lg font-bold text-gray-800">Current Market Prices</h3>
-                                <p class="text-sm text-gray-500">Latest prices for major Cordillera crops (Updated: <span x-text="marketPrices.lastUpdated"></span>)</p>
+                                <h3 class="text-lg font-bold text-gray-800">Current Market Prices - <span x-text="selectedMunicipality"></span></h3>
+                                <p class="text-sm text-gray-500">Latest prices for Cordillera crops in <span x-text="selectedMunicipality"></span> based on ML analysis (Updated: <span x-text="marketPrices.lastUpdated"></span>)</p>
                             </div>
                             <div class="bg-yellow-100 p-3 rounded-xl">
                                 <span class="text-2xl">₱</span>
@@ -1898,7 +1913,12 @@
                 loading: true,
                 currentSection: 'dashboard',
                 unreadMessages: 5,
-                selectedMunicipality: '',
+                selectedMunicipality: 'La Trinidad',
+                municipalities: [
+                    'La Trinidad', 'Bokod', 'Tublay', 'Atok', 'Itogon',
+                    'Kapangan', 'Kibungan', 'Mancayan', 'Sablan', 'Tuba',
+                    'Bugias', 'Bontoc', 'Baguio City', 'Pugo'
+                ],
                 baseUrl: '{{ url("/") }}',  // Laravel base URL
                 stats: {
                     registeredFarmers: 0,
@@ -1968,6 +1988,14 @@
                             this.$nextTick(() => window.dispatchEvent(new CustomEvent('load-crop-monitoring')));
                         }
                     });
+
+                    // Watch for municipality changes and reload dashboard data
+                    this.$watch('selectedMunicipality', value => {
+                        console.log('Municipality changed to:', value);
+                        this.loadYieldAnalysis();
+                        this.loadMarketPrices();
+                        this.loadEnhancedCropPerformance();
+                    });
                     
                     await this.loadDashboardData();
                     await this.loadYieldAnalysis();
@@ -1983,8 +2011,9 @@
 
                 async loadEnhancedCropPerformance() {
                     try {
-                        console.log('Fetching enhanced crop performance from', this.baseUrl + '/api/admin/enhanced-crop-performance');
-                        const response = await fetch(this.baseUrl + '/api/admin/enhanced-crop-performance');
+                        const url = this.baseUrl + '/api/admin/enhanced-crop-performance?municipality=' + encodeURIComponent(this.selectedMunicipality);
+                        console.log('Fetching enhanced crop performance from', url);
+                        const response = await fetch(url);
                         
                         if (!response.ok) {
                             throw new Error(`API returned ${response.status}`);
@@ -2005,13 +2034,13 @@
                         this.renderCropPerformanceChart();
                     } catch (error) {
                         console.error('Error loading enhanced crop performance:', error);
-                        // Use fallback data
+                        // Use fallback data - NO TOMATO for Cordillera
                         this.enhancedCropPerformance = {
                             crops: [
                                 { variety: 'Cabbage', currentYield: 7.8, targetYield: 8.0, achievement: 97, activeFarms: 487, estRevenue: 18500000, yoyChange: 12 },
                                 { variety: 'Carrots', currentYield: 5.5, targetYield: 6.5, achievement: 84, activeFarms: 356, estRevenue: 12300000, yoyChange: 8 },
                                 { variety: 'White Potato', currentYield: 6.4, targetYield: 7.0, achievement: 92, activeFarms: 412, estRevenue: 15200000, yoyChange: 15 },
-                                { variety: 'Beans', currentYield: 4.1, targetYield: 4.5, achievement: 91, activeFarms: 245, estRevenue: 9800000, yoyChange: 5 },
+                                { variety: 'Snap Beans', currentYield: 4.1, targetYield: 4.5, achievement: 91, activeFarms: 245, estRevenue: 9800000, yoyChange: 5 },
                                 { variety: 'Lettuce', currentYield: 3.2, targetYield: 3.8, achievement: 84, activeFarms: 189, estRevenue: 8100000, yoyChange: 3 }
                             ],
                             year: new Date().getFullYear(),
@@ -2193,8 +2222,9 @@
 
                 async loadYieldAnalysis() {
                     try {
-                        console.log('Fetching yield analysis from', this.baseUrl + '/api/admin/yield-analysis');
-                        const response = await fetch(this.baseUrl + '/api/admin/yield-analysis');
+                        const url = this.baseUrl + '/api/admin/yield-analysis?municipality=' + encodeURIComponent(this.selectedMunicipality);
+                        console.log('Fetching yield analysis from', url);
+                        const response = await fetch(url);
                         
                         console.log('Response status:', response.status, response.statusText);
                         
@@ -2224,7 +2254,6 @@
                         }
                     } catch (error) {
                         console.error('Error loading yield analysis:', error);
-                        alert('Failed to load yield analysis: ' + error.message);
                         this.mlStatus.yieldAnalysis = false;
                         // Only use fallback if API completely fails
                         this.insights = {
@@ -2238,8 +2267,9 @@
 
                 async loadMarketPrices() {
                     try {
-                        console.log('Fetching market prices from', this.baseUrl + '/api/admin/market-prices');
-                        const response = await fetch(this.baseUrl + '/api/admin/market-prices');
+                        const url = this.baseUrl + '/api/admin/market-prices?municipality=' + encodeURIComponent(this.selectedMunicipality);
+                        console.log('Fetching market prices from', url);
+                        const response = await fetch(url);
                         
                         if (!response.ok) {
                             throw new Error(`API returned ${response.status}`);
@@ -2261,7 +2291,7 @@
                 },
 
                 useFallbackMarketPrices() {
-                    // Use fallback data - only ML-supported crops
+                    // Use fallback data - only ML-supported crops (NO TOMATO - not suitable for Cordillera)
                     this.marketPrices.crops = [
                         { name: 'Cabbage', price: 25, unit: 'per kg', change: 8, demand: 'High' },
                         { name: 'Bell Pepper', price: 80, unit: 'per kg', change: 10, demand: 'High' },
