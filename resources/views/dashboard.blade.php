@@ -1211,12 +1211,9 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-1">To (DA Officer)</label>
                                 <select x-model="newMessage.receiver_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" required>
                                     <option value="">Select a DA Officer...</option>
-                                    @php
-                                        $daOfficers = \App\Models\User::whereIn('role', ['Admin', 'DA Admin'])->get();
-                                    @endphp
-                                    @foreach($daOfficers as $officer)
-                                        <option value="{{ $officer->id }}">{{ $officer->name }}</option>
-                                    @endforeach
+                                    <template x-for="officer in daOfficers" :key="officer.id">
+                                        <option :value="officer.id" x-text="officer.name"></option>
+                                    </template>
                                 </select>
                             </div>
                             <div>
@@ -1462,6 +1459,7 @@
                     this.loadAnnouncements();
                     this.loadMessages();
                     this.loadMyCrops();
+                    this.loadOfficers();
                     
                     // Initialize translation system
                     if (typeof SmartHarvestTranslation !== 'undefined') {
@@ -1512,6 +1510,17 @@
                         }
                     } catch (error) {
                         console.error('Error loading messages:', error);
+                    }
+                },
+
+                async loadOfficers() {
+                    try {
+                        const response = await fetch(`{{ url('/api/officers') }}`);
+                        if (response.ok) {
+                            this.daOfficers = await response.json();
+                        }
+                    } catch (error) {
+                        console.error('Error loading officers:', error);
                     }
                 },
 
@@ -1640,27 +1649,38 @@
                         return;
                     }
                     try {
+                        // Ensure receiver_id is sent as integer
+                        const messageData = {
+                            receiver_id: parseInt(this.newMessage.receiver_id),
+                            subject: this.newMessage.subject,
+                            content: this.newMessage.content,
+                            send_sms: this.newMessage.send_sms
+                        };
+
                         const response = await fetch(`{{ url('/api/messages') }}`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                             },
-                            body: JSON.stringify(this.newMessage)
+                            body: JSON.stringify(messageData)
                         });
+                        
+                        const result = await response.json();
+                        
                         if (response.ok) {
                             this.showComposeModal = false;
                             this.newMessage = { receiver_id: '', subject: '', content: '', send_sms: false };
                             await this.loadMessages();
-                            const result = await response.json();
                             alert(result.message || 'Message sent successfully!');
                         } else {
-                            const error = await response.json();
-                            alert(error.errors ? JSON.stringify(error.errors) : 'Error sending message');
+                            const errorMessage = result.errors ? JSON.stringify(result.errors) : (result.message || 'Error sending message');
+                            alert(errorMessage);
+                            console.error('API Error:', result);
                         }
                     } catch (error) {
                         console.error('Error sending message:', error);
-                        alert('Error sending message');
+                        alert('Error sending message: ' + error.message);
                     }
                 },
                 
