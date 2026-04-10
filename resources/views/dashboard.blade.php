@@ -1252,7 +1252,7 @@
                     variety: '',
                     planting_date: '',
                     expected_harvest_date: '',
-                    area_planted: '',
+                    area_planted: 0.01,
                     municipality: '{{ $userMunicipality ?? "La Trinidad" }}',
                     plot_location: '',
                     seed_source: '',
@@ -1354,7 +1354,7 @@
                         variety: '',
                         planting_date: '',
                         expected_harvest_date: '',
-                        area_planted: '',
+                        area_planted: 0.01,
                         municipality: this.selectedMunicipality,
                         plot_location: '',
                         seed_source: '',
@@ -1402,18 +1402,21 @@
                             body: JSON.stringify(this.cropForm),
                         });
 
+                        const data = await response.json();
+                        
                         if (!response.ok) {
-                            const errorData = await response.json().catch(() => ({}));
-                            const firstError = errorData?.message || 'Failed to save crop record.';
-                            throw new Error(firstError);
+                            console.error('Crop save error response:', data);
+                            const errorMessage = data?.message || data?.error || 'Failed to save crop record.';
+                            throw new Error(errorMessage);
                         }
 
+                        alert('Crop record saved successfully!');
                         this.showAddCropForm = false;
                         this.resetCropForm();
                         await this.loadMyCrops();
                     } catch (error) {
                         console.error('Error saving crop record:', error);
-                        alert(error.message || 'Failed to save crop record.');
+                        alert('Error: ' + (error.message || 'Failed to save crop record.'));
                     } finally {
                         this.cropSaving = false;
                     }
