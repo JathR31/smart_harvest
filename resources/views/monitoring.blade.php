@@ -184,8 +184,6 @@
                     <p class="text-xs text-gray-400" x-text="'Data source: ' + dataSource"></p>
                     <p class="text-xs text-gray-400" x-text="lastUpdated ? 'Last updated: ' + lastUpdated : ''"></p>
                 </div>
-                    </div>
-                </div>
 
                 <!-- Statistics Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -436,7 +434,7 @@
 
                             <!-- Municipalities Grid -->
                             <template x-if="!loading || municipalities.length > 0">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2">
                                     <template x-for="municipality in municipalities" :key="municipality.name">
                                         <div class="p-4 rounded-lg border transition-all hover:shadow-md"
                                              :class="{
@@ -449,7 +447,7 @@
                                                     <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"/>
                                                     </svg>
-                                                    <span class="font-semibold text-gray-800" x-text="municipality.name"></span>
+                                                    <span class="font-semibold text-gray-800 text-sm" x-text="municipality.name"></span>
                                                 </div>
                                                 <span class="px-2 py-0.5 text-xs font-semibold rounded-full whitespace-nowrap"
                                                       :class="{
@@ -489,9 +487,6 @@
                                                     <span class="text-gray-500">%</span>
                                                 </div>
                                             </div>
-                                            
-                                            <!-- Description -->
-                                            <p class="text-xs text-gray-600 mt-2 capitalize" x-text="municipality.description"></p>
                                         </div>
                                     </template>
                                 </div>
