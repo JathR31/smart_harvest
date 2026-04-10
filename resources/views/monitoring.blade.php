@@ -420,93 +420,98 @@
                     <div class="bg-white rounded-lg shadow-sm border border-gray-200">
                         <div class="px-6 py-4 border-b border-gray-200">
                             <h3 class="text-lg font-semibold text-gray-800">Provincial Climate Status</h3>
+                            <p class="text-xs text-gray-500 mt-1" x-text="'All ' + municipalities.length + ' municipalities'"></p>
                         </div>
                         <div class="p-6">
-                            <div class="space-y-3">
-                                <template x-for="municipality in municipalities" :key="municipality.name">
-                                    <div class="p-3 rounded-lg hover:bg-gray-50 transition-colors border border-gray-100">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <div class="flex items-center space-x-3">
-                                                <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"/>
-                                                </svg>
-                                                <span class="font-medium text-gray-800" x-text="municipality.name"></span>
-                                            </div>
-                                            <span class="px-3 py-1 text-xs font-semibold rounded-full"
-                                                  :class="{
-                                                      'bg-green-100 text-green-800': municipality.status === 'Normal',
-                                                      'bg-yellow-100 text-yellow-800': municipality.status === 'Watch',
-                                                      'bg-blue-100 text-blue-800': municipality.status === 'Favorable'
-                                                  }"
-                                                  x-text="municipality.status"></span>
-                                        </div>
-                                        <template x-if="municipality.temperature !== undefined">
-                                            <div class="ml-8">
-                                                <div class="flex items-center space-x-4 text-xs text-gray-600">
-                                                    <div class="flex items-center space-x-1">
-                                                        <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z"/>
-                                                        </svg>
-                                                        <span x-text="municipality.rainfall + 'mm'"></span>
-                                                    </div>
-                                                    <div class="flex items-center space-x-1">
-                                                        <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/>
-                                                        </svg>
-                                                        <span x-text="municipality.temperature + '°C'"></span>
-                                                    </div>
-                                                    <div class="flex items-center space-x-1">
-                                                        <svg class="w-4 h-4 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path d="M10 3.5a1.5 1.5 0 013 0V4a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-.5a1.5 1.5 0 000 3h.5a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-.5a1.5 1.5 0 00-3 0v.5a1 1 0 01-1 1H6a1 1 0 01-1-1v-3a1 1 0 00-1-1h-.5a1.5 1.5 0 010-3H4a1 1 0 001-1V6a1 1 0 011-1h3a1 1 0 001-1v-.5z"/>
-                                                        </svg>
-                                                        <span x-text="municipality.humidity + '%'"></span>
-                                                    </div>
+                            <!-- Loading state -->
+                            <template x-if="loading && municipalities.length === 0">
+                                <div class="text-center py-8">
+                                    <svg class="animate-spin h-8 w-8 mx-auto text-blue-500" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <p class="text-sm text-gray-600 mt-2">Loading municipalities...</p>
+                                </div>
+                            </template>
+
+                            <!-- Municipalities Grid -->
+                            <template x-if="!loading || municipalities.length > 0">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <template x-for="municipality in municipalities" :key="municipality.name">
+                                        <div class="p-4 rounded-lg border transition-all hover:shadow-md"
+                                             :class="{
+                                                 'bg-blue-50 border-blue-200': municipality.status === 'Favorable',
+                                                 'bg-green-50 border-green-200': municipality.status === 'Normal',
+                                                 'bg-yellow-50 border-yellow-200': municipality.status === 'Watch'
+                                             }">
+                                            <div class="flex items-start justify-between mb-3">
+                                                <div class="flex items-center space-x-2">
+                                                    <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"/>
+                                                    </svg>
+                                                    <span class="font-semibold text-gray-800" x-text="municipality.name"></span>
                                                 </div>
-                                                <p class="text-xs text-gray-400 mt-1 capitalize" x-text="municipality.description || ''"></p>
+                                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full whitespace-nowrap"
+                                                      :class="{
+                                                          'bg-blue-200 text-blue-800': municipality.status === 'Favorable',
+                                                          'bg-green-200 text-green-800': municipality.status === 'Normal',
+                                                          'bg-yellow-200 text-yellow-800': municipality.status === 'Watch'
+                                                      }"
+                                                      x-text="municipality.status"></span>
                                             </div>
-                                        </template>
-                                    </div>
-                                </template>
-                            </div>
-                            
+                                            
+                                            <!-- Weather metrics grid -->
+                                            <div class="grid grid-cols-3 gap-2 text-xs">
+                                                <!-- Rainfall -->
+                                                <div class="flex flex-col items-center p-2 bg-white bg-opacity-50 rounded">
+                                                    <svg class="w-4 h-4 text-blue-500 mb-1" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z"/>
+                                                    </svg>
+                                                    <span class="font-bold text-gray-800" x-text="municipality.rainfall"></span>
+                                                    <span class="text-gray-500">mm</span>
+                                                </div>
+                                                
+                                                <!-- Temperature -->
+                                                <div class="flex flex-col items-center p-2 bg-white bg-opacity-50 rounded">
+                                                    <svg class="w-4 h-4 text-red-500 mb-1" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/>
+                                                    </svg>
+                                                    <span class="font-bold text-gray-800" x-text="municipality.temperature"></span>
+                                                    <span class="text-gray-500">°C</span>
+                                                </div>
+                                                
+                                                <!-- Humidity -->
+                                                <div class="flex flex-col items-center p-2 bg-white bg-opacity-50 rounded">
+                                                    <svg class="w-4 h-4 text-cyan-500 mb-1" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M10 3.5a1.5 1.5 0 013 0V4a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-.5a1.5 1.5 0 000 3h.5a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-.5a1.5 1.5 0 00-3 0v.5a1 1 0 01-1 1H6a1 1 0 01-1-1v-3a1 1 0 00-1-1h-.5a1.5 1.5 0 010-3H4a1 1 0 001-1V6a1 1 0 011-1h3a1 1 0 001-1v-.5z"/>
+                                                    </svg>
+                                                    <span class="font-bold text-gray-800" x-text="municipality.humidity"></span>
+                                                    <span class="text-gray-500">%</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Description -->
+                                            <p class="text-xs text-gray-600 mt-2 capitalize" x-text="municipality.description"></p>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+
                             <!-- Legend -->
                             <div class="mt-6 pt-4 border-t border-gray-200">
-                                <h4 class="text-xs font-semibold text-gray-700 mb-3">Legend</h4>
+                                <h4 class="text-xs font-semibold text-gray-700 mb-3">Status Indicators & Legend</h4>
                                 <div class="grid grid-cols-1 gap-2 text-xs">
                                     <div class="flex items-center space-x-2">
-                                        <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z"/>
-                                        </svg>
-                                        <span class="text-gray-600">Rainfall (mm/h, current)</span>
+                                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Favorable</span>
+                                        <span class="text-gray-600">Optimal growing conditions</span>
                                     </div>
                                     <div class="flex items-center space-x-2">
-                                        <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/>
-                                        </svg>
-                                        <span class="text-gray-600">Temperature (°C)</span>
+                                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">Normal</span>
+                                        <span class="text-gray-600">Standard conditions</span>
                                     </div>
                                     <div class="flex items-center space-x-2">
-                                        <svg class="w-4 h-4 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M10 3.5a1.5 1.5 0 013 0V4a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-.5a1.5 1.5 0 000 3h.5a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-.5a1.5 1.5 0 00-3 0v.5a1 1 0 01-1 1H6a1 1 0 01-1-1v-3a1 1 0 00-1-1h-.5a1.5 1.5 0 010-3H4a1 1 0 001-1V6a1 1 0 011-1h3a1 1 0 001-1v-.5z"/>
-                                        </svg>
-                                        <span class="text-gray-600">Humidity (%)</span>
-                                    </div>
-                                    <div class="mt-2 pt-2 border-t border-gray-100">
-                                        <div class="text-xs font-semibold text-gray-700 mb-2">Status Indicators:</div>
-                                        <div class="flex flex-col space-y-1">
-                                            <div class="flex items-center space-x-2">
-                                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Favorable</span>
-                                                <span class="text-gray-600">Optimal growing conditions</span>
-                                            </div>
-                                            <div class="flex items-center space-x-2">
-                                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">Normal</span>
-                                                <span class="text-gray-600">Standard conditions</span>
-                                            </div>
-                                            <div class="flex items-center space-x-2">
-                                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Watch</span>
-                                                <span class="text-gray-600">Needs attention (rain, wind, or extreme conditions)</span>
-                                            </div>
-                                        </div>
+                                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Watch</span>
+                                        <span class="text-gray-600">Needs attention (rain, wind, or extreme)</span>
                                     </div>
                                 </div>
                             </div>
@@ -615,19 +620,62 @@
 
                 async loadMunicipalityStatus() {
                     try {
-                        const response = await fetch('{{ route("admin.api.monitoring.municipalities") }}', {
+                        const url = '{{ route("admin.api.monitoring.municipalities") }}';
+                        console.log('🏘️ Fetching municipalities from:', url);
+                        
+                        const response = await fetch(url, {
                             credentials: 'same-origin',
                             headers: { 'Accept': 'application/json' }
                         });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        
                         const data = await response.json();
-                        this.municipalities = data.municipalities || [];
-                        this.dataSource = data.source || 'API';
+                        console.log('📊 Municipalities data:', data);
+                        
+                        this.municipalities = data.municipalities && Array.isArray(data.municipalities) ? data.municipalities : [];
+                        this.dataSource = data.source || 'Unknown';
                         this.lastUpdated = data.last_updated 
                             ? new Date(data.last_updated).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
                             : new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                        
+                        console.log(`✅ ${this.municipalities.length} municipalities loaded successfully`);
+                        
+                        if (this.municipalities.length === 0) {
+                            console.warn('⚠️ No municipalities received, generating fallback data');
+                            this.municipalities = this.generateFallbackMunicipalities();
+                            this.dataSource = 'Demo Data (API Empty)';
+                        }
+                        
                     } catch (error) {
-                        console.error('Error loading municipality status:', error);
+                        console.error('❌ Error loading municipalities:', error);
+                        // Generate fallback demo data
+                        this.municipalities = this.generateFallbackMunicipalities();
+                        this.dataSource = 'Demo Data (Error Recovery)';
                     }
+                },
+
+                generateFallbackMunicipalities() {
+                    const names = [
+                        'Atok', 'Bakun', 'Baguio', 'Bokod', 'Buguias', 'Itogon',
+                        'Kabayan', 'Kapangan', 'Kibungan', 'La Trinidad', 'Mankayan',
+                        'Sablan', 'Tuba', 'Tublay'
+                    ];
+                    const statuses = ['Favorable', 'Normal', 'Normal'];
+                    const descriptions = ['Partly Cloudy', 'Overcast', 'Clear', 'Light Rain'];
+                    
+                    return names.map(name => ({
+                        name: name,
+                        status: statuses[Math.floor(Math.random() * statuses.length)],
+                        rainfall: Math.round(Math.random() * 8 * 10) / 10,
+                        temperature: Math.round((Math.random() * 10 + 16) * 10) / 10,
+                        humidity: Math.floor(Math.random() * 25) + 60,
+                        description: descriptions[Math.floor(Math.random() * descriptions.length)],
+                        wind_speed: Math.round(Math.random() * 5 * 10) / 10,
+                        icon: '02d',
+                    }));
                 },
 
                 async refreshData() {

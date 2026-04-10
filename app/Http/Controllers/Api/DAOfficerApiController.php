@@ -403,7 +403,7 @@ class DAOfficerApiController extends Controller
             ->whereNotNull('yield_amount')
             ->where('yield_amount', '>', 0)
             ->where('area_planted', '>', 0)
-            ->groupBy('month')
+            ->groupByRaw('MONTH(planting_date)')
             ->get()
             ->keyBy('month');
         
@@ -490,7 +490,7 @@ class DAOfficerApiController extends Controller
                 DB::raw('AVG(yield_amount / NULLIF(area_planted, 0)) as avgYield')
             )
             ->where('municipality', $municipality)
-            ->groupBy('month')
+            ->groupByRaw('MONTH(planting_date)')
             ->orderByDesc('avgYield')
             ->get();
         
