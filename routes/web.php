@@ -3816,6 +3816,17 @@ Route::get('/api/ml/yield/analysis', function (\Illuminate\Http\Request $request
     }
 })->name('api.ml.yield.analysis');
 
+// Alternate endpoint path for yield analysis data (used to avoid proxy/path conflicts)
+Route::get('/api/ml/yield-analysis-v2', function (\Illuminate\Http\Request $request) {
+    return response()->json([
+        'status' => 'ok',
+        'message' => 'v2 route reachable',
+        'municipality' => $request->query('municipality', 'La Trinidad'),
+        'year' => intval($request->query('year', date('Y'))),
+        'timestamp' => now()->toIso8601String(),
+    ]);
+})->name('api.ml.yield.analysis.v2');
+
 // Crop interpretation endpoint
 Route::get('/api/yield/interpretation/crops', function (\Illuminate\Http\Request $request) {
     try {
