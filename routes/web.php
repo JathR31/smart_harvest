@@ -3052,6 +3052,58 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
                 'schedule_count' => count($schedules)
             ]);
         }
+        
+        // If BOTH ML and database return no data, provide fallback/demo data
+        if (empty($schedules)) {
+            \Log::warning('No crop data from ML or database, using fallback demo data', [
+                'municipality' => $municipality
+            ]);
+            
+            $schedules = [
+                [
+                    'crop' => 'CABBAGE',
+                    'variety' => 'Scorpio F1',
+                    'optimal_planting' => 'Oct-Dec',
+                    'expected_harvest' => 'Jan-Mar',
+                    'duration' => '65-90 days',
+                    'yield_prediction' => '22.5 mt/ha',
+                    'historical_yield' => '21.8 mt/ha',
+                    'confidence' => 'High',
+                    'confidence_score' => 85,
+                    'status' => 'Recommended',
+                    'ml_prediction' => false,
+                    'note' => 'Demo data - no real data available for this municipality'
+                ],
+                [
+                    'crop' => 'CARROTS',
+                    'variety' => 'Nantes',
+                    'optimal_planting' => 'Oct-Dec',
+                    'expected_harvest' => 'Jan-Mar',
+                    'duration' => '75-90 days',
+                    'yield_prediction' => '18.3 mt/ha',
+                    'historical_yield' => '17.9 mt/ha',
+                    'confidence' => 'High',
+                    'confidence_score' => 83,
+                    'status' => 'Recommended',
+                    'ml_prediction' => false,
+                    'note' => 'Demo data - no real data available for this municipality'
+                ],
+                [
+                    'crop' => 'LETTUCE',
+                    'variety' => 'Crisphead',
+                    'optimal_planting' => 'Oct-Jan',
+                    'expected_harvest' => 'Dec-Mar',
+                    'duration' => '45-60 days',
+                    'yield_prediction' => '13.9 mt/ha',
+                    'historical_yield' => '13.2 mt/ha',
+                    'confidence' => 'Medium',
+                    'confidence_score' => 78,
+                    'status' => 'Consider',
+                    'ml_prediction' => false,
+                    'note' => 'Demo data - no real data available for this municipality'
+                ]
+            ];
+        }
 
         \Log::info('=== PLANTING SCHEDULE API RESPONSE ===', [
             'municipality' => $municipality,
@@ -3136,6 +3188,81 @@ Route::get('/api/test/db-crops', function (\Illuminate\Http\Request $request) {
         'crops' => $crops
     ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
 })->name('api.test.db-crops');
+
+// DIAGNOSTIC ENDPOINT: Show why there's no data
+Route::get('/api/diagnose', function (\Illuminate\Http\Request $request) {
+    $municipality = $request->query('municipality', 'Bokod');
+    $mlMunicipality = strtoupper(str_replace(' ', '', $municipality));
+    
+    \Log::info('=== DIAGNOSTIC REQUEST ===', ['municipality' => $municipality, 'normalized' => $mlMunicipality]);
+    
+    $diagnosis = [
+        'requested_municipality' => $municipality,
+        'normalized_for_ml' => $mlMunicipality,
+        'timestamp' => now()->toIso8601String()
+    ];
+    
+    // Check ML API health
+    $mlService = new \App\Services\MLApiService();
+    $healthCheck = $mlService->checkHealth();
+    $diagnosis['ml_api_health'] = $healthCheck['status'];
+    
+    // Try single ML prediction
+    try {
+        $mlTest = $mlService->predict([
+            'MUNICIPALITY' => $mlMunicipality,
+            'CROP' => 'CABBAGE',
+            'FARM_TYPE' => 'IRRIGATED',
+            'YEAR' => 2026,
+            'Area_planted_ha' => 2.5,
+            'MONTH' => 'APR'
+        ]);
+        $diagnosis['ml_test_prediction'] = $mlTest['status'];
+        if ($mlTest['status'] === 'success') {
+            $diagnosis['ml_test_data'] = $mlTest['data']['prediction'] ?? null;
+        } else {
+            $diagnosis['ml_test_error'] = $mlTest['message'] ?? 'Unknown error';
+        }
+    } catch (\Exception $e) {
+        $diagnosis['ml_test_exception'] = $e->getMessage();
+    }
+    
+    // Check all municipalities in database
+    $dbMunicipalities = \DB::table('crop_data')->distinct()->pluck('municipality')->toArray();
+    $diagnosis['db_municipalities'] = $dbMunicipalities;
+    $diagnosis['db_municipality_count'] = count($dbMunicipalities);
+    
+    // Check crop data for requested municipality
+    $dbCropCount = \App\Models\CropData::whereRaw('UPPER(municipality) = ?', [$mlMunicipality])->count();
+    $diagnosis['db_crop_records'] = ['municipality' => $municipality, 'count' => $dbCropCount];
+    
+    // Check crop types in municipality
+    if ($dbCropCount > 0) {
+        $cropTypes = \App\Models\CropData::whereRaw('UPPER(municipality) = ?', [$mlMunicipality])
+            ->select('crop_type', \DB::raw('COUNT(*) as count'))
+            ->groupBy('crop_type')
+            ->orderBy('count', 'desc')
+            ->limit(5)
+            ->get();
+        $diagnosis['db_crop_types'] = $cropTypes;
+    }
+    
+    // Test database query
+    $dbTest = \App\Models\CropData::whereRaw('UPPER(municipality) = ?', [$mlMunicipality])
+        ->where('yield_amount', '>', 0)
+        ->where('area_planted', '>', 0)
+        ->select('crop_type', 'variety', \DB::raw('AVG(yield_amount / area_planted) as avg_yield'), \DB::raw('COUNT(*) as record_count'))
+        ->groupBy('crop_type', 'variety')
+        ->orderBy('avg_yield', 'desc')
+        ->limit(5)
+        ->get();
+    
+    $diagnosis['db_fallback_crops'] = $dbTest;
+    $diagnosis['db_fallback_count'] = count($dbTest);
+    
+    return response()->json($diagnosis)
+        ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+})->name('api.diagnose');
 
 // Monthly Yield API
 Route::get('/api/yield/monthly', function (\Illuminate\Http\Request $request) {

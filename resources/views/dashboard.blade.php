@@ -265,6 +265,12 @@
                     <template x-if="topCrops.length === 0">
                         <span class="ml-2 text-gray-600">(Loading...)</span>
                     </template>
+                    <!-- Show warning if demo data -->
+                    <template x-if="topCrops.length > 0 && topCrops[0].note">
+                        <div class="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800">
+                            <span class="text-xs">⚠️ No real data available - showing sample recommendations only</span>
+                        </div>
+                    </template>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <template x-for="(crop, index) in topCrops.slice(0, 5)" :key="index">
