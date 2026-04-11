@@ -133,6 +133,7 @@ class DAOfficerApiController extends Controller
             $chartData = [];
             $insights = [];
             $mlConnected = false;
+            $dataSource = 'ml_api';
             
             // Try to get ML-based yield analysis
             try {
@@ -154,28 +155,40 @@ class DAOfficerApiController extends Controller
                 $chartData = $this->getDatabaseYieldData($municipality);
                 $insights = $this->generateDatabaseInsights($municipality);
                 $mlConnected = false;
+                $dataSource = 'database_fallback';
             }
             
             // If still no data, use fallback
             if (empty($chartData)) {
                 $chartData = $this->getFallbackChartData();
                 $insights = $this->getFallbackInsights();
+                $dataSource = 'static_fallback';
             }
+
+            $insights = $this->ensureInsights($insights);
+            $interpretation = $this->buildYieldInterpretation($chartData, $insights, $municipality, $dataSource);
             
             return response()->json([
                 'chartData' => $chartData,
                 'insights' => $insights,
-                'ml_connected' => $mlConnected
+                'interpretation' => $interpretation,
+                'ml_connected' => $mlConnected,
+                'data_source' => $dataSource,
+                'has_fallback' => $dataSource !== 'ml_api'
             ], 200);
             
         } catch (\Exception $e) {
             Log::error('Yield Analysis error: ' . $e->getMessage() . '\n' . $e->getTraceAsString());
             
             // Always return fallback data instead of error
+            $fallbackInsights = $this->ensureInsights($this->getFallbackInsights());
             return response()->json([
                 'chartData' => $this->getFallbackChartData(),
-                'insights' => $this->getFallbackInsights(),
-                'ml_connected' => false
+                'insights' => $fallbackInsights,
+                'interpretation' => $this->buildYieldInterpretation($this->getFallbackChartData(), $fallbackInsights, $request->query('municipality', 'La Trinidad'), 'error_fallback'),
+                'ml_connected' => false,
+                'data_source' => 'error_fallback',
+                'has_fallback' => true
             ], 200);
         }
     }
@@ -567,6 +580,50 @@ class DAOfficerApiController extends Controller
             'rainfallPattern' => 'Moderate rainfall (120-250mm) during May-June provides sufficient moisture without waterlogging, supporting optimal crop growth and development.',
             'recommendation' => 'Plant between May 15 - June 15 to capitalize on favorable conditions. Monitor local weather forecasts and adjust planting dates within this window for best results.'
         ];
+    }
+
+    private function ensureInsights($insights)
+    {
+        if (!is_array($insights)) {
+            $insights = [];
+        }
+
+        $fallback = $this->getFallbackInsights();
+
+        return [
+            'peakYieldPeriod' => trim($insights['peakYieldPeriod'] ?? '') !== '' ? $insights['peakYieldPeriod'] : $fallback['peakYieldPeriod'],
+            'rainfallPattern' => trim($insights['rainfallPattern'] ?? '') !== '' ? $insights['rainfallPattern'] : $fallback['rainfallPattern'],
+            'recommendation' => trim($insights['recommendation'] ?? '') !== '' ? $insights['recommendation'] : $fallback['recommendation'],
+        ];
+    }
+
+    private function buildYieldInterpretation($chartData, $insights, $municipality, $dataSource)
+    {
+        $municipality = $municipality ?: 'your municipality';
+        $sourceNote = $dataSource === 'ml_api'
+            ? 'ML predictions'
+            : 'fallback analysis data';
+
+        $peakMonth = 'May';
+        $peakYield = 0.0;
+
+        if (is_array($chartData)) {
+            foreach ($chartData as $row) {
+                $actual = floatval($row['actualYield'] ?? 0);
+                if ($actual > $peakYield) {
+                    $peakYield = $actual;
+                    $peakMonth = $row['month'] ?? $peakMonth;
+                }
+            }
+        }
+
+        $peakYieldRounded = round($peakYield, 1);
+
+        return "• Source: {$sourceNote} for {$municipality}\n"
+            . "• Peak observed month: {$peakMonth}" . ($peakYieldRounded > 0 ? " ({$peakYieldRounded} MT/ha)" : '') . "\n"
+            . "• {$insights['peakYieldPeriod']}\n"
+            . "• {$insights['rainfallPattern']}\n"
+            . "• {$insights['recommendation']}";
     }
 
     private function getFallbackMarketPrices()

@@ -37,7 +37,7 @@
 <body class="bg-gray-50" x-data="adminDashboard()" x-init="init()">
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar - Green theme for DA-CAR Officers -->
-        <aside class="w-64 bg-gradient-to-b from-green-700 to-green-900 text-white flex-shrink-0 overflow-y-auto">
+        <aside class="w-64 bg-gradient-to-b from-green-700 to-green-900 text-white flex-shrink-0 overflow-y-auto sticky top-0 h-screen">
             <div class="p-6 border-b border-green-600">
                 <div class="flex items-center space-x-3">
                     <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
@@ -291,6 +291,16 @@
                                 </div>
                                 <p class="text-xs text-gray-600" x-text="insights.recommendation"></p>
                             </div>
+                        </div>
+
+                        <div class="mt-4 border border-indigo-200 rounded-lg p-4 bg-indigo-50">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-semibold text-indigo-700">Interpretation</span>
+                                <span class="text-xs font-medium px-2 py-1 rounded-full"
+                                      :class="hasYieldFallback ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'"
+                                      x-text="hasYieldFallback ? 'Fallback data source' : 'ML data source'"></span>
+                            </div>
+                            <p class="text-xs text-gray-700 whitespace-pre-line" x-text="yieldInterpretation"></p>
                         </div>
                     </div>
 
@@ -1671,6 +1681,9 @@
                     rainfallPattern: 'Loading analysis...',
                     recommendation: 'Loading analysis...'
                 },
+                yieldInterpretation: 'Loading interpretation...',
+                yieldDataSource: '',
+                hasYieldFallback: false,
                 validationAlerts: [],
                 marketPrices: {
                     lastUpdated: 'January 20, 2026',
@@ -1985,15 +1998,23 @@
                         console.log('Yield analysis loaded (ML Connected: ' + data.ml_connected + '):', data);
                         
                         // Update ML status
-                        this.mlStatus.yieldAnalysis = data.ml_connected || false;
+                        this.mlStatus.yieldAnalysis = Boolean(data.ml_connected);
+                        this.yieldDataSource = data.data_source || (this.mlStatus.yieldAnalysis ? 'ml_api' : 'fallback');
+                        this.hasYieldFallback = Boolean(data.has_fallback) || !this.mlStatus.yieldAnalysis;
                         
-                        // Set insights FIRST before rendering chart
-                        if (data.insights) {
-                            this.insights = data.insights;
-                            console.log('Insights updated:', this.insights);
-                        }
+                        const fallbackInsights = this.getFallbackYieldInsights();
+                        const apiInsights = data.insights && typeof data.insights === 'object' ? data.insights : {};
+                        this.insights = {
+                            peakYieldPeriod: apiInsights.peakYieldPeriod || fallbackInsights.peakYieldPeriod,
+                            rainfallPattern: apiInsights.rainfallPattern || fallbackInsights.rainfallPattern,
+                            recommendation: apiInsights.recommendation || fallbackInsights.recommendation
+                        };
+
+                        this.yieldInterpretation = typeof data.interpretation === 'string' && data.interpretation.trim().length > 0
+                            ? data.interpretation
+                            : this.buildYieldInterpretation(this.insights, this.yieldDataSource);
                         
-                        if (data.chartData && data.chartData.length > 0) {
+                        if (Array.isArray(data.chartData) && data.chartData.length > 0) {
                             this.renderYieldChart(data.chartData);
                         } else {
                             this.renderFallbackChart();
@@ -2001,14 +2022,30 @@
                     } catch (error) {
                         console.error('Error loading yield analysis:', error);
                         this.mlStatus.yieldAnalysis = false;
-                        // Only use fallback if API completely fails
-                        this.insights = {
-                            peakYieldPeriod: 'May-June typically shows highest yields (6-8 MT/ha) when rainfall (180-220mm) and temperatures (22-23°C) are optimal for vegetable production.',
-                            rainfallPattern: 'Moderate rainfall (120-250mm) during May-June provides sufficient moisture without waterlogging, supporting optimal crop growth and development.',
-                            recommendation: 'Plant between May 15 - June 15 to capitalize on favorable conditions. Monitor local weather forecasts and adjust planting dates within this window for best results.'
-                        };
+                        this.hasYieldFallback = true;
+                        this.yieldDataSource = 'error_fallback';
+                        this.insights = this.getFallbackYieldInsights();
+                        this.yieldInterpretation = this.buildYieldInterpretation(this.insights, this.yieldDataSource);
                         this.renderFallbackChart();
                     }
+                },
+
+                getFallbackYieldInsights() {
+                    return {
+                        peakYieldPeriod: 'May-June typically shows highest yields (6-8 MT/ha) when rainfall (180-220mm) and temperatures (22-23 C) are optimal for vegetable production.',
+                        rainfallPattern: 'Moderate rainfall (120-250mm) during May-June provides sufficient moisture without waterlogging, supporting optimal crop growth and development.',
+                        recommendation: 'Plant between May 15 - June 15 to capitalize on favorable conditions. Monitor local weather forecasts and adjust planting dates within this window for best results.'
+                    };
+                },
+
+                buildYieldInterpretation(insights, source) {
+                    const sourceLabel = source === 'ml_api' ? 'ML predictions' : 'fallback analysis data';
+                    return [
+                        '• Source: ' + sourceLabel + ' for ' + this.selectedMunicipality,
+                        '• ' + (insights.peakYieldPeriod || ''),
+                        '• ' + (insights.rainfallPattern || ''),
+                        '• ' + (insights.recommendation || '')
+                    ].filter(line => line.trim() !== '•').join('\n');
                 },
 
                 async loadMarketPrices() {
