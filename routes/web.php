@@ -4068,10 +4068,10 @@ Route::get('/api/weather', function (Request $request) {
             $currentWeatherCode = $data['current']['weather_code'] ?? 0;
             $currentWeather = $getWeatherInfo($currentWeatherCode);
             
-            // Process hourly data (next 24 hours, every 3 hours)
+            // Process hourly data (next 24 hours)
             $hourly = [];
             if (isset($data['hourly']['time']) && is_array($data['hourly']['time'])) {
-                for ($i = 0; $i < min(8, count($data['hourly']['time'])); $i += 3) {
+                for ($i = 0; $i < min(24, count($data['hourly']['time'])); $i++) {
                     $weatherCode = $data['hourly']['weather_code'][$i] ?? 0;
                     $weatherInfo = $getWeatherInfo($weatherCode);
                     
@@ -4173,9 +4173,10 @@ Route::get('/api/weather', function (Request $request) {
     $hourly = [];
     $daily = [];
     
-    // Generate demo hourly data with diurnal variation
-    for ($i = 0; $i < 8; $i++) {
-        $hourTemp = $baseTemp + ($i * 0.3) - 1; // Gradual warming
+    // Generate demo hourly data with diurnal variation (24 hours)
+    for ($i = 0; $i < 24; $i++) {
+        $dayProgress = ($i % 24) / 24;
+        $hourTemp = $baseTemp + (sin($dayProgress * 2 * pi()) * 2.2);
         $hourly[] = [
             'dt' => time() + ($i * 3600),
             'temp' => round($hourTemp + (rand(-10, 10) / 10), 1),

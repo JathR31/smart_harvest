@@ -392,8 +392,8 @@
                             clouds: data.current.clouds
                         };
 
-                        // Update hourly forecast (next 8 hours)
-                        this.hourlyForecast = data.hourly.slice(0, 8).map((hour, index) => ({
+                        // Update hourly forecast (next 24 hours)
+                        this.hourlyForecast = data.hourly.slice(0, 24).map((hour, index) => ({
                             time: index === 0 ? 'Now' : new Date(hour.dt * 1000).toLocaleTimeString('en-US', { hour: 'numeric', hour12: true }),
                             icon: hour.weather[0].icon,
                             temp: Math.round(hour.temp)
@@ -563,7 +563,7 @@
                             const minTemp = Math.min(...temps);
                             const avgTemp = Math.round(temps.reduce((a, b) => a + b, 0) / temps.length);
                             
-                            const fallback = `• Temperature varies from ${minTemp}°C to ${maxTemp}°C in next 8 hours\n• Average hourly temperature is ${avgTemp}°C, ideal for outdoor farm activities\n• Best time for fieldwork is during moderate temperature hours`;
+                            const fallback = `• Temperature varies from ${minTemp}°C to ${maxTemp}°C in the next 24 hours\n• Average hourly temperature is ${avgTemp}°C, ideal for outdoor farm activities\n• Best time for fieldwork is during moderate temperature hours`;
                             this.hourlyInterpretation = { text: fallback, loading: false, error: '' };
                         }
                     } catch (error) {
