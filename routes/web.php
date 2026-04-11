@@ -2754,9 +2754,6 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
             'timestamp' => now()->toIso8601String(),
             'query_params' => $request->query()
         ]);
-            'normalized_db' => $dbMunicipality,
-            'timestamp' => now()->toIso8601String()
-        ]);
         
         $mlService = new \App\Services\MLApiService();
         
@@ -3084,6 +3081,61 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
         return response()->json([]);
     }
 })->name('api.planting.schedule');
+
+// DEBUG ENDPOINT: Test planting schedule with different municipalities
+Route::get('/api/test/crops-comparison', function (\Illuminate\Http\Request $request) {
+    $mlService = new \App\Services\MLApiService();
+    $testMunicipalities = ['BOKOD', 'LATRINIDAD', 'BAGUIOCITY', 'KABAYAN'];
+    $crops = ['CABBAGE', 'CARROTS', 'LETTUCE'];
+    $currentMonth = strtoupper(date('M'));
+    $currentYear = intval(date('Y'));
+    
+    $results = [];
+    foreach ($testMunicipalities as $municipality) {
+        $results[$municipality] = [];
+        foreach ($crops as $crop) {
+            try {
+                $result = $mlService->predict([
+                    'MUNICIPALITY' => $municipality,
+                    'CROP' => $crop,
+                    'FARM_TYPE' => 'IRRIGATED',
+                    'YEAR' => $currentYear,
+                    'Area_planted_ha' => 2.5,
+                    'MONTH' => $currentMonth
+                ]);
+                
+                $results[$municipality][$crop] = [
+                    'status' => $result['status'],
+                    'production' => $result['data']['prediction']['production_mt'] ?? null,
+                    'confidence' => $result['data']['prediction']['confidence_score'] ?? null
+                ];
+            } catch (\Exception $e) {
+                $results[$municipality][$crop] = ['error' => $e->getMessage()];
+            }
+        }
+    }
+    
+    return response()->json($results)
+        ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+})->name('api.test.crops');
+
+// DEBUG ENDPOINT: Show database crops for municipality
+Route::get('/api/test/db-crops', function (\Illuminate\Http\Request $request) {
+    $municipality = $request->query('municipality', 'BOKOD');
+    
+    $crops = \App\Models\CropData::whereRaw('UPPER(municipality) = ?', [$municipality])
+        ->select('crop_type', 'variety', 'municipality', \DB::raw('AVG(yield_amount) as avg_yield'), \DB::raw('COUNT(*) as count'))
+        ->groupBy('crop_type', 'variety', 'municipality')
+        ->orderBy('avg_yield', 'desc')
+        ->limit(10)
+        ->get();
+    
+    return response()->json([
+        'municipality' => $municipality,
+        'crop_count' => count($crops),
+        'crops' => $crops
+    ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+})->name('api.test.db-crops');
 
 // Monthly Yield API
 Route::get('/api/yield/monthly', function (\Illuminate\Http\Request $request) {
