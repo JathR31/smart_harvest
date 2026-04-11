@@ -3463,322 +3463,348 @@ Route::get('/api/ml/yield/forecast', function (\Illuminate\Http\Request $request
 })->name('api.ml.yield.forecast');
 
 Route::get('/api/ml/yield/analysis', function (\Illuminate\Http\Request $request) {
-    try {
-        $municipality = $request->query('municipality', 'La Trinidad');
-        $year = intval($request->query('year', date('Y')));
-        $mlService = new \App\Services\MLApiService();
+    $municipality = $request->query('municipality', 'La Trinidad');
+    $year = intval($request->query('year', date('Y')));
+    $mlService = new \App\Services\MLApiService();
 
-        // Normalize municipality name for ML API (no spaces, uppercase)
-        $mlMunicipality = strtoupper(str_replace(' ', '', $municipality));
-        $dbMunicipality = strtoupper(str_replace(' ', '', $municipality));
+    $mlMunicipality = strtoupper(str_replace(' ', '', $municipality));
+    $dbMunicipality = strtoupper(str_replace(' ', '', $municipality));
 
-        // All available crops in the ML model
-        $allCrops = ['CABBAGE', 'CARROTS', 'WHITE POTATO', 'LETTUCE', 'CAULIFLOWER',
-                     'BROCCOLI', 'SNAP BEANS', 'CHINESE CABBAGE', 'GARDEN PEAS', 'SWEET PEPPER'];
+    $allCrops = ['CABBAGE', 'CARROTS', 'WHITE POTATO', 'LETTUCE', 'CAULIFLOWER', 'BROCCOLI', 'SNAP BEANS', 'CHINESE CABBAGE', 'GARDEN PEAS', 'SWEET PEPPER'];
+    $monthCodes = [1 => 'JAN', 2 => 'FEB', 3 => 'MAR', 4 => 'APR', 5 => 'MAY', 6 => 'JUN', 7 => 'JUL', 8 => 'AUG', 9 => 'SEP', 10 => 'OCT', 11 => 'NOV', 12 => 'DEC'];
+    $currentMonthCode = strtoupper(date('M'));
 
-        // Accurate fallback from real municipality database records (used when ML is unavailable).
-        $buildDatabaseFallback = function (string $normalizedMunicipality, int $selectedYear, string $mlStatus = 'database_fallback') {
-            $cropRows = \App\Models\CropData::whereRaw('UPPER(municipality) = ?', [$normalizedMunicipality])
-                ->where('yield_amount', '>', 0)
-                ->where('area_planted', '>', 0)
-                ->select(
-                    'crop_type',
-                    \DB::raw('AVG(yield_amount / NULLIF(area_planted, 0)) as avg_yield'),
-                    \DB::raw('SUM(yield_amount) as total_production'),
-                    \DB::raw('COUNT(*) as record_count')
-                )
-                ->groupBy('crop_type')
-                ->orderBy('avg_yield', 'desc')
-                ->limit(5)
-                ->get();
+    $buildDatabaseFallback = function (string $normalizedMunicipality, int $selectedYear, string $mlStatus = 'database_fallback') {
+        $cropRows = \App\Models\CropData::whereRaw('UPPER(municipality) = ?', [$normalizedMunicipality])
+            ->where('yield_amount', '>', 0)
+            ->where('area_planted', '>', 0)
+            ->select(
+                'crop_type',
+                \DB::raw('AVG(yield_amount / NULLIF(area_planted, 0)) as avg_yield'),
+                \DB::raw('SUM(yield_amount) as total_production'),
+                \DB::raw('COUNT(*) as record_count')
+            )
+            ->groupBy('crop_type')
+            ->orderBy('avg_yield', 'desc')
+            ->limit(5)
+            ->get();
 
-            if ($cropRows->isEmpty()) {
-                return [
-                    'stats' => [
-                        'avg_yield' => '3.5',
-                        'best_crop' => ['crop_type' => 'CABBAGE', 'avg_yield' => 4.2],
-                        'total_production' => '420.0',
-                        'total_area' => '5.0',
-                    ],
-                    'comparison' => [],
-                    'crops' => [
-                        ['crop' => 'CABBAGE', 'yield' => 3.8, 'predicted' => 4.2, 'confidence' => 85],
-                        ['crop' => 'CARROTS', 'yield' => 3.2, 'predicted' => 3.5, 'confidence' => 82],
-                        ['crop' => 'WHITE POTATO', 'yield' => 2.9, 'predicted' => 3.1, 'confidence' => 80],
-                        ['crop' => 'LETTUCE', 'yield' => 2.5, 'predicted' => 2.8, 'confidence' => 78],
-                        ['crop' => 'CAULIFLOWER', 'yield' => 2.2, 'predicted' => 2.4, 'confidence' => 76],
-                    ],
-                    'monthly' => [
-                        ['month' => 1, 'month_name' => 'Jan', 'avg_yield' => 4.0],
-                        ['month' => 2, 'month_name' => 'Feb', 'avg_yield' => 4.1],
-                        ['month' => 3, 'month_name' => 'Mar', 'avg_yield' => 4.0],
-                        ['month' => 4, 'month_name' => 'Apr', 'avg_yield' => 2.9],
-                        ['month' => 5, 'month_name' => 'May', 'avg_yield' => 2.8],
-                        ['month' => 6, 'month_name' => 'Jun', 'avg_yield' => 2.9],
-                        ['month' => 7, 'month_name' => 'Jul', 'avg_yield' => 3.2],
-                        ['month' => 8, 'month_name' => 'Aug', 'avg_yield' => 3.3],
-                        ['month' => 9, 'month_name' => 'Sep', 'avg_yield' => 3.3],
-                        ['month' => 10, 'month_name' => 'Oct', 'avg_yield' => 4.0],
-                        ['month' => 11, 'month_name' => 'Nov', 'avg_yield' => 4.1],
-                        ['month' => 12, 'month_name' => 'Dec', 'avg_yield' => 4.0],
-                    ],
-                    'forecast' => [
-                        ['year' => $selectedYear, 'predicted_production' => 420.0],
-                        ['year' => $selectedYear + 1, 'predicted_production' => 435.0],
-                        ['year' => $selectedYear + 2, 'predicted_production' => 450.0],
-                        ['year' => $selectedYear + 3, 'predicted_production' => 468.0],
-                        ['year' => $selectedYear + 4, 'predicted_production' => 487.0],
-                        ['year' => $selectedYear + 5, 'predicted_production' => 507.0],
-                    ],
-                    'ml_status' => $mlStatus,
-                    'ml_api_connected' => false,
-                ];
-            }
-
-            $crops = [];
-            $bestCrop = null;
-            $bestYield = 0.0;
-            $totalProduction = 0.0;
-            $totalYield = 0.0;
-
-            foreach ($cropRows as $row) {
-                $avgYield = floatval($row->avg_yield);
-                if ($avgYield > 100) {
-                    $avgYield = min($avgYield / 1000, 100);
-                    if ($avgYield > 100) {
-                        $avgYield = 15.0;
-                    }
-                }
-
-                $predictedYield = round($avgYield * 1.05, 2);
-                $confidence = min(95, max(70, 65 + min(25, intval($row->record_count / 20))));
-
-                if ($predictedYield > $bestYield) {
-                    $bestYield = $predictedYield;
-                    $bestCrop = [
-                        'crop_type' => $row->crop_type,
-                        'avg_yield' => $predictedYield,
-                    ];
-                }
-
-                $totalProduction += floatval($row->total_production);
-                $totalYield += $predictedYield;
-
-                $crops[] = [
-                    'crop' => $row->crop_type,
-                    'yield' => round($avgYield, 2),
-                    'predicted' => $predictedYield,
-                    'confidence' => $confidence,
-                ];
-            }
-
-            $avgYieldAll = count($crops) > 0 ? ($totalYield / count($crops)) : 0.0;
-
-            $monthlyRows = \App\Models\CropData::whereRaw('UPPER(municipality) = ?', [$normalizedMunicipality])
-                ->where('yield_amount', '>', 0)
-                ->where('area_planted', '>', 0)
-                ->whereYear('planting_date', '=', $selectedYear)
-                ->select(
-                    \DB::raw('MONTH(planting_date) as month_num'),
-                    \DB::raw('AVG(yield_amount / NULLIF(area_planted, 0)) as avg_yield')
-                )
-                ->groupBy('month_num')
-                ->orderBy('month_num')
-                ->get()
-                ->keyBy('month_num');
-
-            $monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-            $monthly = [];
-            for ($m = 1; $m <= 12; $m++) {
-                $monthYield = isset($monthlyRows[$m]) ? floatval($monthlyRows[$m]->avg_yield) : $avgYieldAll;
-                if ($monthYield > 100) {
-                    $monthYield = min($monthYield / 1000, 100);
-                }
-                $monthly[] = [
-                    'month' => $m,
-                    'month_name' => $monthNames[$m - 1],
-                    'year' => $selectedYear,
-                    'avg_yield' => round($monthYield, 2),
-                ];
-            }
-
-            $baseProduction = $totalProduction > 0 ? $totalProduction : 420.0;
-            $forecast = [];
-            for ($i = 0; $i < 6; $i++) {
-                $forecast[] = [
-                    'year' => $selectedYear + $i,
-                    'predicted_production' => round($baseProduction * pow(1.03, $i), 1),
-                ];
-            }
-
+        if ($cropRows->isEmpty()) {
             return [
                 'stats' => [
-                    'avg_yield' => number_format($avgYieldAll, 1),
-                    'best_crop' => $bestCrop,
-                    'total_production' => number_format($totalProduction, 1),
-                    'total_area' => number_format(count($crops), 1),
+                    'avg_yield' => '3.5',
+                    'best_crop' => ['crop_type' => 'CABBAGE', 'avg_yield' => 4.2],
+                    'total_production' => '420.0',
+                    'total_area' => '5.0',
                 ],
                 'comparison' => [],
-                'crops' => $crops,
-                'monthly' => $monthly,
-                'forecast' => $forecast,
+                'crops' => [
+                    ['crop' => 'CABBAGE', 'yield' => 3.8, 'predicted' => 4.2, 'confidence' => 85],
+                    ['crop' => 'CARROTS', 'yield' => 3.2, 'predicted' => 3.5, 'confidence' => 82],
+                    ['crop' => 'WHITE POTATO', 'yield' => 2.9, 'predicted' => 3.1, 'confidence' => 80],
+                    ['crop' => 'LETTUCE', 'yield' => 2.5, 'predicted' => 2.8, 'confidence' => 78],
+                    ['crop' => 'CAULIFLOWER', 'yield' => 2.2, 'predicted' => 2.4, 'confidence' => 76],
+                ],
+                'monthly' => [
+                    ['month' => 1, 'month_name' => 'Jan', 'avg_yield' => 4.0],
+                    ['month' => 2, 'month_name' => 'Feb', 'avg_yield' => 4.1],
+                    ['month' => 3, 'month_name' => 'Mar', 'avg_yield' => 4.0],
+                    ['month' => 4, 'month_name' => 'Apr', 'avg_yield' => 2.9],
+                    ['month' => 5, 'month_name' => 'May', 'avg_yield' => 2.8],
+                    ['month' => 6, 'month_name' => 'Jun', 'avg_yield' => 2.9],
+                    ['month' => 7, 'month_name' => 'Jul', 'avg_yield' => 3.2],
+                    ['month' => 8, 'month_name' => 'Aug', 'avg_yield' => 3.3],
+                    ['month' => 9, 'month_name' => 'Sep', 'avg_yield' => 3.3],
+                    ['month' => 10, 'month_name' => 'Oct', 'avg_yield' => 4.0],
+                    ['month' => 11, 'month_name' => 'Nov', 'avg_yield' => 4.1],
+                    ['month' => 12, 'month_name' => 'Dec', 'avg_yield' => 4.0],
+                ],
+                'forecast' => [
+                    ['year' => $selectedYear, 'predicted_production' => 420.0],
+                    ['year' => $selectedYear + 1, 'predicted_production' => 435.0],
+                    ['year' => $selectedYear + 2, 'predicted_production' => 450.0],
+                    ['year' => $selectedYear + 3, 'predicted_production' => 468.0],
+                    ['year' => $selectedYear + 4, 'predicted_production' => 487.0],
+                    ['year' => $selectedYear + 5, 'predicted_production' => 507.0],
+                ],
                 'ml_status' => $mlStatus,
                 'ml_api_connected' => false,
             ];
-        };
-
-        $fallbackData = $buildDatabaseFallback($dbMunicipality, $year, 'fallback');
-
-        // 1) Health check
-        $healthCheck = $mlService->checkHealth();
-        if ($healthCheck['status'] !== 'success') {
-            // Return fallback data instead of empty
-            return response()->json($fallbackData);
         }
 
-        // 2) Get forecasts for every crop in this municipality using /api/forecast
-        $cropResults = [];
-        foreach ($allCrops as $crop) {
-            $forecastResult = $mlService->getForecast([
-                'MUNICIPALITY'    => $mlMunicipality,
-                'CROP'            => $crop,
-                'FARM_TYPE'       => 'IRRIGATED',
-                'Area_planted_ha' => 10,
-                'years_ahead'     => 3,
-            ]);
-            if ($forecastResult['status'] === 'success' && ($forecastResult['data']['success'] ?? false)) {
-                $data = $forecastResult['data'];
-                // Find forecast for the requested year
-                $yearProduction = 0;
-                foreach ($data['forecast'] ?? [] as $f) {
-                    if (intval($f['year']) === $year) {
-                        $yearProduction = floatval($f['production']);
-                        break;
-                    }
+        $crops = [];
+        $bestCrop = null;
+        $bestYield = 0.0;
+        $totalProduction = 0.0;
+        $totalYield = 0.0;
+
+        foreach ($cropRows as $row) {
+            $avgYield = floatval($row->avg_yield);
+            if ($avgYield > 100) {
+                $avgYield = min($avgYield / 1000, 100);
+                if ($avgYield > 100) {
+                    $avgYield = 15.0;
                 }
-                if ($yearProduction <= 0) {
-                    $yearProduction = floatval($data['historical']['average'] ?? 0);
-                }
-                $cropResults[] = [
-                    'crop'       => $crop,
-                    'production' => $yearProduction,
-                    'historical' => $data['historical'] ?? [],
-                    'forecast'   => $data['forecast'] ?? [],
-                    'trend'      => $data['trend'] ?? [],
+            }
+
+            $predictedYield = round($avgYield * 1.05, 2);
+            $confidence = min(95, max(70, 65 + min(25, intval($row->record_count / 20))));
+
+            if ($predictedYield > $bestYield) {
+                $bestYield = $predictedYield;
+                $bestCrop = [
+                    'crop_type' => $row->crop_type,
+                    'avg_yield' => $predictedYield,
                 ];
             }
-        }
 
-        if (empty($cropResults)) {
-            // Use fallback data when ML API returns no crops
-            return response()->json($buildDatabaseFallback($dbMunicipality, $year, 'api_connected_no_data'));
-        }
+            $totalProduction += floatval($row->total_production);
+            $totalYield += $predictedYield;
 
-        // Sort by production descending and take top 5
-        usort($cropResults, fn($a, $b) => $b['production'] <=> $a['production']);
-        $topCrops = array_slice($cropResults, 0, 5);
-
-        // 3) Build stats
-        $bestCrop = null;
-        $bestYield = 0;
-        $totalProduction = 0;
-        $totalYield = 0;
-        $cropsPerformance = [];
-        $area = 23.0; // Average area per crop in hectares (Benguet data)
-
-        foreach ($topCrops as $c) {
-            $yieldPerHa = $c['production'] / $area;
-            $historicalAvg = floatval($c['historical']['average'] ?? $c['production']);
-            $historicalYield = $historicalAvg / $area;
-
-            if ($yieldPerHa > $bestYield) {
-                $bestYield = $yieldPerHa;
-                $bestCrop = ['crop_type' => $c['crop'], 'avg_yield' => round($yieldPerHa, 2)];
-            }
-            $totalProduction += $c['production'];
-            $totalYield += $yieldPerHa;
-            $cropsPerformance[] = [
-                'crop'       => $c['crop'],
-                'yield'      => round($historicalYield, 2),
-                'predicted'  => round($yieldPerHa, 2),
-                'confidence' => 85,
-            ];
-        }
-
-        $avgYield = count($topCrops) > 0 ? $totalYield / count($topCrops) : 0;
-
-        // 4) Yearly comparison using the top crop's /api/predict endpoint (2020 → year)
-        $comparison = [];
-        $baselineCrop = $topCrops[0]['crop'];
-        for ($y = 2020; $y <= $year; $y++) {
-            $predictResult = $mlService->predict([
-                'MUNICIPALITY'    => $mlMunicipality,
-                'CROP'            => $baselineCrop,
-                'FARM_TYPE'       => 'IRRIGATED',
-                'MONTH'           => 'JUN',
-                'YEAR'            => $y,
-                'Area_planted_ha' => 10,
-            ]);
-            $predicted = $avgYield * (1 + ($y - 2020) * 0.02);
-            $confidence = 85;
-            if ($predictResult['status'] === 'success' && ($predictResult['data']['success'] ?? false)) {
-                $predicted = floatval($predictResult['data']['prediction']['production_mt'] ?? $predicted);
-                $confidence = isset($predictResult['data']['prediction']['confidence_score'])
-                    ? round(floatval($predictResult['data']['prediction']['confidence_score']) * 100)
-                    : 85;
-            }
-            $comparison[] = [
-                'year'       => $y,
-                'actual'     => round($predicted * 0.97, 2),
-                'predicted'  => round($predicted, 2),
+            $crops[] = [
+                'crop' => $row->crop_type,
+                'yield' => round($avgYield, 2),
+                'predicted' => $predictedYield,
                 'confidence' => $confidence,
             ];
         }
 
-        // 5) Monthly data (cool-season boost for Benguet)
-        $monthlyData = [];
+        $avgYieldAll = count($crops) > 0 ? ($totalYield / count($crops)) : 0.0;
+
+        $monthlyRows = \App\Models\CropData::whereRaw('UPPER(municipality) = ?', [$normalizedMunicipality])
+            ->where('yield_amount', '>', 0)
+            ->where('area_planted', '>', 0)
+            ->whereYear('planting_date', '=', $selectedYear)
+            ->select(
+                \DB::raw('MONTH(planting_date) as month_num'),
+                \DB::raw('AVG(yield_amount / NULLIF(area_planted, 0)) as avg_yield')
+            )
+            ->groupBy('month_num')
+            ->orderBy('month_num')
+            ->get()
+            ->keyBy('month_num');
+
         $monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        if ($year >= 2025) {
-            for ($m = 1; $m <= 12; $m++) {
-                $factor = ($m >= 10 || $m <= 3) ? 1.15 : (($m >= 4 && $m <= 6) ? 0.85 : 1.0);
-                $monthlyData[] = [
-                    'month' => $m, 'month_name' => $monthNames[$m - 1],
-                    'year' => $year, 'avg_yield' => round($avgYield * $factor, 2),
+        $monthly = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $monthYield = isset($monthlyRows[$m]) ? floatval($monthlyRows[$m]->avg_yield) : $avgYieldAll;
+            if ($monthYield > 100) {
+                $monthYield = min($monthYield / 1000, 100);
+            }
+            $monthly[] = [
+                'month' => $m,
+                'month_name' => $monthNames[$m - 1],
+                'year' => $selectedYear,
+                'avg_yield' => round($monthYield, 2),
+            ];
+        }
+
+        $baseProduction = $totalProduction > 0 ? $totalProduction : 420.0;
+        $forecast = [];
+        for ($i = 0; $i < 6; $i++) {
+            $forecast[] = [
+                'year' => $selectedYear + $i,
+                'predicted_production' => round($baseProduction * pow(1.03, $i), 1),
+            ];
+        }
+
+        return [
+            'stats' => [
+                'avg_yield' => number_format($avgYieldAll, 1),
+                'best_crop' => $bestCrop,
+                'total_production' => number_format($totalProduction, 1),
+                'total_area' => number_format(count($crops), 1),
+            ],
+            'comparison' => [],
+            'crops' => $crops,
+            'monthly' => $monthly,
+            'forecast' => $forecast,
+            'ml_status' => $mlStatus,
+            'ml_api_connected' => false,
+        ];
+    };
+
+    try {
+        $healthCheck = $mlService->checkHealth();
+        $mlHealthy = ($healthCheck['status'] ?? 'error') === 'success';
+
+        $mlRows = [];
+        if ($mlHealthy) {
+            foreach ($allCrops as $crop) {
+                $result = $mlService->predict([
+                    'MUNICIPALITY' => $mlMunicipality,
+                    'CROP' => $crop,
+                    'FARM_TYPE' => 'IRRIGATED',
+                    'YEAR' => $year,
+                    'Area_planted_ha' => 2.5,
+                    'MONTH' => $currentMonthCode,
+                ]);
+
+                if ($result['status'] !== 'success' || !isset($result['data']['prediction']['production_mt'])) {
+                    continue;
+                }
+
+                $production = floatval($result['data']['prediction']['production_mt']);
+                if ($production <= 0) {
+                    continue;
+                }
+
+                $predictedYield = $production / 2.5;
+                if ($predictedYield > 100) {
+                    $predictedYield = 15.0;
+                }
+
+                $confidence = isset($result['data']['prediction']['confidence_score'])
+                    ? round(floatval($result['data']['prediction']['confidence_score']) * 100)
+                    : 80;
+
+                $historicalYield = round($predictedYield * 0.97, 2);
+                $prev = $mlService->predict([
+                    'MUNICIPALITY' => $mlMunicipality,
+                    'CROP' => $crop,
+                    'FARM_TYPE' => 'IRRIGATED',
+                    'YEAR' => $year - 1,
+                    'Area_planted_ha' => 2.5,
+                    'MONTH' => $currentMonthCode,
+                ]);
+                if (($prev['status'] ?? 'error') === 'success' && isset($prev['data']['prediction']['production_mt'])) {
+                    $historicalYield = round(floatval($prev['data']['prediction']['production_mt']) / 2.5, 2);
+                    if ($historicalYield > 100) {
+                        $historicalYield = 15.0;
+                    }
+                }
+
+                $mlRows[] = [
+                    'crop' => $crop,
+                    'yield' => $historicalYield,
+                    'predicted' => round($predictedYield, 2),
+                    'confidence' => $confidence,
+                    'production' => $production,
                 ];
             }
         }
 
-        // 6) Forecast data from the top crop normalized for frontend
-        $forecastData = array_map(function ($f) {
-            return [
-                'year' => intval($f['year'] ?? 0),
-                'predicted_production' => round(floatval($f['production'] ?? $f['predicted_production'] ?? 0), 2),
+        if (empty($mlRows)) {
+            $status = $mlHealthy ? 'api_connected_no_data' : 'fallback';
+            return response()->json($buildDatabaseFallback($dbMunicipality, $year, $status));
+        }
+
+        usort($mlRows, fn($a, $b) => $b['predicted'] <=> $a['predicted']);
+        $topCrops = array_slice($mlRows, 0, 5);
+
+        $avgYield = array_sum(array_column($topCrops, 'predicted')) / count($topCrops);
+        $totalProduction = array_sum(array_column($topCrops, 'production'));
+        $bestCrop = [
+            'crop_type' => $topCrops[0]['crop'],
+            'avg_yield' => $topCrops[0]['predicted'],
+        ];
+
+        $comparison = [];
+        $baselineCrop = $topCrops[0]['crop'];
+        $startYear = max(2020, $year - 5);
+        for ($y = $startYear; $y <= $year; $y++) {
+            $predicted = $avgYield;
+            $confidence = $topCrops[0]['confidence'];
+
+            $yrResult = $mlService->predict([
+                'MUNICIPALITY' => $mlMunicipality,
+                'CROP' => $baselineCrop,
+                'FARM_TYPE' => 'IRRIGATED',
+                'YEAR' => $y,
+                'Area_planted_ha' => 2.5,
+                'MONTH' => $currentMonthCode,
+            ]);
+            if (($yrResult['status'] ?? 'error') === 'success' && isset($yrResult['data']['prediction']['production_mt'])) {
+                $predicted = floatval($yrResult['data']['prediction']['production_mt']) / 2.5;
+                if ($predicted > 100) {
+                    $predicted = 15.0;
+                }
+                if (isset($yrResult['data']['prediction']['confidence_score'])) {
+                    $confidence = round(floatval($yrResult['data']['prediction']['confidence_score']) * 100);
+                }
+            }
+
+            $comparison[] = [
+                'year' => $y,
+                'actual' => round($predicted * 0.97, 2),
+                'predicted' => round($predicted, 2),
+                'confidence' => $confidence,
             ];
-        }, $topCrops[0]['forecast'] ?? []);
+        }
+
+        $monthly = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $monthYield = $avgYield;
+            $monthResult = $mlService->predict([
+                'MUNICIPALITY' => $mlMunicipality,
+                'CROP' => $baselineCrop,
+                'FARM_TYPE' => 'IRRIGATED',
+                'YEAR' => $year,
+                'Area_planted_ha' => 2.5,
+                'MONTH' => $monthCodes[$m],
+            ]);
+            if (($monthResult['status'] ?? 'error') === 'success' && isset($monthResult['data']['prediction']['production_mt'])) {
+                $monthYield = floatval($monthResult['data']['prediction']['production_mt']) / 2.5;
+                if ($monthYield > 100) {
+                    $monthYield = 15.0;
+                }
+            }
+
+            $monthly[] = [
+                'month' => $m,
+                'month_name' => date('M', mktime(0, 0, 0, $m, 1)),
+                'year' => $year,
+                'avg_yield' => round($monthYield, 2),
+            ];
+        }
+
+        $forecast = [];
+        for ($fy = $year; $fy <= ($year + 5); $fy++) {
+            $forecastProduction = $avgYield * 2.5;
+            $fyResult = $mlService->predict([
+                'MUNICIPALITY' => $mlMunicipality,
+                'CROP' => $baselineCrop,
+                'FARM_TYPE' => 'IRRIGATED',
+                'YEAR' => $fy,
+                'Area_planted_ha' => 2.5,
+                'MONTH' => $currentMonthCode,
+            ]);
+            if (($fyResult['status'] ?? 'error') === 'success' && isset($fyResult['data']['prediction']['production_mt'])) {
+                $forecastProduction = floatval($fyResult['data']['prediction']['production_mt']);
+            }
+
+            $forecast[] = [
+                'year' => $fy,
+                'predicted_production' => round($forecastProduction, 1),
+            ];
+        }
 
         return response()->json([
             'stats' => [
-                'avg_yield'        => number_format($avgYield, 1),
-                'best_crop'        => $bestCrop,
+                'avg_yield' => number_format($avgYield, 1),
+                'best_crop' => $bestCrop,
                 'total_production' => number_format($totalProduction, 1),
-                'total_area'       => number_format(count($topCrops), 1),
+                'total_area' => number_format(count($topCrops), 1),
             ],
-            'comparison'       => $comparison,
-            'crops'            => $cropsPerformance,
-            'monthly'          => $monthlyData,
-            'forecast'         => $forecastData,
-            'ml_status'        => 'success',
+            'comparison' => $comparison,
+            'crops' => array_map(function ($c) {
+                return [
+                    'crop' => $c['crop'],
+                    'yield' => $c['yield'],
+                    'predicted' => $c['predicted'],
+                    'confidence' => $c['confidence'],
+                ];
+            }, $topCrops),
+            'monthly' => $monthly,
+            'forecast' => $forecast,
+            'ml_status' => 'success',
             'ml_api_connected' => true,
         ]);
-
     } catch (\Throwable $e) {
         safe_log('error', 'ML Analysis Error: ' . $e->getMessage());
         safe_log('error', 'Stack trace: ' . $e->getTraceAsString());
 
-        $municipalityForFallback = isset($municipality) ? $municipality : 'La Trinidad';
-        $yearForFallback = isset($year) ? intval($year) : intval(date('Y'));
-        $fallbackForError = $buildDatabaseFallback(strtoupper(str_replace(' ', '', $municipalityForFallback)), $yearForFallback, 'error_database_fallback');
-        return response()->json($fallbackForError);
+        return response()->json($buildDatabaseFallback($dbMunicipality, $year, 'error_database_fallback'));
     }
 })->name('api.ml.yield.analysis');
 
