@@ -1832,12 +1832,21 @@ Route::get('/api/dashboard/stats', function (\Illuminate\Http\Request $request) 
             ->limit(5)
             ->get()
             ->map(function($harvest) {
+                $year = null;
+                if (!empty($harvest->planting_date)) {
+                    if ($harvest->planting_date instanceof \Carbon\CarbonInterface) {
+                        $year = intval($harvest->planting_date->format('Y'));
+                    } else {
+                        $year = intval(date('Y', strtotime((string) $harvest->planting_date)));
+                    }
+                }
+
                 return [
                     'id' => $harvest->id,
                     'crop_type' => $harvest->crop_type,
                     'variety' => $harvest->variety ?? 'N/A',
                     'municipality' => $harvest->municipality,
-                    'year' => date('Y', strtotime($harvest->planting_date)),
+                    'year' => $year,
                     'area_planted' => floatval($harvest->area_planted),
                     'yield_amount' => floatval($harvest->yield_amount)
                 ];
@@ -1855,7 +1864,7 @@ Route::get('/api/dashboard/stats', function (\Illuminate\Http\Request $request) 
          ->header('Pragma', 'no-cache')
          ->header('Expires', 'Fri, 01 Jan 1990 00:00:00 GMT');
         
-    } catch (\Exception $e) {
+    } catch (\Throwable $e) {
         safe_log('error', 'Dashboard stats error: ' . $e->getMessage());
         return response()->json([
             'stats' => [
@@ -3165,7 +3174,7 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
             ->header('Expires', 'Fri, 01 Jan 1990 00:00:00 GMT')
             ->header('X-Timestamp', now()->timestamp);
         
-    } catch (\Exception $e) {
+    } catch (\Throwable $e) {
         safe_log('error', 'Planting schedule error: ' . $e->getMessage(), [
             'exception' => $e->getTraceAsString()
         ]);
@@ -3762,11 +3771,13 @@ Route::get('/api/ml/yield/analysis', function (\Illuminate\Http\Request $request
             'ml_api_connected' => true,
         ]);
 
-    } catch (\Exception $e) {
+    } catch (\Throwable $e) {
         safe_log('error', 'ML Analysis Error: ' . $e->getMessage());
         safe_log('error', 'Stack trace: ' . $e->getTraceAsString());
 
-        $fallbackForError = $buildDatabaseFallback(strtoupper(str_replace(' ', '', $municipality)), $year, 'error_database_fallback');
+        $municipalityForFallback = isset($municipality) ? $municipality : 'La Trinidad';
+        $yearForFallback = isset($year) ? intval($year) : intval(date('Y'));
+        $fallbackForError = $buildDatabaseFallback(strtoupper(str_replace(' ', '', $municipalityForFallback)), $yearForFallback, 'error_database_fallback');
         return response()->json($fallbackForError);
     }
 })->name('api.ml.yield.analysis');
@@ -4384,25 +4395,33 @@ Route::get('/api/ml/test', function () {
 })->name('ml.test');
 
 Route::get('/api/ml/test-prediction', function () {
-    $mlService = new \App\Services\MLApiService();
-    
-    // Sample prediction data
-    $testData = [
-        'MUNICIPALITY' => 'LATRINIDAD',
-        'CROP' => 'CABBAGE',
-        'FARM_TYPE' => 'IRRIGATED',
-        'YEAR' => now()->year,
-        'Area_planted_ha' => 2.5,
-        'MONTH' => strtoupper(now()->format('M')),
-    ];
-    
-    $result = $mlService->predict($testData);
-    
-    return response()->json([
-        'test_time' => now()->toDateTimeString(),
-        'test_data' => $testData,
-        'prediction_result' => $result,
-    ]);
+    try {
+        $mlService = new \App\Services\MLApiService();
+
+        // Sample prediction data
+        $testData = [
+            'MUNICIPALITY' => 'LATRINIDAD',
+            'CROP' => 'CABBAGE',
+            'FARM_TYPE' => 'IRRIGATED',
+            'YEAR' => now()->year,
+            'Area_planted_ha' => 2.5,
+            'MONTH' => strtoupper(now()->format('M')),
+        ];
+
+        $result = $mlService->predict($testData);
+
+        return response()->json([
+            'test_time' => now()->toDateTimeString(),
+            'test_data' => $testData,
+            'prediction_result' => $result,
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'test_time' => now()->toDateTimeString(),
+            'status' => 'error',
+            'message' => $e->getMessage(),
+        ], 200);
+    }
 })->name('ml.test.prediction');
 
 // Include farmer API routes
