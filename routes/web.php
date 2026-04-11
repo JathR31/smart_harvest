@@ -1840,7 +1840,9 @@ Route::get('/api/dashboard/stats', function (\Illuminate\Http\Request $request) 
                 'ml_api_connected' => $mlConnected
             ],
             'recent_harvests' => $recentHarvests
-        ]);
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+         ->header('Pragma', 'no-cache')
+         ->header('Expires', 'Fri, 01 Jan 1990 00:00:00 GMT');
         
     } catch (\Exception $e) {
         \Log::error('Dashboard stats error: ' . $e->getMessage());
@@ -2749,6 +2751,10 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
             'requested_municipality' => $municipality,
             'normalized_ml' => $mlMunicipality,
             'normalized_db' => $dbMunicipality,
+            'timestamp' => now()->toIso8601String(),
+            'query_params' => $request->query()
+        ]);
+            'normalized_db' => $dbMunicipality,
             'timestamp' => now()->toIso8601String()
         ]);
         
@@ -2795,6 +2801,14 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
                     'MONTH' => $currentMonth
                 ]);
                 
+                \Log::debug('ML Prediction for crop', [
+                    'municipality' => $mlMunicipality,
+                    'crop'  => $crop,
+                    'status' => $result['status'],
+                    'has_prediction' => isset($result['data']['prediction']),
+                    'production' => $result['data']['prediction']['production_mt'] ?? null
+                ]);
+                
                 if ($result['status'] === 'success' && isset($result['data']['prediction'])) {
                     $prediction = $result['data']['prediction'];
                     $cropPredictions[] = [
@@ -2803,11 +2817,27 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
                         'confidence' => floatval($prediction['confidence_score'] ?? 0)
                     ];
                     $mlConnected = true;
+                } else {
+                    \Log::warning('ML Prediction failed or returned no data', [
+                        'municipality' => $mlMunicipality,
+                        'crop' => $crop,
+                        'response' => $result
+                    ]);
                 }
             } catch (\Exception $cropErr) {
+                \Log::error('ML Prediction exception for ' . $crop, [
+                    'error' => $cropErr->getMessage()
+                ]);
                 // Skip failed predictions
             }
         }
+        
+        \Log::info('ML Predictions summary', [
+            'municipality' => $mlMunicipality,
+            'total_predictions' => count($cropPredictions),
+            'predictions' => collect($cropPredictions)->pluck('crop')->toArray(),
+            'ml_connected' => $mlConnected
+        ]);
         
         if (!empty($cropPredictions)) {
             // Sort by production descending - top producing crops first
@@ -3039,7 +3069,13 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
             'timestamp' => now()->toIso8601String()
         ]);
         
-        return response()->json($schedules);
+        // Prevent caching to ensure fresh data for each municipality
+        return response()
+            ->json($schedules)
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', 'Fri, 01 Jan 1990 00:00:00 GMT')
+            ->header('X-Timestamp', now()->timestamp);
         
     } catch (\Exception $e) {
         \Log::error('Planting schedule error: ' . $e->getMessage(), [
