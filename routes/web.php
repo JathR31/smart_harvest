@@ -2745,9 +2745,11 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
         $mlMunicipality = strtoupper(str_replace(' ', '', $municipality));
         $dbMunicipality = strtoupper(str_replace(' ', '', $municipality));
         
-        \Log::info('Planting Schedule API called', [
-            'municipality' => $municipality,
-            'normalized' => $dbMunicipality
+        \Log::info('=== PLANTING SCHEDULE API REQUEST ===', [
+            'requested_municipality' => $municipality,
+            'normalized_ml' => $mlMunicipality,
+            'normalized_db' => $dbMunicipality,
+            'timestamp' => now()->toIso8601String()
         ]);
         
         $mlService = new \App\Services\MLApiService();
@@ -3024,7 +3026,19 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
             ]);
         }
 
-        \Log::info('Returning schedules', ['count' => count($schedules)]);
+        \Log::info('=== PLANTING SCHEDULE API RESPONSE ===', [
+            'municipality' => $municipality,
+            'total_crops_returned' => count($schedules),
+            'crops_detail' => collect($schedules)->map(function($s) { 
+                return [
+                    'crop' => $s['crop'], 
+                    'yield' => $s['yield_prediction'],
+                    'ml_prediction' => $s['ml_prediction'] ?? false
+                ];
+            })->toArray(),
+            'timestamp' => now()->toIso8601String()
+        ]);
+        
         return response()->json($schedules);
         
     } catch (\Exception $e) {

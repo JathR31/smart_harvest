@@ -250,12 +250,21 @@
 
             <!-- Top 5 Recommended Crops -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-                <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center justify-between mb-2">
                     <h2 class="text-lg font-semibold text-green-700">Top 5 Recommended Crops</h2>
                     <a href="{{ route('planting.schedule') }}" class="text-sm text-green-600 hover:text-green-700 font-medium flex items-center">
                         View Full Schedule
                         <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                     </a>
+                </div>
+                <!-- Municipality-specific data indicator -->
+                <div class="text-xs text-gray-500 mb-4 py-2 px-3 bg-gray-50 rounded border border-gray-100">
+                    <span class="font-medium">📍 Data for: </span><span class="font-bold text-green-700" x-text="selectedMunicipality"></span>
+                    <span class="mx-2">|</span>
+                    <span class="font-medium">🔄 ML-powered</span>
+                    <template x-if="topCrops.length === 0">
+                        <span class="ml-2 text-gray-600">(Loading...)</span>
+                    </template>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <template x-for="(crop, index) in topCrops.slice(0, 5)" :key="index">
