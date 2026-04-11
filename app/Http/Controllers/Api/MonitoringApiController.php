@@ -229,69 +229,6 @@ class MonitoringApiController extends Controller
             ],
         ];
     }
-                        'locations'   => [$muni],
-                        'severity'    => $weather['wind_speed'] > 14 ? 'high' : 'medium',
-                        'riskLabel'   => $weather['wind_speed'] > 14 ? 'High Risk' : 'Medium Risk',
-                    ];
-                }
-
-                // Extreme temperature alert
-                if ($weather['temp'] > 30) {
-                    $alerts[] = [
-                        'id'          => 'heat_' . $muni,
-                        'type'        => 'drought',
-                        'title'       => 'High Temperature Warning — ' . $muni,
-                        'time'        => 'Today, ' . Carbon::now()->format('g:i A'),
-                        'description' => "Temperature at {$weather['temp']}°C in {$muni} — above normal for Cordillera highlands. Increase irrigation, apply mulching to retain soil moisture.",
-                        'locations'   => [$muni],
-                        'severity'    => $weather['temp'] > 34 ? 'high' : 'medium',
-                        'riskLabel'   => $weather['temp'] > 34 ? 'High Risk' : 'Medium Risk',
-                    ];
-                }
-
-                // Very high humidity - fungal risk
-                if ($weather['humidity'] > 90) {
-                    $alerts[] = [
-                        'id'          => 'humid_' . $muni,
-                        'type'        => 'heavy_rainfall',
-                        'title'       => 'High Humidity / Fungal Risk — ' . $muni,
-                        'time'        => 'Today, ' . Carbon::now()->format('g:i A'),
-                        'description' => "Humidity at {$weather['humidity']}% in {$muni}. Conditions favor fungal diseases (blight, mildew). Monitor vegetable crops and apply preventive fungicide.",
-                        'locations'   => [$muni],
-                        'severity'    => 'low',
-                        'riskLabel'   => 'Low Risk',
-                    ];
-                }
-
-                // Low visibility / fog
-                if ($weather['visibility'] < 2) {
-                    $alerts[] = [
-                        'id'          => 'fog_' . $muni,
-                        'type'        => 'heavy_rainfall',
-                        'title'       => 'Dense Fog Advisory — ' . $muni,
-                        'time'        => 'Now, ' . Carbon::now()->format('g:i A'),
-                        'description' => "Visibility at {$weather['visibility']}km in {$muni}. Exercise caution on highland roads. Delay field work if visibility is impaired.",
-                        'locations'   => [$muni],
-                        'severity'    => 'low',
-                        'riskLabel'   => 'Low Risk',
-                    ];
-                }
-            }
-
-            return response()->json([
-                'alerts'       => array_values($alerts),
-                'source'       => 'OpenWeatherMap (Live)',
-                'last_updated' => Carbon::now()->toIso8601String(),
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Climate Alerts Error: ' . $e->getMessage());
-            return response()->json([
-                'alerts' => [],
-                'error'  => 'Failed to load climate alerts: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
 
     /**
      * Get 7-Day Rainfall Forecast using OpenWeatherMap 5-day forecast API
