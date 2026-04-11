@@ -1545,7 +1545,14 @@
                 },
 
                 selectMunicipality(municipality) {
+                    console.log('📍 Municipality changed to:', municipality);
                     this.selectedMunicipality = municipality;
+                    // Clear previous data to force refresh
+                    this.topCrops = [];
+                    this.optimal = {};
+                    this.stats = { expected_harvest: 0, percentage_change: 0, ml_confidence: 0 };
+                    this.recentHarvests = [];
+                    console.log('✓ Cleared previous data, now loading new municipality data...');
                     this.loadDashboardData();
                 },
 
@@ -1611,19 +1618,36 @@
                         }
 
                         // Load top crops recommendations
-                        console.log('🌾 Fetching top crops for:', this.selectedMunicipality);
+                        console.log('🌾 Fetching top crops for municipality:', this.selectedMunicipality);
+                        console.log('🌾 API URL:', `{{ url('/api/planting/schedule') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}&_t=${timestamp}`);
                         const topCropsResponse = await fetch(`{{ url('/api/planting/schedule') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}&_t=${timestamp}`);
+                        console.log('🌾 Response status:', topCropsResponse.status);
+                        
                         if (topCropsResponse.ok) {
                             const topCropsData = await topCropsResponse.json();
-                            if (Array.isArray(topCropsData)) {
+                            console.log('🌾 Full API Response:', topCropsData); // Log complete response
+                            console.log('📊 Response is array?', Array.isArray(topCropsData));
+                            console.log('📊 Response length:', topCropsData.length);
+                            
+                            if (Array.isArray(topCropsData) && topCropsData.length > 0) {
                                 this.topCrops = topCropsData.slice(0, 5); // Get top 5
                                 console.log('✓ Top Crops loaded:', this.topCrops.length, 'crops');
+                                console.log('✓ Crops:', this.topCrops.map(c => c.crop + ` (${c.yield_prediction})`).join(', '));
+                                console.log('✓ Current topCrops array:', this.topCrops); // Final state
                             } else {
-                                console.error('❌ topCrops is not an array');
+                                console.error('❌ topCrops is empty or not an array', {
+                                    isArray: Array.isArray(topCropsData),
+                                    length: topCropsData?.length
+                                });
                                 this.topCrops = [];
                             }
                         } else {
-                            console.error('❌ Failed to load top crops:', topCropsResponse.status);
+                            console.error('❌ Failed to load top crops', {
+                                status: topCropsResponse.status,
+                                statusText: topCropsResponse.statusText
+                            });
+                            const errorText = await topCropsResponse.text();
+                            console.error('❌ Error response body:', errorText);
                             this.topCrops = [];
                         }
 
