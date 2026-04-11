@@ -98,7 +98,7 @@
         <!-- Top Header -->
         <header class="bg-white border-b px-8 py-4">
             <div class="flex items-center justify-between">
-                <h1 class="text-2xl font-semibold text-green-700">Weather Forecast & Predictions (2025+)</h1>
+                <h1 class="text-2xl font-semibold text-green-700">Weather Forecast & Predictions</h1>
                 <div class="flex items-center space-x-4">
                     <!-- Municipality Dropdown -->
                     <div class="relative">
@@ -225,7 +225,7 @@
                     <!-- Monthly Rainfall Prediction -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <div class="flex items-center justify-between mb-2">
-                            <h2 class="text-lg font-semibold text-green-700">Monthly Rainfall Prediction (2025+)</h2>
+                            <h2 class="text-lg font-semibold text-green-700">Monthly Rainfall Prediction</h2>
                             <span class="px-2 py-1 bg-green-500 text-white text-xs font-bold rounded-full">Forecast</span>
                         </div>
                         <p class="text-sm text-gray-600 mb-6">Long-term predictions for agricultural planning</p>
