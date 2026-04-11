@@ -3463,6 +3463,14 @@ Route::get('/api/ml/yield/forecast', function (\Illuminate\Http\Request $request
 })->name('api.ml.yield.forecast');
 
 Route::get('/api/ml/yield/analysis', function (\Illuminate\Http\Request $request) {
+    if ($request->query('ping') === '1') {
+        return response()->json([
+            'status' => 'ok',
+            'message' => 'yield-analysis route reachable',
+            'timestamp' => now()->toIso8601String(),
+        ]);
+    }
+
     $municipality = $request->query('municipality', 'La Trinidad');
     $year = intval($request->query('year', date('Y')));
     $mlService = new \App\Services\MLApiService();
