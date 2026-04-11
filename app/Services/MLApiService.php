@@ -11,9 +11,26 @@ class MLApiService
     protected $timeout;
     protected $retryTimes;
 
+    /**
+     * Logging should never break API responses.
+     */
+    private function safeLogError(string $message): void
+    {
+        try {
+            Log::error($message);
+        } catch (\Throwable $ignored) {
+            // Ignore logging failures (e.g. unwritable log file in production)
+        }
+    }
+
     public function __construct()
     {
-        $this->baseUrl = config('ml.api_url');
+        $rawBaseUrl = rtrim((string) config('ml.api_url'), '/');
+        if (!preg_match('/^https?:\/\//i', $rawBaseUrl)) {
+            $rawBaseUrl = 'https://' . $rawBaseUrl;
+        }
+
+        $this->baseUrl = $rawBaseUrl;
         $this->timeout = config('ml.timeout', 30);
         $this->retryTimes = config('ml.retry_times', 2);
     }
@@ -25,7 +42,7 @@ class MLApiService
     {
         try {
             $response = Http::timeout($this->timeout)
-                ->retry($this->retryTimes, 100)
+                ->retry($this->retryTimes, 100, throw: false)
                 ->get($this->baseUrl . config('ml.endpoints.health'));
 
             if ($response->successful()) {
@@ -44,15 +61,15 @@ class MLApiService
                 'body' => $response->body(),
             ];
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            Log::error('ML API Connection Error: ' . $e->getMessage());
+            $this->safeLogError('ML API Connection Error: ' . $e->getMessage());
             return [
                 'status' => 'error',
                 'message' => 'Cannot connect to ML API service',
                 'error' => $e->getMessage(),
                 'api_url' => $this->baseUrl,
             ];
-        } catch (\Exception $e) {
-            Log::error('ML API Health Check Error: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            $this->safeLogError('ML API Health Check Error: ' . $e->getMessage());
             return [
                 'status' => 'error',
                 'message' => 'Error checking ML API health',
@@ -68,7 +85,7 @@ class MLApiService
     {
         try {
             $response = Http::timeout($this->timeout)
-                ->retry($this->retryTimes, 100)
+                ->retry($this->retryTimes, 100, throw: false)
                 ->post($this->baseUrl . config('ml.endpoints.predict'), $data);
 
             if ($response->successful()) {
@@ -84,8 +101,8 @@ class MLApiService
                 'status_code' => $response->status(),
                 'body' => $response->body(),
             ];
-        } catch (\Exception $e) {
-            Log::error('ML API Prediction Error: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            $this->safeLogError('ML API Prediction Error: ' . $e->getMessage());
             return [
                 'status' => 'error',
                 'message' => 'Error making prediction request',
@@ -101,7 +118,7 @@ class MLApiService
     {
         try {
             $response = Http::timeout($this->timeout)
-                ->retry($this->retryTimes, 100)
+                ->retry($this->retryTimes, 100, throw: false)
                 ->post($this->baseUrl . config('ml.endpoints.forecast'), $data);
 
             if ($response->successful()) {
@@ -117,8 +134,8 @@ class MLApiService
                 'status_code' => $response->status(),
                 'body' => $response->body(),
             ];
-        } catch (\Exception $e) {
-            Log::error('ML API Forecast Error: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            $this->safeLogError('ML API Forecast Error: ' . $e->getMessage());
             return [
                 'status' => 'error',
                 'message' => 'Error making forecast request',
@@ -134,7 +151,7 @@ class MLApiService
     {
         try {
             $response = Http::timeout($this->timeout)
-                ->retry($this->retryTimes, 100)
+                ->retry($this->retryTimes, 100, throw: false)
                 ->post($this->baseUrl . config('ml.endpoints.top_crops'), $params);
 
             if ($response->successful()) {
@@ -149,8 +166,8 @@ class MLApiService
                 'message' => 'Top crops request failed',
                 'status_code' => $response->status(),
             ];
-        } catch (\Exception $e) {
-            Log::error('ML API Top Crops Error: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            $this->safeLogError('ML API Top Crops Error: ' . $e->getMessage());
             return [
                 'status' => 'error',
                 'message' => 'Error getting top crops',
@@ -166,7 +183,7 @@ class MLApiService
     {
         try {
             $response = Http::timeout($this->timeout)
-                ->retry($this->retryTimes, 100)
+                ->retry($this->retryTimes, 100, throw: false)
                 ->post($this->baseUrl . config('ml.endpoints.forecast'), $params);
 
             if ($response->successful()) {
@@ -181,8 +198,8 @@ class MLApiService
                 'message' => 'Forecast request failed',
                 'status_code' => $response->status(),
             ];
-        } catch (\Exception $e) {
-            Log::error('ML API Forecast Error: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            $this->safeLogError('ML API Forecast Error: ' . $e->getMessage());
             return [
                 'status' => 'error',
                 'message' => 'Error getting forecast',
@@ -198,7 +215,7 @@ class MLApiService
     {
         try {
             $response = Http::timeout($this->timeout)
-                ->retry($this->retryTimes, 100)
+                ->retry($this->retryTimes, 100, throw: false)
                 ->get($this->baseUrl . config('ml.endpoints.dataset_stats'));
 
             if ($response->successful()) {
@@ -213,8 +230,8 @@ class MLApiService
                 'message' => 'Dataset stats request failed',
                 'status_code' => $response->status(),
             ];
-        } catch (\Exception $e) {
-            Log::error('ML API Dataset Stats Error: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            $this->safeLogError('ML API Dataset Stats Error: ' . $e->getMessage());
             return [
                 'status' => 'error',
                 'message' => 'Error getting dataset stats',
@@ -230,7 +247,7 @@ class MLApiService
     {
         try {
             $response = Http::timeout($this->timeout)
-                ->retry($this->retryTimes, 100)
+                ->retry($this->retryTimes, 100, throw: false)
                 ->get($this->baseUrl . config('ml.endpoints.model_info'));
 
             if ($response->successful()) {
@@ -245,8 +262,8 @@ class MLApiService
                 'message' => 'Model info request failed',
                 'status_code' => $response->status(),
             ];
-        } catch (\Exception $e) {
-            Log::error('ML API Model Info Error: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            $this->safeLogError('ML API Model Info Error: ' . $e->getMessage());
             return [
                 'status' => 'error',
                 'message' => 'Error getting model info',
@@ -262,7 +279,7 @@ class MLApiService
     {
         try {
             $response = Http::timeout($this->timeout)
-                ->retry($this->retryTimes, 100)
+                ->retry($this->retryTimes, 100, throw: false)
                 ->post($this->baseUrl . config('ml.endpoints.batch_predict'), ['records' => $records]);
 
             if ($response->successful()) {
@@ -277,8 +294,8 @@ class MLApiService
                 'message' => 'Batch prediction failed',
                 'status_code' => $response->status(),
             ];
-        } catch (\Exception $e) {
-            Log::error('ML API Batch Predict Error: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            $this->safeLogError('ML API Batch Predict Error: ' . $e->getMessage());
             return [
                 'status' => 'error',
                 'message' => 'Error making batch prediction',

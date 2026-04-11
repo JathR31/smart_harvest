@@ -6,6 +6,17 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 
+if (!function_exists('safe_log')) {
+    function safe_log(string $level, string $message, array $context = []): void
+    {
+        try {
+            \Log::{$level}($message, $context);
+        } catch (\Throwable $ignored) {
+            // Ignore logging failures to avoid breaking API responses.
+        }
+    }
+}
+
 Route::match(['GET', 'HEAD'], '/', function () {
     return view('homepage'); 
 })->name('homepage');
@@ -1769,7 +1780,7 @@ Route::get('/api/dashboard/stats', function (\Illuminate\Http\Request $request) 
                     }
                 }
             } catch (\Exception $cropErr) {
-                \Log::warning("Dashboard stats: predict failed for {$crop}: " . $cropErr->getMessage());
+                safe_log('warning', "Dashboard stats: predict failed for {$crop}: " . $cropErr->getMessage());
             }
         }
         
@@ -1845,7 +1856,7 @@ Route::get('/api/dashboard/stats', function (\Illuminate\Http\Request $request) 
          ->header('Expires', 'Fri, 01 Jan 1990 00:00:00 GMT');
         
     } catch (\Exception $e) {
-        \Log::error('Dashboard stats error: ' . $e->getMessage());
+        safe_log('error', 'Dashboard stats error: ' . $e->getMessage());
         return response()->json([
             'stats' => [
                 'expected_harvest' => '0',
@@ -2747,7 +2758,7 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
         $mlMunicipality = strtoupper(str_replace(' ', '', $municipality));
         $dbMunicipality = strtoupper(str_replace(' ', '', $municipality));
         
-        \Log::info('=== PLANTING SCHEDULE API REQUEST ===', [
+        safe_log('info', '=== PLANTING SCHEDULE API REQUEST ===', [
             'requested_municipality' => $municipality,
             'normalized_ml' => $mlMunicipality,
             'normalized_db' => $dbMunicipality,
@@ -2798,7 +2809,7 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
                     'MONTH' => $currentMonth
                 ]);
                 
-                \Log::debug('ML Prediction for crop', [
+                safe_log('debug', 'ML Prediction for crop', [
                     'municipality' => $mlMunicipality,
                     'crop'  => $crop,
                     'status' => $result['status'],
@@ -2815,21 +2826,21 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
                     ];
                     $mlConnected = true;
                 } else {
-                    \Log::warning('ML Prediction failed or returned no data', [
+                    safe_log('warning', 'ML Prediction failed or returned no data', [
                         'municipality' => $mlMunicipality,
                         'crop' => $crop,
                         'response' => $result
                     ]);
                 }
             } catch (\Exception $cropErr) {
-                \Log::error('ML Prediction exception for ' . $crop, [
+                safe_log('error', 'ML Prediction exception for ' . $crop, [
                     'error' => $cropErr->getMessage()
                 ]);
                 // Skip failed predictions
             }
         }
         
-        \Log::info('ML Predictions summary', [
+        safe_log('info', 'ML Predictions summary', [
             'municipality' => $mlMunicipality,
             'total_predictions' => count($cropPredictions),
             'predictions' => collect($cropPredictions)->pluck('crop')->toArray(),
@@ -2984,7 +2995,7 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
         
         // If no ML data, fallback to database only
         if (empty($schedules)) {
-            \Log::info('No ML data, using database fallback for municipality: ' . $dbMunicipality);
+            safe_log('info', 'No ML data, using database fallback for municipality: ' . $dbMunicipality);
             
             $cropSchedules = [
                 'SAYOTE' => ['planting' => 'Mar-May', 'harvest' => 'Jul-Sep', 'duration' => '120-150 days'],
@@ -3047,7 +3058,7 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
                 ];
             }
             
-            \Log::info('Database fallback completed', [
+            safe_log('info', 'Database fallback completed', [
                 'crop_count' => count($cropData),
                 'schedule_count' => count($schedules)
             ]);
@@ -3055,7 +3066,7 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
         
         // If BOTH ML and database return no data, provide fallback/demo data
         if (empty($schedules)) {
-            \Log::warning('No crop data from ML or database, using fallback demo data', [
+            safe_log('warning', 'No crop data from ML or database, using fallback demo data', [
                 'municipality' => $municipality
             ]);
             
@@ -3101,11 +3112,39 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
                     'status' => 'Consider',
                     'ml_prediction' => false,
                     'note' => 'Demo data - no real data available for this municipality'
+                ],
+                [
+                    'crop' => 'BROCCOLI',
+                    'variety' => 'Marathon',
+                    'optimal_planting' => 'Oct-Dec',
+                    'expected_harvest' => 'Jan-Mar',
+                    'duration' => '70-90 days',
+                    'yield_prediction' => '15.6 mt/ha',
+                    'historical_yield' => '15.1 mt/ha',
+                    'confidence' => 'Medium',
+                    'confidence_score' => 76,
+                    'status' => 'Consider',
+                    'ml_prediction' => false,
+                    'note' => 'Demo data - no real data available for this municipality'
+                ],
+                [
+                    'crop' => 'SWEET PEPPER',
+                    'variety' => 'California Wonder',
+                    'optimal_planting' => 'Nov-Jan',
+                    'expected_harvest' => 'Mar-Jun',
+                    'duration' => '90-120 days',
+                    'yield_prediction' => '12.1 mt/ha',
+                    'historical_yield' => '11.7 mt/ha',
+                    'confidence' => 'Medium',
+                    'confidence_score' => 74,
+                    'status' => 'Consider',
+                    'ml_prediction' => false,
+                    'note' => 'Demo data - no real data available for this municipality'
                 ]
             ];
         }
 
-        \Log::info('=== PLANTING SCHEDULE API RESPONSE ===', [
+        safe_log('info', '=== PLANTING SCHEDULE API RESPONSE ===', [
             'municipality' => $municipality,
             'total_crops_returned' => count($schedules),
             'crops_detail' => collect($schedules)->map(function($s) { 
@@ -3127,10 +3166,61 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
             ->header('X-Timestamp', now()->timestamp);
         
     } catch (\Exception $e) {
-        \Log::error('Planting schedule error: ' . $e->getMessage(), [
+        safe_log('error', 'Planting schedule error: ' . $e->getMessage(), [
             'exception' => $e->getTraceAsString()
         ]);
-        return response()->json([]);
+
+        $fallbackSchedules = [
+            [
+                'crop' => 'CABBAGE',
+                'variety' => 'Scorpio F1',
+                'optimal_planting' => 'Oct-Dec',
+                'expected_harvest' => 'Jan-Mar',
+                'duration' => '65-90 days',
+                'yield_prediction' => '22.5 mt/ha',
+                'historical_yield' => '21.8 mt/ha',
+                'confidence' => 'High',
+                'confidence_score' => 85,
+                'status' => 'Recommended',
+                'ml_prediction' => false,
+                'note' => 'Fallback data due to temporary system issue'
+            ],
+            [
+                'crop' => 'CARROTS',
+                'variety' => 'Nantes',
+                'optimal_planting' => 'Oct-Dec',
+                'expected_harvest' => 'Jan-Mar',
+                'duration' => '75-90 days',
+                'yield_prediction' => '18.3 mt/ha',
+                'historical_yield' => '17.9 mt/ha',
+                'confidence' => 'High',
+                'confidence_score' => 83,
+                'status' => 'Recommended',
+                'ml_prediction' => false,
+                'note' => 'Fallback data due to temporary system issue'
+            ],
+            [
+                'crop' => 'LETTUCE',
+                'variety' => 'Crisphead',
+                'optimal_planting' => 'Oct-Jan',
+                'expected_harvest' => 'Dec-Mar',
+                'duration' => '45-60 days',
+                'yield_prediction' => '13.9 mt/ha',
+                'historical_yield' => '13.2 mt/ha',
+                'confidence' => 'Medium',
+                'confidence_score' => 78,
+                'status' => 'Consider',
+                'ml_prediction' => false,
+                'note' => 'Fallback data due to temporary system issue'
+            ]
+        ];
+
+        return response()
+            ->json($fallbackSchedules)
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', 'Fri, 01 Jan 1990 00:00:00 GMT')
+            ->header('X-Timestamp', now()->timestamp);
     }
 })->name('api.planting.schedule');
 
@@ -3333,7 +3423,7 @@ Route::get('/api/ml/yield/predict', function (\Illuminate\Http\Request $request)
         
         return response()->json($result);
     } catch (\Exception $e) {
-        \Log::error('ML Predict Error: ' . $e->getMessage());
+        safe_log('error', 'ML Predict Error: ' . $e->getMessage());
         return response()->json([
             'status' => 'error',
             'message' => $e->getMessage()
@@ -3355,7 +3445,7 @@ Route::get('/api/ml/yield/forecast', function (\Illuminate\Http\Request $request
         
         return response()->json($result);
     } catch (\Exception $e) {
-        \Log::error('ML Forecast Error: ' . $e->getMessage());
+        safe_log('error', 'ML Forecast Error: ' . $e->getMessage());
         return response()->json([
             'status' => 'error',
             'message' => $e->getMessage()
@@ -3371,57 +3461,164 @@ Route::get('/api/ml/yield/analysis', function (\Illuminate\Http\Request $request
 
         // Normalize municipality name for ML API (no spaces, uppercase)
         $mlMunicipality = strtoupper(str_replace(' ', '', $municipality));
+        $dbMunicipality = strtoupper(str_replace(' ', '', $municipality));
 
         // All available crops in the ML model
         $allCrops = ['CABBAGE', 'CARROTS', 'WHITE POTATO', 'LETTUCE', 'CAULIFLOWER',
                      'BROCCOLI', 'SNAP BEANS', 'CHINESE CABBAGE', 'GARDEN PEAS', 'SWEET PEPPER'];
 
-        // Fallback demo data when ML API is offline
-        $fallbackData = [
-            'stats' => [
-                'avg_yield' => number_format(3.5 + rand(1,10)/10, 1),
-                'best_crop' => ['crop_type' => 'CABBAGE', 'avg_yield' => 4.2],
-                'total_production' => number_format(420 + rand(50,200), 1),
-                'total_area' => '5',
-            ],
-            'crops' => [
-                ['crop' => 'CABBAGE', 'yield' => 3.8, 'predicted' => 4.2, 'confidence' => 85],
-                ['crop' => 'CARROTS', 'yield' => 3.2, 'predicted' => 3.5, 'confidence' => 82],
-                ['crop' => 'WHITE POTATO', 'yield' => 2.9, 'predicted' => 3.1, 'confidence' => 80],
-                ['crop' => 'LETTUCE', 'yield' => 2.5, 'predicted' => 2.8, 'confidence' => 78],
-                ['crop' => 'CAULIFLOWER', 'yield' => 2.2, 'predicted' => 2.4, 'confidence' => 76],
-            ],
-            'monthly' => [
-                ['month' => 1, 'month_name' => 'Jan', 'avg_yield' => 4.0],
-                ['month' => 2, 'month_name' => 'Feb', 'avg_yield' => 4.1],
-                ['month' => 3, 'month_name' => 'Mar', 'avg_yield' => 4.0],
-                ['month' => 4, 'month_name' => 'Apr', 'avg_yield' => 2.9],
-                ['month' => 5, 'month_name' => 'May', 'avg_yield' => 2.8],
-                ['month' => 6, 'month_name' => 'Jun', 'avg_yield' => 2.9],
-                ['month' => 7, 'month_name' => 'Jul', 'avg_yield' => 3.2],
-                ['month' => 8, 'month_name' => 'Aug', 'avg_yield' => 3.3],
-                ['month' => 9, 'month_name' => 'Sep', 'avg_yield' => 3.3],
-                ['month' => 10, 'month_name' => 'Oct', 'avg_yield' => 4.0],
-                ['month' => 11, 'month_name' => 'Nov', 'avg_yield' => 4.1],
-                ['month' => 12, 'month_name' => 'Dec', 'avg_yield' => 4.0],
-            ],
-            'forecast' => [
-                ['year' => 2025, 'predicted_production' => 420],
-                ['year' => 2026, 'predicted_production' => 435],
-                ['year' => 2027, 'predicted_production' => 450],
-                ['year' => 2028, 'predicted_production' => 468],
-                ['year' => 2029, 'predicted_production' => 487],
-                ['year' => 2030, 'predicted_production' => 507],
-            ],
-            'ml_status' => 'fallback', 
-            'ml_api_connected' => false
-        ];
+        // Accurate fallback from real municipality database records (used when ML is unavailable).
+        $buildDatabaseFallback = function (string $normalizedMunicipality, int $selectedYear, string $mlStatus = 'database_fallback') {
+            $cropRows = \App\Models\CropData::whereRaw('UPPER(municipality) = ?', [$normalizedMunicipality])
+                ->where('yield_amount', '>', 0)
+                ->where('area_planted', '>', 0)
+                ->select(
+                    'crop_type',
+                    \DB::raw('AVG(yield_amount / NULLIF(area_planted, 0)) as avg_yield'),
+                    \DB::raw('SUM(yield_amount) as total_production'),
+                    \DB::raw('COUNT(*) as record_count')
+                )
+                ->groupBy('crop_type')
+                ->orderBy('avg_yield', 'desc')
+                ->limit(5)
+                ->get();
 
-        $emptyResponse = [
-            'stats' => ['avg_yield' => '0.0', 'best_crop' => null, 'total_production' => '0', 'total_area' => '0'],
-            'comparison' => [], 'crops' => [], 'monthly' => [], 'forecast' => [],
-            'ml_status' => 'no_data', 'ml_api_connected' => false
-        ];
+            if ($cropRows->isEmpty()) {
+                return [
+                    'stats' => [
+                        'avg_yield' => '3.5',
+                        'best_crop' => ['crop_type' => 'CABBAGE', 'avg_yield' => 4.2],
+                        'total_production' => '420.0',
+                        'total_area' => '5.0',
+                    ],
+                    'comparison' => [],
+                    'crops' => [
+                        ['crop' => 'CABBAGE', 'yield' => 3.8, 'predicted' => 4.2, 'confidence' => 85],
+                        ['crop' => 'CARROTS', 'yield' => 3.2, 'predicted' => 3.5, 'confidence' => 82],
+                        ['crop' => 'WHITE POTATO', 'yield' => 2.9, 'predicted' => 3.1, 'confidence' => 80],
+                        ['crop' => 'LETTUCE', 'yield' => 2.5, 'predicted' => 2.8, 'confidence' => 78],
+                        ['crop' => 'CAULIFLOWER', 'yield' => 2.2, 'predicted' => 2.4, 'confidence' => 76],
+                    ],
+                    'monthly' => [
+                        ['month' => 1, 'month_name' => 'Jan', 'avg_yield' => 4.0],
+                        ['month' => 2, 'month_name' => 'Feb', 'avg_yield' => 4.1],
+                        ['month' => 3, 'month_name' => 'Mar', 'avg_yield' => 4.0],
+                        ['month' => 4, 'month_name' => 'Apr', 'avg_yield' => 2.9],
+                        ['month' => 5, 'month_name' => 'May', 'avg_yield' => 2.8],
+                        ['month' => 6, 'month_name' => 'Jun', 'avg_yield' => 2.9],
+                        ['month' => 7, 'month_name' => 'Jul', 'avg_yield' => 3.2],
+                        ['month' => 8, 'month_name' => 'Aug', 'avg_yield' => 3.3],
+                        ['month' => 9, 'month_name' => 'Sep', 'avg_yield' => 3.3],
+                        ['month' => 10, 'month_name' => 'Oct', 'avg_yield' => 4.0],
+                        ['month' => 11, 'month_name' => 'Nov', 'avg_yield' => 4.1],
+                        ['month' => 12, 'month_name' => 'Dec', 'avg_yield' => 4.0],
+                    ],
+                    'forecast' => [
+                        ['year' => $selectedYear, 'predicted_production' => 420.0],
+                        ['year' => $selectedYear + 1, 'predicted_production' => 435.0],
+                        ['year' => $selectedYear + 2, 'predicted_production' => 450.0],
+                        ['year' => $selectedYear + 3, 'predicted_production' => 468.0],
+                        ['year' => $selectedYear + 4, 'predicted_production' => 487.0],
+                        ['year' => $selectedYear + 5, 'predicted_production' => 507.0],
+                    ],
+                    'ml_status' => $mlStatus,
+                    'ml_api_connected' => false,
+                ];
+            }
+
+            $crops = [];
+            $bestCrop = null;
+            $bestYield = 0.0;
+            $totalProduction = 0.0;
+            $totalYield = 0.0;
+
+            foreach ($cropRows as $row) {
+                $avgYield = floatval($row->avg_yield);
+                if ($avgYield > 100) {
+                    $avgYield = min($avgYield / 1000, 100);
+                    if ($avgYield > 100) {
+                        $avgYield = 15.0;
+                    }
+                }
+
+                $predictedYield = round($avgYield * 1.05, 2);
+                $confidence = min(95, max(70, 65 + min(25, intval($row->record_count / 20))));
+
+                if ($predictedYield > $bestYield) {
+                    $bestYield = $predictedYield;
+                    $bestCrop = [
+                        'crop_type' => $row->crop_type,
+                        'avg_yield' => $predictedYield,
+                    ];
+                }
+
+                $totalProduction += floatval($row->total_production);
+                $totalYield += $predictedYield;
+
+                $crops[] = [
+                    'crop' => $row->crop_type,
+                    'yield' => round($avgYield, 2),
+                    'predicted' => $predictedYield,
+                    'confidence' => $confidence,
+                ];
+            }
+
+            $avgYieldAll = count($crops) > 0 ? ($totalYield / count($crops)) : 0.0;
+
+            $monthlyRows = \App\Models\CropData::whereRaw('UPPER(municipality) = ?', [$normalizedMunicipality])
+                ->where('yield_amount', '>', 0)
+                ->where('area_planted', '>', 0)
+                ->whereYear('planting_date', '=', $selectedYear)
+                ->select(
+                    \DB::raw('MONTH(planting_date) as month_num'),
+                    \DB::raw('AVG(yield_amount / NULLIF(area_planted, 0)) as avg_yield')
+                )
+                ->groupBy('month_num')
+                ->orderBy('month_num')
+                ->get()
+                ->keyBy('month_num');
+
+            $monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            $monthly = [];
+            for ($m = 1; $m <= 12; $m++) {
+                $monthYield = isset($monthlyRows[$m]) ? floatval($monthlyRows[$m]->avg_yield) : $avgYieldAll;
+                if ($monthYield > 100) {
+                    $monthYield = min($monthYield / 1000, 100);
+                }
+                $monthly[] = [
+                    'month' => $m,
+                    'month_name' => $monthNames[$m - 1],
+                    'year' => $selectedYear,
+                    'avg_yield' => round($monthYield, 2),
+                ];
+            }
+
+            $baseProduction = $totalProduction > 0 ? $totalProduction : 420.0;
+            $forecast = [];
+            for ($i = 0; $i < 6; $i++) {
+                $forecast[] = [
+                    'year' => $selectedYear + $i,
+                    'predicted_production' => round($baseProduction * pow(1.03, $i), 1),
+                ];
+            }
+
+            return [
+                'stats' => [
+                    'avg_yield' => number_format($avgYieldAll, 1),
+                    'best_crop' => $bestCrop,
+                    'total_production' => number_format($totalProduction, 1),
+                    'total_area' => number_format(count($crops), 1),
+                ],
+                'comparison' => [],
+                'crops' => $crops,
+                'monthly' => $monthly,
+                'forecast' => $forecast,
+                'ml_status' => $mlStatus,
+                'ml_api_connected' => false,
+            ];
+        };
+
+        $fallbackData = $buildDatabaseFallback($dbMunicipality, $year, 'fallback');
 
         // 1) Health check
         $healthCheck = $mlService->checkHealth();
@@ -3465,8 +3662,7 @@ Route::get('/api/ml/yield/analysis', function (\Illuminate\Http\Request $request
 
         if (empty($cropResults)) {
             // Use fallback data when ML API returns no crops
-            $fallbackData['ml_status'] = 'api_connected_no_data';
-            return response()->json($fallbackData);
+            return response()->json($buildDatabaseFallback($dbMunicipality, $year, 'api_connected_no_data'));
         }
 
         // Sort by production descending and take top 5
@@ -3543,8 +3739,13 @@ Route::get('/api/ml/yield/analysis', function (\Illuminate\Http\Request $request
             }
         }
 
-        // 6) Forecast data from the top crop
-        $forecastData = $topCrops[0]['forecast'] ?? [];
+        // 6) Forecast data from the top crop normalized for frontend
+        $forecastData = array_map(function ($f) {
+            return [
+                'year' => intval($f['year'] ?? 0),
+                'predicted_production' => round(floatval($f['production'] ?? $f['predicted_production'] ?? 0), 2),
+            ];
+        }, $topCrops[0]['forecast'] ?? []);
 
         return response()->json([
             'stats' => [
@@ -3562,67 +3763,10 @@ Route::get('/api/ml/yield/analysis', function (\Illuminate\Http\Request $request
         ]);
 
     } catch (\Exception $e) {
-        \Log::error('ML Analysis Error: ' . $e->getMessage());
-        \Log::error('Stack trace: ' . $e->getTraceAsString());
+        safe_log('error', 'ML Analysis Error: ' . $e->getMessage());
+        safe_log('error', 'Stack trace: ' . $e->getTraceAsString());
 
-        // Return fallback data on error
-        $fallbackForError = [
-            'stats' => [
-                'avg_yield' => '3.5',
-                'best_crop' => ['crop_type' => 'CABBAGE', 'avg_yield' => 4.2],
-                'total_production' => '420',
-                'total_area' => '5',
-            ],
-            'crops' => [
-                ['crop' => 'CABBAGE', 'yield' => 3.8, 'predicted' => 4.2, 'confidence' => 85],
-                ['crop' => 'CARROTS', 'yield' => 3.2, 'predicted' => 3.5, 'confidence' => 82],
-                ['crop' => 'WHITE POTATO', 'yield' => 2.9, 'predicted' => 3.1, 'confidence' => 80],
-                ['crop' => 'LETTUCE', 'yield' => 2.5, 'predicted' => 2.8, 'confidence' => 78],
-                ['crop' => 'CAULIFLOWER', 'yield' => 2.2, 'predicted' => 2.4, 'confidence' => 76],
-            ],
-            'monthly' => [
-                ['month' => 1, 'month_name' => 'Jan', 'avg_yield' => 4.0],
-                ['month' => 2, 'month_name' => 'Feb', 'avg_yield' => 4.1],
-                ['month' => 3, 'month_name' => 'Mar', 'avg_yield' => 4.0],
-                ['month' => 4, 'month_name' => 'Apr', 'avg_yield' => 2.9],
-                ['month' => 5, 'month_name' => 'May', 'avg_yield' => 2.8],
-                ['month' => 6, 'month_name' => 'Jun', 'avg_yield' => 2.9],
-                ['month' => 7, 'month_name' => 'Jul', 'avg_yield' => 3.2],
-                ['month' => 8, 'month_name' => 'Aug', 'avg_yield' => 3.3],
-                ['month' => 9, 'month_name' => 'Sep', 'avg_yield' => 3.3],
-                ['month' => 10, 'month_name' => 'Oct', 'avg_yield' => 4.0],
-                ['month' => 11, 'month_name' => 'Nov', 'avg_yield' => 4.1],
-                ['month' => 12, 'month_name' => 'Dec', 'avg_yield' => 4.0],
-            ],
-            'forecast' => [
-                ['year' => 2025, 'predicted_production' => 420],
-                ['year' => 2026, 'predicted_production' => 435],
-                ['year' => 2027, 'predicted_production' => 450],
-                ['year' => 2028, 'predicted_production' => 468],
-                ['year' => 2029, 'predicted_production' => 487],
-                ['year' => 2030, 'predicted_production' => 507],
-            ],
-            'ml_status' => 'error_fallback', 
-            'ml_api_connected' => false
-        ];
-
-        $mlConnected = false;
-        try {
-            $mlService = new \App\Services\MLApiService();
-            $healthCheck = $mlService->checkHealth();
-            $mlConnected = ($healthCheck['status'] === 'success');
-        } catch (\Exception $ignore) {}
-
-        if ($mlConnected) {
-            // If ML is connected, return error response (not fallback)
-            return response()->json([
-                'stats' => ['avg_yield' => '0.0', 'best_crop' => null, 'total_production' => '0', 'total_area' => '0'],
-                'comparison' => [], 'crops' => [], 'monthly' => [], 'forecast' => [],
-                'ml_status' => 'error', 'ml_api_connected' => true, 'error' => $e->getMessage()
-            ], 500);
-        }
-
-        // If ML is not connected, return fallback data
+        $fallbackForError = $buildDatabaseFallback(strtoupper(str_replace(' ', '', $municipality)), $year, 'error_database_fallback');
         return response()->json($fallbackForError);
     }
 })->name('api.ml.yield.analysis');
@@ -3645,7 +3789,7 @@ Route::get('/api/yield/interpretation/crops', function (\Illuminate\Http\Request
             'interpretation' => $interpretation
         ]);
     } catch (\Exception $e) {
-        \Log::error('Crop Interpretation Error: ' . $e->getMessage());
+        safe_log('error', 'Crop Interpretation Error: ' . $e->getMessage());
         
         return response()->json([
             'status' => 'success',
@@ -3679,7 +3823,7 @@ Route::get('/api/yield/interpretation/monthly', function (\Illuminate\Http\Reque
             'interpretation' => $interpretation
         ]);
     } catch (\Exception $e) {
-        \Log::error('Monthly Interpretation Error: ' . $e->getMessage());
+        safe_log('error', 'Monthly Interpretation Error: ' . $e->getMessage());
         
         return response()->json([
             'status' => 'success',
@@ -4244,11 +4388,12 @@ Route::get('/api/ml/test-prediction', function () {
     
     // Sample prediction data
     $testData = [
-        'municipality' => 'La Trinidad',
-        'crop_type' => 'Cabbage',
-        'area_planted' => 2.5,
-        'month' => now()->month,
-        'year' => now()->year,
+        'MUNICIPALITY' => 'LATRINIDAD',
+        'CROP' => 'CABBAGE',
+        'FARM_TYPE' => 'IRRIGATED',
+        'YEAR' => now()->year,
+        'Area_planted_ha' => 2.5,
+        'MONTH' => strtoupper(now()->format('M')),
     ];
     
     $result = $mlService->predict($testData);
