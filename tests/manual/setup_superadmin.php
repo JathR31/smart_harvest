@@ -8,20 +8,20 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 
-echo "=== Setting up Superadmin: jath.carbonell@gmail.com ===\n\n";
+echo "=== Setting up Superadmin: superadmin@smartharvest.ph ===\n\n";
 
 // First, remove superadmin status from old superadmin and clear username
 DB::table('users')
-    ->where('username', 'smartharvestsuperadmin')
+    ->where('email', '!=', 'superadmin@smartharvest.ph')
+    ->where('admin_type', 'superadmin')
     ->update([
-        'username' => null,
         'is_superadmin' => false,
         'admin_type' => null,
     ]);
 echo "Cleared old superadmin username.\n";
 
 // Check if user exists
-$user = User::where('email', 'jath.carbonell@gmail.com')->first();
+$user = User::where('email', 'superadmin@smartharvest.ph')->first();
 
 if ($user) {
     echo "User found: ID=" . $user->id . "\n";
@@ -31,13 +31,11 @@ if ($user) {
     DB::table('users')
         ->where('id', $user->id)
         ->update([
-            'username' => 'smartharvestsuperadmin',
+            'username' => 'superadmin@smartharvest.ph',
             'role' => 'Admin',
             'is_superadmin' => true,
             'admin_type' => 'superadmin',
-            'password' => Hash::make('Admin123'),
-            'google2fa_enabled' => false,
-            'google2fa_secret' => null,
+            'password' => Hash::make('SuperAdminAccess123'),
         ]);
     
     echo "✓ User updated to superadmin!\n";
@@ -47,9 +45,9 @@ if ($user) {
     // Create new superadmin with this email
     DB::table('users')->insert([
         'name' => 'Super Administrator',
-        'email' => 'jath.carbonell@gmail.com',
-        'username' => 'smartharvestsuperadmin',
-        'password' => Hash::make('Admin123'),
+        'email' => 'superadmin@smartharvest.ph',
+        'username' => 'superadmin@smartharvest.ph',
+        'password' => Hash::make('SuperAdminAccess123'),
         'role' => 'Admin',
         'is_superadmin' => true,
         'admin_type' => 'superadmin',
@@ -63,7 +61,7 @@ if ($user) {
 }
 
 // Verify
-$user = User::where('email', 'jath.carbonell@gmail.com')->first();
+$user = User::where('email', 'superadmin@smartharvest.ph')->first();
 echo "\n=== Superadmin Details ===\n";
 echo "Email: " . $user->email . "\n";
 echo "Username: " . $user->username . "\n";
@@ -71,13 +69,13 @@ echo "Role: " . $user->role . "\n";
 echo "is_superadmin: " . ($user->is_superadmin ? 'true' : 'false') . "\n";
 
 // Verify password
-if (Hash::check('Admin123', $user->password)) {
-    echo "✓ Password 'Admin123' verified!\n";
+if (Hash::check('SuperAdminAccess123', $user->password)) {
+    echo "✓ Password 'SuperAdminAccess123' verified!\n";
 } else {
     echo "✗ Password verification failed\n";
 }
 
 echo "\n=== Login Credentials ===\n";
-echo "Username: smartharvestsuperadmin\n";
-echo "Password: Admin123\n";
+echo "Username: superadmin@smartharvest.ph\n";
+echo "Password: SuperAdminAccess123\n";
 echo "\n=== Done ===\n";

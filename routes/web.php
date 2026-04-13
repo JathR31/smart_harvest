@@ -84,6 +84,20 @@ Route::post('/login', function (Request $request) {
     if (Auth::attempt($credentials, $remember)) {
         $user = Auth::user();
         $request->session()->regenerate();
+
+        // Superadmin starts from normal login, then continues to existing 2FA flow.
+        if ($user->is_superadmin || $user->admin_type === 'superadmin') {
+            Auth::logout();
+            $request->session()->put('superadmin_credentials_verified', true);
+            $request->session()->put('superadmin_user_id', $user->id);
+
+            if (!$user->google2fa_enabled || !$user->google2fa_secret) {
+                $request->session()->put('superadmin_needs_2fa_setup', true);
+                return redirect()->route('superadmin.2fa.setup');
+            }
+
+            return redirect()->route('superadmin.login');
+        }
         
         // Update last login timestamp
         $user->update(['last_login' => now()]);

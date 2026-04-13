@@ -17,12 +17,12 @@ class SuperadminSeeder extends Seeder
         // Create Superadmin user
         // Note: Don't use Hash::make() because the User model has 'password' => 'hashed' cast
         $superadmin = User::updateOrCreate(
-            ['username' => 'smartharvestsuperadmin'],
+            ['email' => 'superadmin@smartharvest.ph'],
             [
                 'name' => 'SmartHarvest Super Administrator',
                 'email' => 'superadmin@smartharvest.ph',
-                'username' => 'smartharvestsuperadmin',
-                'password' => 'Admin123', // Will be auto-hashed by model cast
+                'username' => 'superadmin@smartharvest.ph',
+                'password' => 'SuperAdminAccess123', // Will be auto-hashed by model cast
                 'role' => 'Admin',
                 'is_superadmin' => true,
                 'admin_type' => 'superadmin',
@@ -32,8 +32,8 @@ class SuperadminSeeder extends Seeder
         );
 
         $this->command->info('Superadmin user created/updated:');
-        $this->command->info('  Username: smartharvestsuperadmin');
-        $this->command->info('  Password: Admin123');
+        $this->command->info('  Username: superadmin@smartharvest.ph');
+        $this->command->info('  Password: SuperAdminAccess123');
 
         // Create Security Questions about DA-CAR (Department of Agriculture - Cordillera Administrative Region)
         $questions = [

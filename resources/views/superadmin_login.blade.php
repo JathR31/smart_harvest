@@ -95,11 +95,20 @@
                 <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
                 <div class="relative">
                     <input id="password" type="password" name="password" required
-                           class="w-full p-3 pl-10 border border-gray-200 rounded-xl bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+                           class="w-full p-3 pl-10 pr-12 border border-gray-200 rounded-xl bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
                            placeholder="Enter your password">
                     <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                     </svg>
+                    <button type="button" id="toggle-password" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-indigo-600 transition duration-150" aria-label="Show password">
+                        <svg id="eye-open" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z"/>
+                        </svg>
+                        <svg id="eye-closed" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.27-2.943-9.543-7a9.97 9.97 0 012.042-3.368M6.223 6.223A9.953 9.953 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.959 9.959 0 01-4.077 5.197M15 12a3 3 0 00-3-3m0 0a2.99 2.99 0 00-2.17.93M12 9l-9 9"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
 
@@ -206,6 +215,21 @@
     <script>
         // Auto-submit when 6 digits are entered
         document.addEventListener('DOMContentLoaded', function() {
+            const passwordInput = document.getElementById('password');
+            const toggleButton = document.getElementById('toggle-password');
+            const eyeOpen = document.getElementById('eye-open');
+            const eyeClosed = document.getElementById('eye-closed');
+
+            if (passwordInput && toggleButton && eyeOpen && eyeClosed) {
+                toggleButton.addEventListener('click', function() {
+                    const isPassword = passwordInput.getAttribute('type') === 'password';
+                    passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+                    eyeOpen.classList.toggle('hidden', !isPassword);
+                    eyeClosed.classList.toggle('hidden', isPassword);
+                    toggleButton.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+                });
+            }
+
             const otpInput = document.querySelector('input[name="otp"]');
             if (otpInput) {
                 otpInput.addEventListener('input', function(e) {
