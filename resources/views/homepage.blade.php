@@ -485,6 +485,63 @@
         </div>
     </section>
     
+    <!-- QR Code Section -->
+    <section class="py-16 px-4 bg-green-700">
+        <div class="max-w-4xl mx-auto text-center text-white">
+            <div class="mx-auto mb-4 w-14 h-14 flex items-center justify-center bg-white bg-opacity-20 rounded-full">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+            </div>
+            <h2 class="text-3xl font-semibold mb-3" data-translate data-translate-id="qr-title">Access SmartHarvest on Mobile</h2>
+            <p class="text-green-100 mb-10 max-w-xl mx-auto" data-translate data-translate-id="qr-desc">Scan the QR code with your phone's camera to open SmartHarvest instantly on your mobile browser — no app store required.</p>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-10">
+                <!-- QR Code Card -->
+                <div class="bg-white rounded-2xl shadow-2xl p-6 flex flex-col items-center">
+                    <p class="text-xs font-semibold text-green-700 uppercase tracking-widest mb-4" data-translate data-translate-id="qr-scan-label">Scan to Open App</p>
+                    <div class="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                        <img id="qrCodeImg"
+                             src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&format=png&data={{ urlencode(config('app.url')) }}"
+                             alt="QR Code for SmartHarvest"
+                             class="w-44 h-44"
+                             loading="lazy">
+                    </div>
+                    <p class="mt-4 text-xs text-gray-500 max-w-[180px] text-center" data-translate data-translate-id="qr-hint">Point your camera here to launch SmartHarvest</p>
+                </div>
+
+                <!-- Steps -->
+                <div class="text-left space-y-5 max-w-xs">
+                    <div class="flex items-start space-x-3">
+                        <span class="flex-shrink-0 w-8 h-8 bg-white bg-opacity-20 text-white rounded-full flex items-center justify-center font-bold text-sm">1</span>
+                        <p class="text-green-100 text-sm pt-1" data-translate data-translate-id="qr-step1">Open your phone's default camera app or any QR scanner.</p>
+                    </div>
+                    <div class="flex items-start space-x-3">
+                        <span class="flex-shrink-0 w-8 h-8 bg-white bg-opacity-20 text-white rounded-full flex items-center justify-center font-bold text-sm">2</span>
+                        <p class="text-green-100 text-sm pt-1" data-translate data-translate-id="qr-step2">Point it at the QR code until a link notification appears.</p>
+                    </div>
+                    <div class="flex items-start space-x-3">
+                        <span class="flex-shrink-0 w-8 h-8 bg-white bg-opacity-20 text-white rounded-full flex items-center justify-center font-bold text-sm">3</span>
+                        <p class="text-green-100 text-sm pt-1" data-translate data-translate-id="qr-step3">Tap the link to open SmartHarvest in your mobile browser.</p>
+                    </div>
+                    <div class="flex items-start space-x-3">
+                        <span class="flex-shrink-0 w-8 h-8 bg-white bg-opacity-20 text-white rounded-full flex items-center justify-center font-bold text-sm">4</span>
+                        <p class="text-green-100 text-sm pt-1" data-translate data-translate-id="qr-step4">Tap <strong>"Add to Home Screen"</strong> to install it like an app for quick access anytime.</p>
+                    </div>
+
+                    <div class="pt-2">
+                        <p class="text-xs text-green-200 flex items-center space-x-1">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span data-translate data-translate-id="qr-compat">Compatible with iOS &amp; Android devices</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <footer class="bg-green-800 text-white py-6 px-4">
         <div class="max-w-6xl mx-auto text-center">
             <div class="flex items-center justify-center space-x-2 mb-3">
