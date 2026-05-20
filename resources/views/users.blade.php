@@ -22,7 +22,11 @@
 <body class="bg-gray-50" x-data="usersManagement()">
     <div class="flex h-screen">
         <!-- Sidebar -->
-        <aside class="w-64 bg-gradient-to-b from-blue-800 to-blue-900 text-white flex-shrink-0">
+        <!-- Mobile overlay -->
+        <div x-show="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" x-cloak></div>
+
+        <aside class="fixed md:static inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-blue-800 to-blue-900 text-white flex-shrink-0 transform transition-transform duration-300"
+               :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'">
             <div class="p-6 border-b border-blue-700">
                 <div class="flex items-center space-x-3">
                     <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
@@ -91,25 +95,31 @@
         </aside>
 
         <!-- Main Content -->
-        <div class="flex-1 flex flex-col overflow-hidden">
+        <div class="flex-1 flex flex-col overflow-hidden md:ml-0">
             <!-- Top Header -->
             <header class="bg-white shadow-sm p-4 flex justify-between items-center border-b">
                 <div class="flex items-center space-x-3">
-                    <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                    <!-- Hamburger (mobile only) -->
+                    <button @click="sidebarOpen = !sidebarOpen" class="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                    <svg class="w-6 h-6 text-green-600 hidden md:block" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                     </svg>
-                    <h2 class="text-xl font-semibold text-gray-800">SmartHarvest Admin</h2>
+                    <h2 class="text-lg md:text-xl font-semibold text-gray-800">SmartHarvest Admin</h2>
                 </div>
 
-                <div class="flex items-center space-x-4">
-                    <div class="relative">
-                        <input type="text" placeholder="Search..." class="px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64">
+                <div class="flex items-center space-x-2 md:space-x-4">
+                    <div class="relative hidden md:block">
+                        <input type="text" placeholder="Search..." class="px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 lg:w-64">
                         <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                         </svg>
                     </div>
 
-                    <div x-data="{ open: false }" class="relative">
+                    <div x-data="{ open: false }" class="relative hidden md:block">
                         <button @click="open = !open" class="px-3 py-2 border border-gray-300 rounded-lg flex items-center space-x-2 hover:bg-gray-50">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/>
@@ -129,18 +139,18 @@
 
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit" class="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
+                        <button type="submit" class="flex items-center space-x-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                             </svg>
-                            <span>Logout</span>
+                            <span class="hidden sm:inline">Logout</span>
                         </button>
                     </form>
                 </div>
             </header>
 
             <!-- Content -->
-            <main class="flex-1 overflow-y-auto p-6">
+            <main class="flex-1 overflow-y-auto p-4 md:p-6">
                 <!-- Page Header with Add Button -->
                 <div class="flex justify-between items-start mb-6">
                     <div>
@@ -206,6 +216,56 @@
 
                 <!-- Users Table -->
                 <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+
+                    <!-- Mobile Card View -->
+                    <div class="md:hidden divide-y divide-gray-100">
+                        <template x-for="user in paginatedUsers" :key="'card-' + user.id">
+                            <div class="p-4">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex items-center space-x-3 min-w-0">
+                                        <div class="flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center text-white font-semibold text-sm"
+                                             :class="{'bg-green-500': user.role === 'Farmer', 'bg-blue-500': user.role === 'DA Admin'}">
+                                            <span x-text="user.name.charAt(0)"></span>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <p class="text-sm font-semibold text-gray-900 truncate" x-text="user.name"></p>
+                                            <p class="text-xs text-gray-500 truncate" x-text="user.email"></p>
+                                            <p class="text-xs text-gray-400 truncate" x-text="user.location || 'No location'"></p>
+                                        </div>
+                                    </div>
+                                    <!-- Action buttons -->
+                                    <div class="flex flex-shrink-0 space-x-1 ml-2">
+                                        <button @click="editUser(user)" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg" title="Edit">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        </button>
+                                        <button @click="toggleUserStatus(user)" class="p-1.5 text-yellow-600 hover:bg-yellow-50 rounded-lg" title="Toggle Status">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                        </button>
+                                        <button x-show="user.status === 'Pending Approval'" @click="approveUser(user)" class="p-1.5 text-green-600 hover:bg-green-50 rounded-lg" title="Approve">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        </button>
+                                        <button @click="deleteUser(user)" class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg" title="Delete">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- Badges row -->
+                                <div class="flex flex-wrap gap-2 mt-2 pl-13">
+                                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full"
+                                          :class="{'bg-green-100 text-green-800': user.role === 'Farmer', 'bg-blue-100 text-blue-800': user.role === 'DA Admin'}"
+                                          x-text="user.role"></span>
+                                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full"
+                                          :class="{'bg-green-100 text-green-800': user.status === 'Active', 'bg-yellow-100 text-yellow-800': user.status === 'Pending Approval', 'bg-red-100 text-red-800': user.status === 'Suspended'}"
+                                          x-text="user.status"></span>
+                                    <span class="text-xs text-gray-400" x-text="user.last_login"></span>
+                                </div>
+                            </div>
+                        </template>
+                        <div x-show="paginatedUsers.length === 0" class="p-8 text-center text-gray-500 text-sm">No users found.</div>
+                    </div>
+
+                    <!-- Desktop Table View -->
+                    <div class="hidden md:block overflow-x-auto">
                     <table class="w-full">
                         <thead class="bg-gray-50 border-b border-gray-200">
                             <tr>
@@ -283,9 +343,10 @@
                             </template>
                         </tbody>
                     </table>
+                    </div>
 
                     <!-- Pagination -->
-                    <div class="bg-gray-50 px-6 py-4 flex justify-between items-center border-t border-gray-200">
+                    <div class="bg-gray-50 px-4 md:px-6 py-4 flex flex-col sm:flex-row gap-3 sm:gap-0 justify-between items-start sm:items-center border-t border-gray-200">
                         <div class="text-sm text-gray-600">
                             Showing <span x-text="((currentPage - 1) * perPage) + 1"></span> to <span x-text="Math.min(currentPage * perPage, filteredUsers.length)"></span> of <span x-text="filteredUsers.length"></span> results
                         </div>
@@ -307,8 +368,8 @@
     </div>
 
     <!-- Add New User Modal -->
-    <div x-show="showAddUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" x-cloak>
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg">
+    <div x-show="showAddUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" x-cloak>
+        <div class="bg-white rounded-t-2xl sm:rounded-xl shadow-xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto">
             <div class="p-6 border-b border-gray-200 flex justify-between items-center">
                 <div>
                     <h3 class="text-xl font-semibold text-gray-800">Add New User</h3>
@@ -516,6 +577,7 @@
     <script>
         function usersManagement() {
             return {
+                sidebarOpen: false,
                 users: [],
                 filteredUsers: [],
                 paginatedUsers: [],
