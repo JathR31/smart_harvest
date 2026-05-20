@@ -16,11 +16,18 @@
         
         /* Fixed layout styles */
         body { height: 100vh; overflow: hidden; }
-        .sidebar-container { position: fixed; top: 0; left: 0; bottom: 0; width: 16rem; overflow-y: auto; z-index: 40; }
+        .sidebar-container { position: fixed; top: 0; left: 0; bottom: 0; width: 16rem; overflow-y: auto; z-index: 40; transition: transform 0.3s ease; }
         .main-container { margin-left: 16rem; height: 100vh; display: flex; flex-direction: column; }
         .content-scrollable { overflow-y: auto; flex: 1; }
         .da-banner { position: fixed; top: 0; left: 16rem; right: 0; z-index: 50; }
         .main-container-with-banner { padding-top: 3.5rem; }
+        /* Mobile responsive */
+        @media (max-width: 767px) {
+            .sidebar-container { transform: translateX(-100%); }
+            .sidebar-container.sidebar-open { transform: translateX(0); }
+            .main-container { margin-left: 0 !important; }
+            .da-banner { left: 0 !important; }
+        }
     </style>
 </head>
 <body class="bg-gray-50" x-data="farmerDashboard()">
@@ -43,8 +50,11 @@
     </div>
     @endif
     
+    <!-- Mobile sidebar overlay -->
+    <div x-show="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden" x-cloak></div>
+
     <!-- Sidebar -->
-    <aside class="sidebar sidebar-container w-64 text-white">
+    <aside class="sidebar sidebar-container w-64 text-white" :class="{'sidebar-open': sidebarOpen}">
         <div class="p-6">
             <div class="flex items-center space-x-2 mb-8">
                 <span class="text-2xl">🌱</span>
@@ -124,18 +134,24 @@
     <!-- Main Content -->
     <div class="main-container {{ isset($viewingAsFarmer) && $viewingAsFarmer ? 'main-container-with-banner' : '' }}">
         <!-- Top Header -->
-        <header class="bg-white border-b px-8 py-4">
+        <header class="bg-white border-b px-4 md:px-8 py-4">
             <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <h1 class="text-2xl font-semibold text-gray-800" data-translate data-translate-id="dashboard-title">Dashboard</h1>
+                <div class="flex items-center space-x-2 md:space-x-4">
+                    <!-- Hamburger (mobile only) -->
+                    <button @click="sidebarOpen = !sidebarOpen" class="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                    <h1 class="text-lg md:text-2xl font-semibold text-gray-800" data-translate data-translate-id="dashboard-title">Dashboard</h1>
                     <!-- ML Status Badge -->
                     <span x-show="mlConnected" class="px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full flex items-center">
                         <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
                         <span data-translate data-translate-id="ml-active">Active</span>
                     </span>
                     <!-- Municipality Dropdown -->
-                    <div x-data="{ open: false }" class="relative">
-                        <button @click="open = !open" class="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                    <div x-data="{ open: false }" class="relative hidden sm:block">
+                        <button @click="open = !open" class="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
                             <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                             <span class="font-medium" x-text="selectedMunicipality"></span>
                             <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -151,9 +167,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <!-- Language Selector -->
-                    <div x-data="{ open: false }" class="relative">
+                <div class="flex items-center space-x-2 md:space-x-4">
+                    <!-- Language Selector (hidden on mobile) -->
+                    <div x-data="{ open: false }" class="relative hidden md:block">
                         <button @click="open = !open" class="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
                             <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path></svg>
                             <span class="text-sm font-medium" x-text="selectedLanguageName"></span>
@@ -171,7 +187,7 @@
                             </button>
                         </div>
                     </div>
-                    <div class="relative">
+                    <div class="relative hidden md:block">
                         <input type="text" placeholder="Search..." class="pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
                         <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
@@ -183,7 +199,7 @@
         </header>
 
         <!-- Dashboard Content -->
-        <main class="content-scrollable p-8 bg-gray-50">
+        <main class="content-scrollable p-4 md:p-8 bg-gray-50">
             
             <!-- Main Dashboard Section -->
             <div x-show="showSection === 'dashboard'">
@@ -1171,6 +1187,7 @@
     <script>
         function farmerDashboard() {
             return {
+                sidebarOpen: false,
                 selectedLanguage: localStorage.getItem('sh_language') || 'en',
                 selectedLanguageName: {
                     'en': 'English',
