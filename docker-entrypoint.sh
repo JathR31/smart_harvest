@@ -14,6 +14,12 @@ fi
 
 echo "Using web port: ${APP_PORT}"
 
+# Clear stale caches before re-caching (ensures fresh Blade views on every deploy)
+echo "Clearing stale caches..."
+php artisan view:clear 2>/dev/null || true
+php artisan config:clear 2>/dev/null || true
+php artisan cache:clear 2>/dev/null || true
+
 # Cache configuration first (doesn't require database)
 echo "Caching configuration..."
 php artisan config:cache 2>/dev/null || true
