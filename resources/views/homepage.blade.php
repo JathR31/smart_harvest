@@ -501,11 +501,7 @@
                 <div class="bg-white rounded-2xl shadow-2xl p-6 flex flex-col items-center">
                     <p class="text-xs font-semibold text-green-700 uppercase tracking-widest mb-4" data-translate data-translate-id="qr-scan-label">Scan to Open App</p>
                     <div class="p-3 bg-gray-50 rounded-xl border border-gray-200">
-                        <img id="qrCodeImg"
-                             src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&format=png&data={{ urlencode(config('app.url')) }}"
-                             alt="QR Code for SmartHarvest"
-                             class="w-44 h-44"
-                             loading="lazy">
+                        <div id="qrCodeCanvas" class="w-44 h-44 flex items-center justify-center"></div>
                     </div>
                     <p class="mt-4 text-xs text-gray-500 max-w-[180px] text-center" data-translate data-translate-id="qr-hint">Point your camera here to launch SmartHarvest</p>
                 </div>
@@ -541,6 +537,20 @@
             </div>
         </div>
     </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            new QRCode(document.getElementById('qrCodeCanvas'), {
+                text: '{{ config('app.url') }}',
+                width: 176,
+                height: 176,
+                colorDark: '#15803d',
+                colorLight: '#f9fafb',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        });
+    </script>
 
     <footer class="bg-green-800 text-white py-6 px-4">
         <div class="max-w-6xl mx-auto text-center">
