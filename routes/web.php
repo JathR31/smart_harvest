@@ -66,14 +66,19 @@ Route::post('/login', function (Request $request) {
     ]);
     
     $remember = $request->has('remember');
-    $loginField = $request->input('email');
-    
-    // Determine if login field is email or phone number
+    $loginField = trim($request->input('email'));
+
+    // Determine if login field is email, phone number, or RSBSA number
     $fieldType = 'email';
     if (preg_match('/^(\+63|0)?9[0-9]{9}$/', $loginField)) {
         $fieldType = 'phone_number';
         // Normalize phone number to +639XXXXXXXXX format
         $loginField = preg_replace('/^(\+63|0)?/', '+63', $loginField);
+    } elseif (filter_var($loginField, FILTER_VALIDATE_EMAIL)) {
+        $fieldType = 'email';
+    } elseif (preg_match('/^[0-9\-]{4,}$/', $loginField)) {
+        // Simple detection for RSBSA-like reference numbers (digits and dashes)
+        $fieldType = 'rsbsa_number';
     }
     
     $credentials = [
@@ -1221,6 +1226,7 @@ Route::get('/admin/api/users', function () {
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
+            'rsbsa_number' => $user->rsbsa_number ?? null,
             'role' => $user->role ?? 'Farmer',
             'status' => $user->status ?? 'Active',
             'location' => $user->location,
@@ -1260,6 +1266,7 @@ Route::post('/admin/api/users/create', function (Request $request) {
     $validated = $request->validate([
         'name' => 'required|string|max:255',
         'email' => 'required|email|max:255|unique:users,email',
+        'rsbsa_number' => 'nullable|string|max:50|unique:users,rsbsa_number',
         'password' => 'required|string|min:6',
         'phone' => 'nullable|string|max:20',
         'role' => 'required|in:DA Admin,Farmer',
@@ -1279,6 +1286,7 @@ Route::post('/admin/api/users/create', function (Request $request) {
     $userData = [
         'name' => $validated['name'],
         'email' => $validated['email'],
+        'rsbsa_number' => $validated['rsbsa_number'] ?? null,
         'password' => $validated['password'], // Will be auto-hashed by model
         'phone' => $validated['phone'] ?? null,
         'role' => $validated['role'],
@@ -1312,6 +1320,37 @@ Route::post('/admin/api/users/create', function (Request $request) {
     ], 201);
 })->middleware('auth')->name('admin.api.users.create');
 
+// Admin API - Import Users (Excel/CSV)
+Route::post('/admin/api/users/import', function (Request $request) {
+    $user = Auth::user();
+    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    $validator = \Validator::make($request->all(), [
+        'file' => 'required|file|mimes:csv,xlsx,xls|max:51200'
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+    }
+
+    $file = $request->file('file');
+
+    try {
+        $import = new \App\Imports\UsersImport(Auth::id());
+        \Maatwebsite\Excel\Facades\Excel::import($import, $file);
+
+        return response()->json([
+            'success' => true,
+            'results' => $import->getResults()
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('User import error: ' . $e->getMessage());
+        return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+    }
+})->middleware('auth')->name('admin.api.users.import');
+
 // Admin API - Update User
 Route::put('/admin/api/users/{id}', function (Request $request, $id) {
     $authUser = Auth::user();
@@ -1329,6 +1368,7 @@ Route::put('/admin/api/users/{id}', function (Request $request, $id) {
     $validated = $request->validate([
         'name' => 'sometimes|string|max:255',
         'email' => 'sometimes|email|max:255|unique:users,email,' . $id,
+        'rsbsa_number' => 'nullable|string|max:50|unique:users,rsbsa_number,' . $id,
         'role' => 'sometimes|in:DA Admin,Farmer,Admin',
         'status' => 'sometimes|in:Active,Pending,Suspended,Inactive',
         'location' => 'nullable|string|max:255',

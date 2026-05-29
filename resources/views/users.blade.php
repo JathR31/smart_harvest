@@ -157,12 +157,20 @@
                         <h1 class="text-2xl font-semibold text-green-700 mb-2">Users Management</h1>
                         <p class="text-gray-600">Manage all user accounts and permissions</p>
                     </div>
-                    <button @click="showAddUserModal = true" class="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                    <div class="flex items-center space-x-2">
+                        <button @click="showAddUserModal = true" class="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
                         </svg>
                         <span>Add New User</span>
                     </button>
+                        <button @click="showImportModal = true" class="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16v-4m0 0l5-5 5 5M12 21V9" />
+                            </svg>
+                            <span>Import Users</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Stats Cards -->
@@ -230,6 +238,7 @@
                                         <div class="min-w-0">
                                             <p class="text-sm font-semibold text-gray-900 truncate" x-text="user.name"></p>
                                             <p class="text-xs text-gray-500 truncate" x-text="user.email"></p>
+                                            <p class="text-xs text-gray-400 truncate" x-text="user.rsbsa_number ? ('RSBSA: ' + user.rsbsa_number) : ''"></p>
                                             <p class="text-xs text-gray-400 truncate" x-text="user.location || 'No location'"></p>
                                         </div>
                                     </div>
@@ -271,6 +280,7 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Full Name</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">RSBSA</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Role</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Location/Dept</th>
@@ -296,6 +306,9 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm text-gray-600" x-text="user.email"></div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-600" x-text="user.rsbsa_number || '-' "></div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full" :class="{
@@ -367,6 +380,41 @@
         </div>
     </div>
 
+    <!-- Import Users Modal -->
+    <div x-show="showImportModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" x-cloak>
+        <div class="bg-white rounded-t-2xl sm:rounded-xl shadow-xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800">Import Users</h3>
+                    <p class="text-sm text-gray-500 mt-1">Upload an Excel or CSV file containing RSBSA numbers and names (see sample screenshot).</p>
+                </div>
+                <button @click="showImportModal = false" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">File</label>
+                        <input type="file" accept=".csv, .xls, .xlsx" @change="importFile = $event.target.files[0]" class="w-full">
+                    </div>
+                    <div class="text-sm text-gray-500">
+                        Expected columns: RSBSA / Reference number, Full name (or First/Last), Municipality (optional).
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" @click="showImportModal = false" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                    <button type="button" @click="uploadUsersImport()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        <span x-show="!importing">Upload & Import</span>
+                        <span x-show="importing">Importing...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Add New User Modal -->
     <div x-show="showAddUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" x-cloak>
         <div class="bg-white rounded-t-2xl sm:rounded-xl shadow-xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto">
@@ -399,6 +447,10 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
                             <input type="text" x-model="newUser.phone" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="09123456789">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">RSBSA Number</label>
+                            <input type="text" x-model="newUser.rsbsa_number" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="e.g. 4-11-10-001-00045">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
@@ -595,10 +647,14 @@
                 totalPages: 1,
                 showAddUserModal: false,
                 saving: false,
+                showImportModal: false,
+                importFile: null,
+                importing: false,
                 newUser: {
                     name: '',
                     email: '',
                     password: '',
+                            rsbsa_number: '',
                     phone: '',
                     role: 'Farmer',
                     status: 'Active',
@@ -618,6 +674,46 @@
                         export_data: true,
                         manage_forecasts: false,
                         system_settings: false
+                    }
+                },
+
+                // Import users
+                async uploadUsersImport() {
+                    if (!this.importFile) {
+                        alert('Please select a file to import');
+                        return;
+                    }
+
+                    this.importing = true;
+
+                    try {
+                        const form = new FormData();
+                        form.append('file', this.importFile);
+
+                        const response = await fetch('{{ route("admin.api.users.import") }}', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: form
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            alert('Import completed: ' + JSON.stringify(data.results));
+                            this.showImportModal = false;
+                            this.importFile = null;
+                            await this.loadUsers();
+                        } else {
+                            alert('Import failed: ' + (data.error || JSON.stringify(data)));
+                        }
+                    } catch (e) {
+                        console.error('Import error', e);
+                        alert('Import failed: ' + e.message);
+                    } finally {
+                        this.importing = false;
                     }
                 },
 

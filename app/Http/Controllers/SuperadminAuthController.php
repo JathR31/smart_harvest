@@ -139,8 +139,19 @@ class SuperadminAuthController extends Controller
             $secret
         );
 
-        // Generate inline QR code using bacon/bacon-qr-code
-        $qrCode = $this->generateQRCode($qrCodeUrl);
+        // Generate inline QR code using bacon/bacon-qr-code, fallback to hosted QR on failure
+        try {
+            $qrCode = $this->generateQRCode($qrCodeUrl);
+        } catch (\Exception $e) {
+            Log::error('Failed to generate QR code for superadmin 2FA', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            $qrCode = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' .
+                urlencode($qrCodeUrl) .
+                '" alt="QR Code" />';
+        }
 
         return view('superadmin_2fa_setup', compact('secret', 'qrCode', 'user'));
     }
@@ -150,6 +161,10 @@ class SuperadminAuthController extends Controller
      */
     private function generateQRCode($url)
     {
+        if (!class_exists(\BaconQrCode\Writer::class)) {
+            throw new \RuntimeException('BaconQrCode is not available.');
+        }
+
         $renderer = new \BaconQrCode\Renderer\ImageRenderer(
             new \BaconQrCode\Renderer\RendererStyle\RendererStyle(200),
             new \BaconQrCode\Renderer\Image\SvgImageBackEnd()
@@ -194,7 +209,15 @@ class SuperadminAuthController extends Controller
         }
 
         // Save the secret and enable 2FA
-        $user->google2fa_secret = Crypt::encrypt($secret);
+        try {
+            $user->google2fa_secret = Crypt::encrypt($secret);
+        } catch (\Exception $e) {
+            Log::error('Failed to encrypt 2FA secret', [
+                'user_id' => $userId,
+                'error' => $e->getMessage(),
+            ]);
+            return back()->withErrors(['otp' => 'Unable to enable 2FA right now. Please contact support.']);
+        }
         $user->google2fa_enabled = true;
         $user->save();
 
@@ -229,6 +252,10 @@ class SuperadminAuthController extends Controller
 
         if (!$user) {
             return $this->failSecurityCheck($request, 'User not found. Please try again.');
+        }
+
+        if (!$user->google2fa_secret) {
+            return $this->failSecurityCheck($request, '2FA is not configured for this account.');
         }
 
         // Decrypt the secret

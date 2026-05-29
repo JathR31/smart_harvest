@@ -73,15 +73,15 @@
             
             <!-- Email / Username Field -->
             <div class="mb-4">
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-2" data-translate data-translate-id="email-or-phone">Email or Phone Number:</label>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-2" data-translate data-translate-id="email-or-phone">Email, Phone, or RSBSA Reference:</label>
                 <div class="relative">
-                    <input id="email" type="text" name="email" required autofocus
+                          <input id="email" type="text" name="email" required autofocus
                            class="w-full p-3 pl-10 border border-gray-200 rounded-xl bg-gray-50 focus:ring-green-500 focus:border-green-500 transition duration-150"
-                           placeholder="farmer@example.com or +639XXXXXXXXX" value="{{ old('email') }}">
+                              placeholder="farmer@example.com or +639XXXXXXXXX or 4-11-10-001-00045" value="{{ old('email') }}">
                     <!-- Icon for Username/Email -->
                     <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                 </div>
-                <p class="text-xs text-gray-500 mt-1 pl-1" data-translate data-translate-id="email-phone-help">You can use your email or phone number to sign in</p>
+                <p class="text-xs text-gray-500 mt-1 pl-1" data-translate data-translate-id="email-phone-help">You can use your email, phone number, or your RSBSA reference to sign in</p>
             </div>
 
             <!-- Password Field -->
