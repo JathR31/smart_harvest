@@ -686,7 +686,7 @@ class DAOfficerApiController extends Controller
     public function getUsers(Request $request)
     {
         try {
-            $users = User::select('id', 'name', 'email', 'role', 'location', 'status', 'created_at', 'email_verified_at')
+            $users = User::select('id', 'name', 'email', 'rsbsa_number', 'role', 'location', 'status', 'created_at', 'email_verified_at')
                 ->orderBy('created_at', 'desc')
                 ->get();
 

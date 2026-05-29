@@ -207,7 +207,9 @@
                             <p class="text-sm text-gray-500 mt-1">Total: <span x-text="users.length">0</span> users</p>
                         </div>
                         <div class="flex space-x-3">
-                            <input type="text" x-model="searchQuery" placeholder="Search users..." class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                <input type="text" x-model="searchQuery" placeholder="Search users..." class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                <button @click="showAddUserModal = true" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Add User</button>
+                                <button @click="showImportModal = true" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Import Users</button>
                             <select x-model="roleFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
                                 <option value="">All Roles</option>
                                 <option value="Farmer">Farmer</option>
@@ -220,6 +222,7 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">RSBSA</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
@@ -250,9 +253,11 @@
                                         <div>
                                             <p class="text-sm font-medium text-gray-800" x-text="user.name"></p>
                                             <p class="text-xs text-gray-500" x-text="user.email"></p>
+                                            <p class="text-xs text-gray-400" x-text="user.rsbsa_number ? ('RSBSA: ' + user.rsbsa_number) : ''"></p>
                                         </div>
                                     </div>
                                 </td>
+                                <td class="px-6 py-4 text-sm text-gray-600" x-text="user.rsbsa_number || '-' "></td>
                                 <td class="px-6 py-4">
                                     <span :class="{
                                         'bg-green-100 text-green-800': user.role === 'Farmer',
@@ -288,6 +293,73 @@
         </main>
     </div>
 
+    <!-- Add User Modal -->
+    <div x-show="showAddUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" x-cloak>
+        <div class="bg-white rounded-t-2xl sm:rounded-xl shadow-xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800">Add New User</h3>
+                </div>
+                <button @click="showAddUserModal = false" class="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                        <input type="text" x-model="newUser.name" class="w-full px-4 py-2 border rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input type="email" x-model="newUser.email" class="w-full px-4 py-2 border rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                        <input type="password" x-model="newUser.password" class="w-full px-4 py-2 border rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">RSBSA Number</label>
+                        <input type="text" x-model="newUser.rsbsa_number" class="w-full px-4 py-2 border rounded-lg" placeholder="4-11-10-001-00045">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                        <select x-model="newUser.role" class="w-full px-4 py-2 border rounded-lg">
+                            <option value="Farmer">Farmer</option>
+                            <option value="DA Admin">DA Admin</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Municipality</label>
+                        <input type="text" x-model="newUser.location" class="w-full px-4 py-2 border rounded-lg">
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button @click="showAddUserModal = false" class="px-4 py-2 border rounded-lg">Cancel</button>
+                    <button @click="addUser()" class="px-4 py-2 bg-green-600 text-white rounded-lg">Add User</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div x-show="showImportModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" x-cloak>
+        <div class="bg-white rounded-t-2xl sm:rounded-xl shadow-xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800">Import Users</h3>
+                    <p class="text-sm text-gray-500">Upload Excel or CSV with RSBSA numbers.</p>
+                </div>
+                <button @click="showImportModal = false" class="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <div class="p-6">
+                <input type="file" accept=".csv, .xls, .xlsx" @change="importFile = $event.target.files[0]">
+                <div class="mt-6 flex justify-end">
+                    <button @click="showImportModal = false" class="px-4 py-2 border rounded-lg">Cancel</button>
+                    <button @click="uploadUsersImport()" class="px-4 py-2 bg-blue-600 text-white rounded-lg ml-2">Upload & Import</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         function usersApp() {
             return {
@@ -296,11 +368,25 @@
                 searchQuery: '',
                 roleFilter: '',
                 loading: true,
+                showAddUserModal: false,
+                showImportModal: false,
+                importFile: null,
                 stats: {
                     total: 0,
                     farmers: 0,
                     daAdmins: 0,
                     active: 0
+                },
+
+                newUser: {
+                    name: '',
+                    email: '',
+                    password: '',
+                    rsbsa_number: '',
+                    phone: '',
+                    role: 'Farmer',
+                    status: 'Active',
+                    location: ''
                 },
 
                 async init() {
@@ -344,13 +430,66 @@
                         const matchesSearch = !this.searchQuery || 
                             user.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
                             user.email.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                            (user.location && user.location.toLowerCase().includes(this.searchQuery.toLowerCase()));
+                            (user.location && user.location.toLowerCase().includes(this.searchQuery.toLowerCase())) ||
+                            (user.rsbsa_number && user.rsbsa_number.toLowerCase().includes(this.searchQuery.toLowerCase()));
                         
                         const matchesRole = !this.roleFilter || user.role === this.roleFilter;
                         
                         return matchesSearch && matchesRole;
                     });
                 }
+
+                async addUser() {
+                    try {
+                        const response = await fetch('{{ route("admin.api.users.create") }}', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify(this.newUser)
+                        });
+
+                        const data = await response.json();
+                        if (response.ok) {
+                            alert('User created successfully');
+                            this.showAddUserModal = false;
+                            this.loadUsers();
+                        } else {
+                            alert('Error creating user: ' + (data.message || data.error || JSON.stringify(data)));
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('Failed to create user');
+                    }
+                },
+
+                async uploadUsersImport() {
+                    if (!this.importFile) { alert('Select a file'); return; }
+                    const form = new FormData();
+                    form.append('file', this.importFile);
+                    try {
+                        const response = await fetch('{{ route("admin.api.users.import") }}', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                            body: form
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            alert('Import finished: ' + JSON.stringify(data.results));
+                            this.showImportModal = false;
+                            this.loadUsers();
+                        } else {
+                            alert('Import failed: ' + (data.error || JSON.stringify(data)));
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('Import failed');
+                    }
+                },
             };
         }
     </script>
