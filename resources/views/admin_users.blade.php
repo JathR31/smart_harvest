@@ -483,6 +483,7 @@
                     const form = new FormData();
                     form.append('file', this.importFile);
                     try {
+                        console.log('Starting import for file:', this.importFile.name);
                         const response = await fetch('{{ route("admin.api.users.import") }}', {
                             method: 'POST',
                             credentials: 'same-origin',
@@ -491,19 +492,25 @@
                             },
                             body: form
                         });
+                        console.log('Response status:', response.status);
                         const data = await response.json();
+                        console.log('Response data:', data);
                         this.importResult = data;
                         if (response.ok) {
-                            alert('Import completed successfully');
+                            const imported = data.results?.imported || 0;
+                            const skipped = data.results?.skipped || 0;
+                            const message = `Import completed!\n- Imported: ${imported} users\n- Skipped: ${skipped} users` + (data.results?.errors?.length ? `\n- Errors: ${data.results.errors.length}` : '');
+                            alert(message);
                             this.showImportModal = false;
                             this.importFile = null;
                             await this.loadUsers();
                         } else {
                             const message = data.error || JSON.stringify(data.errors || data);
+                            console.error('Import error:', message);
                             alert('Import failed: ' + message);
                         }
                     } catch (e) {
-                        console.error(e);
+                        console.error('Import error:', e);
                         alert('Import failed. See console for details.');
                     }
                 }

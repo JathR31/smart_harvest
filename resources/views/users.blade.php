@@ -19,7 +19,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-50" x-data="usersManagement()">
+<body class="bg-gray-50" x-data="usersManagement()" x-init="init()">
     <div class="flex h-screen">
         <!-- Sidebar -->
         <!-- Mobile overlay -->
@@ -626,6 +626,53 @@
         </div>
     </div>
 
+    <!-- Edit User Modal -->
+    <div x-show="showEditUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" x-cloak>
+        <div class="bg-white rounded-t-2xl sm:rounded-xl shadow-xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800">Edit Farmer Identity</h3>
+                    <p class="text-sm text-gray-500 mt-1">Update email, contact number, and RSBSA number</p>
+                </div>
+                <button @click="showEditUserModal = false" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <form @submit.prevent="updateUser()">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                            <input type="text" x-model="editingUser.name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" disabled>
+                            <p class="text-xs text-gray-500 mt-1">Name cannot be changed</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                            <input type="email" x-model="editingUser.email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
+                            <input type="tel" x-model="editingUser.phone" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="09123456789">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">RSBSA Number</label>
+                            <input type="text" x-model="editingUser.rsbsa_number" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="e.g. 4-11-10-001-00045">
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button type="button" @click="showEditUserModal = false" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            <span x-show="!saving">Save Changes</span>
+                            <span x-show="saving">Saving...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         function usersManagement() {
             return {
@@ -650,6 +697,14 @@
                 showImportModal: false,
                 importFile: null,
                 importing: false,
+                showEditUserModal: false,
+                editingUser: {
+                    id: null,
+                    name: '',
+                    email: '',
+                    phone: '',
+                    rsbsa_number: ''
+                },
                 newUser: {
                     name: '',
                     email: '',
@@ -685,11 +740,14 @@
                     }
 
                     this.importing = true;
+                    const fileName = this.importFile.name;
+                    console.log('Starting import for file:', fileName);
 
                     try {
                         const form = new FormData();
                         form.append('file', this.importFile);
 
+                        console.log('Sending request to: {{ route("admin.api.users.import") }}');
                         const response = await fetch('{{ route("admin.api.users.import") }}', {
                             method: 'POST',
                             credentials: 'same-origin',
@@ -699,15 +757,22 @@
                             body: form
                         });
 
+                        console.log('Response status:', response.status);
                         const data = await response.json();
+                        console.log('Response data:', data);
 
                         if (response.ok) {
-                            alert('Import completed: ' + JSON.stringify(data.results));
+                            const imported = data.results?.imported || 0;
+                            const skipped = data.results?.skipped || 0;
+                            const message = `Import completed!\n- Imported: ${imported} users\n- Skipped: ${skipped} users` + (data.results?.errors?.length ? `\n- Errors: ${data.results.errors.length}` : '');
+                            alert(message);
                             this.showImportModal = false;
                             this.importFile = null;
                             await this.loadUsers();
                         } else {
-                            alert('Import failed: ' + (data.error || JSON.stringify(data)));
+                            const errorMessage = data.error || data.message || JSON.stringify(data);
+                            console.error('Import error response:', errorMessage);
+                            alert('Import failed: ' + errorMessage);
                         }
                     } catch (e) {
                         console.error('Import error', e);
@@ -836,8 +901,69 @@
                 },
 
                 editUser(user) {
-                    // TODO: Implement edit functionality
-                    alert('Edit user: ' + user.name);
+                    // Populate edit modal with user data
+                    this.editingUser = {
+                        id: user.id,
+                        name: user.name,
+                        email: user.email,
+                        phone: user.phone || '',
+                        rsbsa_number: user.rsbsa_number || ''
+                    };
+                    this.showEditUserModal = true;
+                },
+
+                async updateUser() {
+                    if (!this.editingUser.id) {
+                        alert('Error: User ID not found');
+                        return;
+                    }
+
+                    if (!this.editingUser.email) {
+                        alert('Email is required');
+                        return;
+                    }
+
+                    this.saving = true;
+
+                    try {
+                        const updateData = {
+                            email: this.editingUser.email,
+                            phone: this.editingUser.phone,
+                            rsbsa_number: this.editingUser.rsbsa_number
+                        };
+
+                        console.log('Updating user with ID:', this.editingUser.id);
+                        console.log('Update data:', updateData);
+
+                        const response = await fetch(`{{ url('/admin/api/users') }}/${this.editingUser.id}`, {
+                            method: 'PUT',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify(updateData)
+                        });
+
+                        const data = await response.json();
+                        console.log('Update response:', data);
+
+                        if (response.ok) {
+                            alert('User updated successfully!');
+                            this.showEditUserModal = false;
+                            await this.loadUsers();
+                        } else {
+                            const errorMessage = data.message || data.error || JSON.stringify(data);
+                            console.error('Update error:', errorMessage);
+                            alert('Error updating user: ' + errorMessage);
+                        }
+                    } catch (error) {
+                        console.error('Update error:', error);
+                        alert('Error updating user. Please check console for details.');
+                    } finally {
+                        this.saving = false;
+                    }
                 },
 
                 async toggleUserStatus(user) {

@@ -1340,8 +1340,14 @@ Route::post('/admin/api/users/create', function (Request $request) {
 // Admin API - Import Users (Excel/CSV)
 Route::post('/admin/api/users/import', function (Request $request) {
     $user = Auth::user();
-    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
-        return response()->json(['error' => 'Unauthorized'], 401);
+    if (!Auth::check()) {
+        return response()->json(['error' => 'Unauthorized - Not logged in'], 401);
+    }
+    
+    // Check authorization: superadmin, Admin, or DA Admin role
+    $isAuthorized = $user->is_superadmin || in_array($user->role, ['Admin', 'DA Admin', 'DA Officer']);
+    if (!$isAuthorized) {
+        return response()->json(['error' => 'Unauthorized - Insufficient permissions. User role: ' . $user->role], 403);
     }
 
     $validator = \Validator::make($request->all(), [
@@ -1371,7 +1377,7 @@ Route::post('/admin/api/users/import', function (Request $request) {
 // Admin API - Update User
 Route::put('/admin/api/users/{id}', function (Request $request, $id) {
     $authUser = Auth::user();
-    if (!Auth::check() || (!$authUser->is_superadmin && $authUser->role !== 'Admin' && $authUser->role !== 'DA Admin')) {
+    if (!Auth::check() || (!$authUser->is_superadmin && $authUser->role !== 'Admin' && $authUser->role !== 'DA Admin' && $authUser->role !== 'DA Officer')) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
@@ -1401,7 +1407,7 @@ Route::put('/admin/api/users/{id}', function (Request $request, $id) {
 // Admin API - Delete User
 Route::delete('/admin/api/users/{id}', function ($id) {
     $authUser = Auth::user();
-    if (!Auth::check() || (!$authUser->is_superadmin && $authUser->role !== 'Admin' && $authUser->role !== 'DA Admin')) {
+    if (!Auth::check() || (!$authUser->is_superadmin && $authUser->role !== 'Admin' && $authUser->role !== 'DA Admin' && $authUser->role !== 'DA Officer')) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
