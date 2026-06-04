@@ -386,7 +386,7 @@
             <div class="p-6 border-b border-gray-200 flex justify-between items-center">
                 <div>
                     <h3 class="text-xl font-semibold text-gray-800">Import Users</h3>
-                    <p class="text-sm text-gray-500 mt-1">Upload an Excel or CSV file containing RSBSA numbers and names (see sample screenshot).</p>
+                    <p class="text-sm text-gray-500 mt-1">Upload an Excel or CSV file containing RSBSA numbers and names. Make sure the file includes a RSBSA Number / Reference Number column.</p>
                 </div>
                 <button @click="showImportModal = false" class="text-gray-400 hover:text-gray-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

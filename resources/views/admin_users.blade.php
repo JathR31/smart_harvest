@@ -346,7 +346,7 @@
             <div class="p-6 border-b border-gray-200 flex justify-between items-center">
                 <div>
                     <h3 class="text-xl font-semibold text-gray-800">Import Users</h3>
-                    <p class="text-sm text-gray-500">Upload Excel or CSV with RSBSA numbers.</p>
+                    <p class="text-sm text-gray-500">Upload Excel or CSV with RSBSA numbers. Include a dedicated RSBSA Number / Reference Number column for each farmer.</p>
                 </div>
                 <button @click="showImportModal = false" class="text-gray-400 hover:text-gray-600">✕</button>
             </div>
@@ -371,13 +371,7 @@
                 showAddUserModal: false,
                 showImportModal: false,
                 importFile: null,
-                stats: {
-                    total: 0,
-                    farmers: 0,
-                    daAdmins: 0,
-                    active: 0
-                },
-
+                importResult: null,
                 newUser: {
                     name: '',
                     email: '',
@@ -388,11 +382,15 @@
                     status: 'Active',
                     location: ''
                 },
+                stats: {
+                    total: 0,
+                    farmers: 0,
+                    daAdmins: 0,
+                    active: 0
+                },
 
                 async init() {
                     await this.loadUsers();
-                    
-                    // Watch for filter changes
                     this.$watch('searchQuery', () => this.filterUsers());
                     this.$watch('roleFilter', () => this.filterUsers());
                 },
@@ -401,11 +399,9 @@
                     try {
                         this.loading = true;
                         const response = await fetch('{{ url("/api/admin/users") }}');
-                        
                         if (!response.ok) {
                             throw new Error('Failed to fetch users');
                         }
-                        
                         const data = await response.json();
                         this.users = data.users || [];
                         this.filteredUsers = this.users;
@@ -421,23 +417,35 @@
                 calculateStats() {
                     this.stats.total = this.users.length;
                     this.stats.farmers = this.users.filter(u => u.role === 'Farmer').length;
-                    this.stats.daAdmins = this.users.filter(u => u.role === 'DA Admin' || u.role === 'Admin' || u.role === 'Superadmin').length;
+                    this.stats.daAdmins = this.users.filter(u => ['DA Admin', 'Admin', 'Superadmin'].includes(u.role)).length;
                     this.stats.active = this.users.filter(u => u.status === 'Active').length;
                 },
 
                 filterUsers() {
+                    const query = this.searchQuery.trim().toLowerCase();
                     this.filteredUsers = this.users.filter(user => {
-                        const matchesSearch = !this.searchQuery || 
-                            user.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                            user.email.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                            (user.location && user.location.toLowerCase().includes(this.searchQuery.toLowerCase())) ||
-                            (user.rsbsa_number && user.rsbsa_number.toLowerCase().includes(this.searchQuery.toLowerCase()));
-                        
+                        const matchesSearch = !query || 
+                            user.name.toLowerCase().includes(query) ||
+                            user.email.toLowerCase().includes(query) ||
+                            (user.location && user.location.toLowerCase().includes(query)) ||
+                            (user.rsbsa_number && user.rsbsa_number.toLowerCase().includes(query));
                         const matchesRole = !this.roleFilter || user.role === this.roleFilter;
-                        
                         return matchesSearch && matchesRole;
                     });
-                }
+                },
+
+                resetNewUser() {
+                    this.newUser = {
+                        name: '',
+                        email: '',
+                        password: '',
+                        rsbsa_number: '',
+                        phone: '',
+                        role: 'Farmer',
+                        status: 'Active',
+                        location: ''
+                    };
+                },
 
                 async addUser() {
                     try {
@@ -451,45 +459,54 @@
                             },
                             body: JSON.stringify(this.newUser)
                         });
-
                         const data = await response.json();
                         if (response.ok) {
                             alert('User created successfully');
                             this.showAddUserModal = false;
-                            this.loadUsers();
+                            this.resetNewUser();
+                            await this.loadUsers();
                         } else {
-                            alert('Error creating user: ' + (data.message || data.error || JSON.stringify(data)));
+                            const message = data.message || data.error || JSON.stringify(data.errors || data);
+                            alert('Error creating user: ' + message);
                         }
                     } catch (e) {
                         console.error(e);
-                        alert('Failed to create user');
+                        alert('Failed to create user. See console for details.');
                     }
                 },
 
                 async uploadUsersImport() {
-                    if (!this.importFile) { alert('Select a file'); return; }
+                    if (!this.importFile) {
+                        alert('Please select an Excel or CSV file first');
+                        return;
+                    }
                     const form = new FormData();
                     form.append('file', this.importFile);
                     try {
                         const response = await fetch('{{ route("admin.api.users.import") }}', {
                             method: 'POST',
                             credentials: 'same-origin',
-                            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
                             body: form
                         });
                         const data = await response.json();
+                        this.importResult = data;
                         if (response.ok) {
-                            alert('Import finished: ' + JSON.stringify(data.results));
+                            alert('Import completed successfully');
                             this.showImportModal = false;
-                            this.loadUsers();
+                            this.importFile = null;
+                            await this.loadUsers();
                         } else {
-                            alert('Import failed: ' + (data.error || JSON.stringify(data)));
+                            const message = data.error || JSON.stringify(data.errors || data);
+                            alert('Import failed: ' + message);
                         }
                     } catch (e) {
                         console.error(e);
-                        alert('Import failed');
+                        alert('Import failed. See console for details.');
                     }
-                },
+                }
             };
         }
     </script>
