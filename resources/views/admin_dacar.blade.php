@@ -1653,7 +1653,7 @@
         function adminDashboard() {
             return {
                 loading: true,
-                currentSection: 'dashboard',
+                currentSection: new URLSearchParams(window.location.search).get('section') || 'dashboard',
                 unreadMessages: 5,
                 selectedMunicipality: 'La Trinidad',
                 municipalities: [
