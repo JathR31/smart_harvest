@@ -22,17 +22,28 @@ class UsersImport implements ToCollection, WithHeadingRow
     {
         foreach ($rows as $row) {
             try {
-                // Try common header keys first
-                $rsbsa = trim((string)($row['rsbsa_number'] ?? $row['rsbsa'] ?? $row['reference_number'] ?? $row['reference'] ?? ''));
-                $rsbsa = \App\Models\User::normalizeRsbsaNumber($rsbsa);
+                $rowArray = $row->toArray();
+                $values = array_values($rowArray); // Get positional values
+                
+                // Extract RSBSA - try header keys first, then first column (position 0)
+                $rsbsaRaw = trim((string)($row['rsbsa_number'] ?? $row['rsbsa'] ?? $row['reference_number'] ?? $row['reference'] ?? $values[0] ?? ''));
+                
+                // Handle "NO REFERENCE NUMBER" and similar placeholders
+                if (stripos($rsbsaRaw, 'no reference') !== false) {
+                    $rsbsa = null;
+                } else {
+                    $rsbsa = \App\Models\User::normalizeRsbsaNumber($rsbsaRaw);
+                    // If normalization resulted in empty string, set to null
+                    $rsbsa = empty($rsbsa) ? null : $rsbsa;
+                }
 
-                // Name detection: try common headers or fall back to positional
-                $name = trim((string)($row['name'] ?? ($row['firstname'] ?? '') . ' ' . ($row['lastname'] ?? '') ?? ''));
+                // Extract Name - try header keys, then fallback to position 1
+                $name = trim((string)($row['name'] ?? $values[1] ?? ''));
                 if (empty($name)) {
-                    // Some files have name in second column without headings
-                    $vals = $row->toArray();
-                    $vals = array_values($vals);
-                    $name = isset($vals[1]) ? trim((string)$vals[1]) : (isset($vals[0]) ? trim((string)$vals[0]) : '');
+                    // Try firstname + lastname
+                    $firstname = trim((string)($row['firstname'] ?? ''));
+                    $lastname = trim((string)($row['lastname'] ?? ''));
+                    $name = trim($firstname . ' ' . $lastname);
                 }
 
                 if (empty($name)) {
@@ -40,20 +51,30 @@ class UsersImport implements ToCollection, WithHeadingRow
                     continue;
                 }
 
-                $municipality = trim((string)($row['municipality'] ?? $row['location'] ?? ''));
+                // Extract Location/Municipality - try header keys, then position 2
+                $municipality = trim((string)($row['municipality'] ?? $row['location'] ?? $row['barangay'] ?? $values[2] ?? ''));
 
-                // Generate a fallback email if none exists
+                // Generate email - prioritize RSBSA if available
                 $email = null;
                 if (!empty($rsbsa)) {
                     $slug = preg_replace('/[^A-Za-z0-9_\-\.]/', '', $rsbsa);
                     $email = strtolower($slug) . '@rsbsa.local';
                 } else {
+                    // Create unique email from name + timestamp
                     $slug = Str::slug($name);
-                    $email = $slug . '.' . time() . '@noemail.local';
+                    $email = $slug . '.' . Str::random(6) . '@noemail.local';
                 }
 
-                // Skip if user already exists by email or rsbsa
-                if (User::where('email', $email)->exists() || ($rsbsa && User::where('rsbsa_number', $rsbsa)->exists())) {
+                // Ensure email is unique
+                $baseEmail = $email;
+                $counter = 1;
+                while (User::where('email', $email)->exists()) {
+                    $email = str_replace('@', $counter . '@', $baseEmail);
+                    $counter++;
+                }
+
+                // Skip if user already exists by RSBSA
+                if ($rsbsa && User::where('rsbsa_number', $rsbsa)->exists()) {
                     $this->results['skipped']++;
                     continue;
                 }
@@ -68,7 +89,7 @@ class UsersImport implements ToCollection, WithHeadingRow
                     'status' => 'Active',
                     'phone' => null,
                     'location' => $municipality ?: null,
-                    'rsbsa_number' => $rsbsa ?: null,
+                    'rsbsa_number' => $rsbsa,
                 ]);
 
                 $this->results['imported']++;
