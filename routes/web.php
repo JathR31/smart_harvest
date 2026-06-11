@@ -1366,12 +1366,16 @@ Route::post('/admin/api/users/import', function (Request $request) {
     ]);
 
     if ($validator->fails()) {
-        return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        return response()->json(['success' => false, 'errors' => $validator->errors()->toArray()], 422);
     }
 
     $file = $request->file('file');
 
     try {
+        if (!$file->isValid()) {
+            return response()->json(['success' => false, 'error' => 'File upload failed: ' . $file->getErrorMessage()], 400);
+        }
+        
         $import = new \App\Imports\UsersImport(Auth::id());
         \Maatwebsite\Excel\Facades\Excel::import($import, $file);
 
@@ -1380,7 +1384,7 @@ Route::post('/admin/api/users/import', function (Request $request) {
             'results' => $import->getResults()
         ]);
     } catch (\Exception $e) {
-        \Log::error('User import error: ' . $e->getMessage());
+        \Log::error('User import error: ' . $e->getMessage() . ' ' . $e->getFile() . ':' . $e->getLine());
         return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
     }
 })->middleware('auth')->name('admin.api.users.import');

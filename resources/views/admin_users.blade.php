@@ -701,7 +701,13 @@
                     form.append('file', this.importFile);
                     try {
                         console.log('Starting import for file:', this.importFile.name);
+                        console.log('File size:', this.importFile.size, 'bytes');
+                        console.log('File type:', this.importFile.type);
                         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                        if (!csrfToken) {
+                            alert('CSRF token not found. Please refresh the page.');
+                            return;
+                        }
                         const response = await fetch('{{ route("admin.api.users.import") }}', {
                             method: 'POST',
                             credentials: 'same-origin',
@@ -712,13 +718,21 @@
                         });
                         console.log('Response status:', response.status);
                         const contentType = response.headers.get('content-type');
+                        console.log('Response content-type:', contentType);
                         let data;
-                        if (contentType && contentType.includes('application/json')) {
-                            data = await response.json();
-                        } else {
-                            const text = await response.text();
-                            console.error('Invalid response type:', contentType, 'Text:', text);
-                            alert('Server returned an invalid response. Check console.');
+                        try {
+                            if (contentType && contentType.includes('application/json')) {
+                                data = await response.json();
+                            } else {
+                                const text = await response.text();
+                                console.error('Invalid response type:', contentType);
+                                console.error('Response body:', text.substring(0, 500));
+                                alert('Server error: ' + (text.substring(0, 200) || 'Unknown error'));
+                                return;
+                            }
+                        } catch (parseError) {
+                            console.error('Failed to parse response:', parseError);
+                            alert('Failed to parse server response. Check console.');
                             return;
                         }
                         console.log('Response data:', data);
@@ -733,13 +747,13 @@
                             this.clearImportFile();
                             await this.loadUsers();
                         } else {
-                            const message = data.error || data.message || JSON.stringify(data.errors || data);
+                            const message = data.error || data.message || (data.errors ? Object.values(data.errors).flat().join(', ') : JSON.stringify(data));
                             console.error('Import error:', message);
                             alert('Import failed: ' + message);
                         }
                     } catch (e) {
-                        console.error('Import error:', e);
-                        alert('Import failed: ' + (e.message || 'See console for details'));
+                        console.error('Import request error:', e);
+                        alert('Import failed: ' + (e.message || 'Network error - check console'));
                     }
                 }
             };
