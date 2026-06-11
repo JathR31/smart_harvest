@@ -1439,6 +1439,21 @@ Route::delete('/admin/api/users/{id}', function ($id) {
     return response()->json(['message' => 'User deleted successfully']);
 })->middleware('auth')->name('admin.api.users.delete');
 
+// Admin API - Bulk Delete All Farmers
+Route::delete('/admin/api/users/farmers/bulk-delete', function () {
+    $authUser = Auth::user();
+    if (!Auth::check() || (!$authUser->is_superadmin && $authUser->role !== 'Admin' && $authUser->role !== 'DA Admin' && $authUser->role !== 'DA Officer')) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    $deleted = \App\Models\User::where('role', 'Farmer')->delete();
+
+    return response()->json([
+        'message' => "Deleted $deleted farmers",
+        'deleted' => $deleted
+    ]);
+})->middleware('auth')->name('admin.api.users.farmers.bulk-delete');
+
 // Admin API - Upload Dataset (Data Import) - Using Laravel Excel
 Route::post('/admin/api/import', function (Request $request) {
     try {

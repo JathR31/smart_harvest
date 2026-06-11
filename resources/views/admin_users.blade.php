@@ -210,6 +210,7 @@
                                 <input type="text" x-model="searchQuery" placeholder="Search users..." class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
                                 <button @click="showAddUserModal = true" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Add User</button>
                                 <button @click="showImportModal = true" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Import Users</button>
+                                <button @click="deleteAllFarmersConfirm()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete All Farmers</button>
                             <select x-model="roleFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
                                 <option value="">All Roles</option>
                                 <option value="Farmer">Farmer</option>
@@ -637,6 +638,40 @@
                     } catch (e) {
                         console.error(e);
                         alert('Failed to delete user');
+                    }
+                },
+
+                deleteAllFarmersConfirm() {
+                    const farmerCount = this.users.filter(u => u.role === 'Farmer').length;
+                    if (farmerCount === 0) {
+                        alert('No farmers to delete');
+                        return;
+                    }
+                    const confirmed = confirm(`Are you sure you want to DELETE ALL ${farmerCount} farmers? This action cannot be undone.`);
+                    if (confirmed) {
+                        this.deleteAllFarmers();
+                    }
+                },
+
+                async deleteAllFarmers() {
+                    try {
+                        const response = await fetch('{{ url("/admin/api/users/farmers/bulk-delete") }}', {
+                            method: 'DELETE',
+                            credentials: 'same-origin',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            }
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            alert(`Successfully deleted ${data.deleted || 0} farmers`);
+                            await this.loadUsers();
+                        } else {
+                            alert('Error deleting farmers');
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('Failed to delete farmers');
                     }
                 },
 
