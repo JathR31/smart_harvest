@@ -406,14 +406,26 @@
                 <button @click="showImportModal = false" class="text-gray-400 hover:text-gray-600">✕</button>
             </div>
             <div class="p-6">
-                <input x-ref="importFileInput" type="file" accept=".csv, .xls, .xlsx" @change="importFile = $event.target.files[0]">
-                <div class="mt-3 text-sm text-gray-500" x-show="importFile">
-                    Selected file: <span class="font-medium text-gray-700" x-text="importFile ? importFile.name : ''"></span>
+                <div class="mb-6">
+                    <input x-ref="importFileInput" type="file" accept=".csv,.xls,.xlsx" @change="importFile = $event.target.files[0]; importedFilePath = $event.target.files[0]?.name || ''" class="hidden">
+                    <button @click="$refs.importFileInput.click()" type="button" class="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg text-center hover:border-blue-500 hover:bg-blue-50 transition">
+                        <div class="text-gray-600">
+                            <span class="block text-sm font-medium">Click to select file</span>
+                            <span class="block text-xs text-gray-500">or drag and drop</span>
+                            <span class="block text-xs text-gray-500 mt-1">.csv, .xls, .xlsx</span>
+                        </div>
+                    </button>
+                </div>
+                <div class="mt-3 text-sm text-gray-500" x-show="importFile" x-cloak>
+                    <div class="p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <span class="block text-green-800">✓ Selected file:</span>
+                        <span class="font-medium text-gray-700" x-text="importFile ? importFile.name : ''"></span>
+                    </div>
                 </div>
                 <div class="mt-6 flex justify-end space-x-2">
-                    <button @click="clearImportFile()" class="px-4 py-2 border rounded-lg" x-show="importFile">Remove CSV</button>
-                    <button @click="showImportModal = false" class="px-4 py-2 border rounded-lg">Cancel</button>
-                    <button @click="uploadUsersImport()" class="px-4 py-2 bg-blue-600 text-white rounded-lg ml-2">Upload & Import</button>
+                    <button @click="clearImportFile()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700" x-show="importFile" x-cloak>Remove CSV</button>
+                    <button @click="showImportModal = false" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700">Cancel</button>
+                    <button @click="uploadUsersImport()" :disabled="!importFile" :class="!importFile ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'" class="px-4 py-2 bg-blue-600 text-white rounded-lg ml-2">Upload & Import</button>
                 </div>
             </div>
         </div>
@@ -689,35 +701,45 @@
                     form.append('file', this.importFile);
                     try {
                         console.log('Starting import for file:', this.importFile.name);
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
                         const response = await fetch('{{ route("admin.api.users.import") }}', {
                             method: 'POST',
                             credentials: 'same-origin',
                             headers: {
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                                'X-CSRF-TOKEN': csrfToken
                             },
                             body: form
                         });
                         console.log('Response status:', response.status);
-                        const data = await response.json();
+                        const contentType = response.headers.get('content-type');
+                        let data;
+                        if (contentType && contentType.includes('application/json')) {
+                            data = await response.json();
+                        } else {
+                            const text = await response.text();
+                            console.error('Invalid response type:', contentType, 'Text:', text);
+                            alert('Server returned an invalid response. Check console.');
+                            return;
+                        }
                         console.log('Response data:', data);
                         this.importResult = data;
                         if (response.ok) {
                             const imported = data.results?.imported || 0;
                             const skipped = data.results?.skipped || 0;
-                            const message = `Import completed!\n- Imported: ${imported} users\n- Skipped: ${skipped} users` + (data.results?.errors?.length ? `\n- Errors: ${data.results.errors.length}` : '');
-                            this.importedFilePath = this.importFile.name;
+                            const errorCount = data.results?.errors?.length || 0;
+                            const message = `✓ Import completed!\n- Imported: ${imported} users\n- Skipped: ${skipped} users${errorCount ? `\n- Errors: ${errorCount}` : ''}`;
                             alert(message);
                             this.showImportModal = false;
-                            this.importFile = null;
+                            this.clearImportFile();
                             await this.loadUsers();
                         } else {
-                            const message = data.error || JSON.stringify(data.errors || data);
+                            const message = data.error || data.message || JSON.stringify(data.errors || data);
                             console.error('Import error:', message);
                             alert('Import failed: ' + message);
                         }
                     } catch (e) {
                         console.error('Import error:', e);
-                        alert('Import failed. See console for details.');
+                        alert('Import failed: ' + (e.message || 'See console for details'));
                     }
                 }
             };
