@@ -233,7 +233,7 @@
                     <tbody class="divide-y divide-gray-100">
                         <template x-if="loading">
                             <tr>
-                                <td colspan="5" class="px-6 py-12 text-center">
+                                <td colspan="7" class="px-6 py-12 text-center">
                                     <div class="text-gray-400">
                                         <svg class="animate-spin w-12 h-12 mx-auto mb-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
