@@ -69,6 +69,7 @@ Route::post('/login', function (Request $request) {
     
     $remember = $request->has('remember');
     $loginField = trim($request->input('email'));
+    $normalizedLoginField = \App\Models\User::normalizeRsbsaNumber($loginField);
 
     // Determine if login field is email, phone number, or RSBSA number
     $fieldType = 'email';
@@ -78,9 +79,10 @@ Route::post('/login', function (Request $request) {
         $loginField = preg_replace('/^(\+63|0)?/', '+63', $loginField);
     } elseif (filter_var($loginField, FILTER_VALIDATE_EMAIL)) {
         $fieldType = 'email';
-    } elseif (preg_match('/^[0-9\-]{4,}$/', $loginField)) {
+    } elseif ($normalizedLoginField !== '' && preg_match('/^[0-9\-]{4,}$/', $normalizedLoginField)) {
         // Simple detection for RSBSA-like reference numbers (digits and dashes)
         $fieldType = 'rsbsa_number';
+        $loginField = $normalizedLoginField;
     }
 
     if ($loginMode === 'rsbsa') {
@@ -88,7 +90,15 @@ Route::post('/login', function (Request $request) {
             return back()->withErrors(['email' => 'Please enter a valid RSBSA number for RSBSA login.'])->withInput();
         }
 
-        $user = \App\Models\User::where('rsbsa_number', $loginField)->where('role', 'Farmer')->first();
+        $digitsOnly = preg_replace('/\D+/', '', $loginField);
+        $user = \App\Models\User::where('role', 'Farmer')
+            ->where(function ($query) use ($loginField, $digitsOnly) {
+                $query->where('rsbsa_number', $loginField);
+                if ($digitsOnly !== $loginField) {
+                    $query->orWhereRaw("REPLACE(REPLACE(rsbsa_number, '-', ''), ' ', '') = ?", [$digitsOnly]);
+                }
+            })
+            ->first();
         if (!$user) {
             return back()->withErrors(['email' => 'RSBSA login failed. Please check your RSBSA number.'])->withInput();
         }

@@ -120,6 +120,17 @@ class User extends Authenticatable
     }
 
     /**
+     * Normalize RSBSA numbers for consistent storage and lookup.
+     */
+    public static function normalizeRsbsaNumber(string $value): string
+    {
+        $normalized = trim($value);
+        $normalized = preg_replace('/[^0-9\-]+/', '', $normalized);
+        $normalized = preg_replace('/\-+/', '-', $normalized);
+        return trim($normalized, '-');
+    }
+
+    /**
      * Check if the user is a superadmin.
      *
      * @return bool

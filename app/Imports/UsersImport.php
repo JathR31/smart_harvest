@@ -24,6 +24,7 @@ class UsersImport implements ToCollection, WithHeadingRow
             try {
                 // Try common header keys first
                 $rsbsa = trim((string)($row['rsbsa_number'] ?? $row['rsbsa'] ?? $row['reference_number'] ?? $row['reference'] ?? ''));
+                $rsbsa = \App\Models\User::normalizeRsbsaNumber($rsbsa);
 
                 // Name detection: try common headers or fall back to positional
                 $name = trim((string)($row['name'] ?? ($row['firstname'] ?? '') . ' ' . ($row['lastname'] ?? '') ?? ''));
