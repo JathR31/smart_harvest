@@ -1256,6 +1256,7 @@ Route::get('/admin/api/users', function () {
             'rsbsa_number' => $user->rsbsa_number ?? null,
             'role' => $user->role ?? 'Farmer',
             'status' => $user->status ?? 'Active',
+            'archived' => ($user->status ?? 'Active') === 'Archived',
             'location' => $user->location,
             'phone' => $user->phone,
             'farm_name' => $user->farm_name,
@@ -1403,11 +1404,22 @@ Route::put('/admin/api/users/{id}', function (Request $request, $id) {
         'email' => 'sometimes|email|max:255|unique:users,email,' . $id,
         'rsbsa_number' => 'nullable|string|max:50|unique:users,rsbsa_number,' . $id,
         'role' => 'sometimes|in:DA Admin,Farmer,Admin',
-        'status' => 'sometimes|in:Active,Pending,Suspended,Inactive',
+        'status' => 'sometimes|in:Active,Pending,Suspended,Inactive,Archived',
         'location' => 'nullable|string|max:255',
         'phone' => 'nullable|string|max:20',
         'farm_name' => 'nullable|string|max:255',
+        'archived' => 'sometimes|boolean',
     ]);
+
+    if ($request->has('rsbsa_number')) {
+        $validated['rsbsa_number'] = $validated['rsbsa_number'] !== null
+            ? \App\Models\User::normalizeRsbsaNumber($validated['rsbsa_number'])
+            : null;
+    }
+
+    if ($request->has('archived')) {
+        $validated['status'] = $request->boolean('archived') ? 'Archived' : 'Active';
+    }
 
     $user->update($validated);
 

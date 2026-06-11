@@ -227,6 +227,7 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -269,15 +270,24 @@
                                 <td class="px-6 py-4">
                                     <span :class="{
                                         'bg-green-100 text-green-800': user.status === 'Active',
-                                        'bg-yellow-100 text-yellow-800': user.status !== 'Active'
+                                        'bg-yellow-100 text-yellow-800': user.status === 'Pending',
+                                        'bg-red-100 text-red-800': user.status === 'Suspended' || user.status === 'Archived',
+                                        'bg-gray-100 text-gray-700': user.status === 'Inactive'
                                     }" class="px-3 py-1 text-xs font-medium rounded-full" x-text="user.status || 'Pending'"></span>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-600" x-text="new Date(user.created_at).toLocaleDateString()"></td>
+                                <td class="px-6 py-4 text-sm">
+                                    <div class="flex space-x-2">
+                                        <button @click="editUser(user)" class="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600">Edit</button>
+                                        <button x-show="user.role === 'Farmer'" @click="archiveUser(user)" :class="{'bg-gray-500': user.status === 'Archived', 'bg-orange-500': user.status !== 'Archived'}" class="px-3 py-1 text-white text-xs rounded hover:opacity-90" x-text="user.status === 'Archived' ? 'Restore' : 'Archive'"></button>
+                                        <button x-show="user.role === 'Farmer'" @click="deleteUserConfirm(user.id, user.name)" class="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600">Delete</button>
+                                    </div>
+                                </td>
                             </tr>
                         </template>
                         <template x-if="!loading && filteredUsers.length === 0">
                             <tr>
-                                <td colspan="5" class="px-6 py-12 text-center">
+                                <td colspan="7" class="px-6 py-12 text-center">
                                     <div class="text-gray-400">
                                         <svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
@@ -291,6 +301,50 @@
                 </table>
             </div>
         </main>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div x-show="showEditUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" x-cloak>
+        <div class="bg-white rounded-t-2xl sm:rounded-xl shadow-xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-xl font-semibold text-gray-800">Edit User</h2>
+                <button @click="showEditUserModal = false" class="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                    <input type="text" x-model="editingUser.name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" x-model="editingUser.email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">RSBSA Number</label>
+                    <input type="text" x-model="editingUser.rsbsa_number" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="e.g. 4-11-10-001-00045">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                    <input type="tel" x-model="editingUser.phone" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                    <input type="text" x-model="editingUser.location" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select x-model="editingUser.status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                        <option value="Pending">Pending</option>
+                    </select>
+                </div>
+            </div>
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
+                <button @click="showEditUserModal = false" class="px-4 py-2 border border-gray-300 rounded-lg">Cancel</button>
+                <button @click="updateUser()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Save Changes</button>
+            </div>
+        </div>
     </div>
 
     <!-- Add User Modal -->
@@ -351,8 +405,12 @@
                 <button @click="showImportModal = false" class="text-gray-400 hover:text-gray-600">✕</button>
             </div>
             <div class="p-6">
-                <input type="file" accept=".csv, .xls, .xlsx" @change="importFile = $event.target.files[0]">
-                <div class="mt-6 flex justify-end">
+                <input x-ref="importFileInput" type="file" accept=".csv, .xls, .xlsx" @change="importFile = $event.target.files[0]">
+                <div class="mt-3 text-sm text-gray-500" x-show="importFile">
+                    Selected file: <span class="font-medium text-gray-700" x-text="importFile ? importFile.name : ''"></span>
+                </div>
+                <div class="mt-6 flex justify-end space-x-2">
+                    <button @click="clearImportFile()" class="px-4 py-2 border rounded-lg" x-show="importFile">Remove CSV</button>
                     <button @click="showImportModal = false" class="px-4 py-2 border rounded-lg">Cancel</button>
                     <button @click="uploadUsersImport()" class="px-4 py-2 bg-blue-600 text-white rounded-lg ml-2">Upload & Import</button>
                 </div>
@@ -372,6 +430,16 @@
                 showImportModal: false,
                 importFile: null,
                 importResult: null,
+                showEditUserModal: false,
+                editingUser: {
+                    id: null,
+                    name: '',
+                    email: '',
+                    phone: '',
+                    rsbsa_number: '',
+                    location: '',
+                    status: 'Active'
+                },
                 newUser: {
                     name: '',
                     email: '',
@@ -475,6 +543,108 @@
                     }
                 },
 
+                editUser(user) {
+                    this.editingUser = {
+                        id: user.id,
+                        name: user.name,
+                        email: user.email,
+                        phone: user.phone || '',
+                        rsbsa_number: user.rsbsa_number || '',
+                        location: user.location || '',
+                        status: user.status || 'Active'
+                    };
+                    this.showEditUserModal = true;
+                },
+
+                clearImportFile() {
+                    this.importFile = null;
+                    if (this.$refs.importFileInput) {
+                        this.$refs.importFileInput.value = '';
+                    }
+                },
+
+                async updateUser() {
+                    try {
+                        const response = await fetch(`{{ url('/admin/api/users') }}/${this.editingUser.id}`, {
+                            method: 'PUT',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify(this.editingUser)
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            alert('User updated successfully');
+                            this.showEditUserModal = false;
+                            await this.loadUsers();
+                        } else {
+                            alert('Error updating user: ' + (data.message || data.error || 'Unknown error'));
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('Failed to update user');
+                    }
+                },
+
+                async archiveUser(user) {
+                    if (!user) return;
+                    const action = user.status === 'Archived' ? 'restore' : 'archive';
+                    if (!confirm(`Are you sure you want to ${action} this user?`)) return;
+                    try {
+                        const response = await fetch(`{{ url('/admin/api/users') }}/${user.id}`, {
+                            method: 'PUT',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({ archived: user.status !== 'Archived' })
+                        });
+                        if (response.ok) {
+                            alert(`User ${action}d successfully`);
+                            await this.loadUsers();
+                        } else {
+                            alert(`Error ${action}ing user`);
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert(`Failed to ${action} user`);
+                    }
+                },
+
+                deleteUserConfirm(userId, userName) {
+                    if (!confirm(`Are you sure you want to delete ${userName}? This action cannot be undone.`)) return;
+                    this.deleteUser(userId);
+                },
+
+                async deleteUser(userId) {
+                    try {
+                        const response = await fetch(`{{ url('/admin/api/users') }}/${userId}`, {
+                            method: 'DELETE',
+                            credentials: 'same-origin',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            }
+                        });
+                        if (response.ok) {
+                            alert('User deleted successfully');
+                            await this.loadUsers();
+                        } else {
+                            alert('Error deleting user');
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('Failed to delete user');
+                    }
+                },
+
+                deleteUploadedCsv() {
+                    this.clearImportFile();
+                    alert('CSV file removed');
+                },
+
                 async uploadUsersImport() {
                     if (!this.importFile) {
                         alert('Please select an Excel or CSV file first');
@@ -500,6 +670,7 @@
                             const imported = data.results?.imported || 0;
                             const skipped = data.results?.skipped || 0;
                             const message = `Import completed!\n- Imported: ${imported} users\n- Skipped: ${skipped} users` + (data.results?.errors?.length ? `\n- Errors: ${data.results.errors.length}` : '');
+                            this.importedFilePath = this.importFile.name;
                             alert(message);
                             this.showImportModal = false;
                             this.importFile = null;
