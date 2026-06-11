@@ -20,6 +20,9 @@ class UsersImport implements ToCollection, WithHeadingRow
 
     public function collection(Collection $rows)
     {
+        $processedRsbsas = []; // Track RSBSAs in current import to prevent duplicates within same file
+        $processedEmails = []; // Track emails in current import
+        
         foreach ($rows as $row) {
             try {
                 $rowArray = $row->toArray();
@@ -54,6 +57,18 @@ class UsersImport implements ToCollection, WithHeadingRow
                 // Extract Location/Municipality - try header keys, then position 2
                 $municipality = trim((string)($row['municipality'] ?? $row['location'] ?? $row['barangay'] ?? $values[2] ?? ''));
 
+                // CHECK 1: Skip if RSBSA already processed in this import (duplicate in file)
+                if ($rsbsa && in_array($rsbsa, $processedRsbsas)) {
+                    $this->results['skipped']++;
+                    continue;
+                }
+
+                // CHECK 2: Skip if RSBSA already exists in database
+                if ($rsbsa && User::where('rsbsa_number', $rsbsa)->exists()) {
+                    $this->results['skipped']++;
+                    continue;
+                }
+
                 // Generate email - prioritize RSBSA if available
                 $email = null;
                 if (!empty($rsbsa)) {
@@ -65,18 +80,18 @@ class UsersImport implements ToCollection, WithHeadingRow
                     $email = $slug . '.' . Str::random(6) . '@noemail.local';
                 }
 
-                // Ensure email is unique
-                $baseEmail = $email;
-                $counter = 1;
-                while (User::where('email', $email)->exists()) {
-                    $email = str_replace('@', $counter . '@', $baseEmail);
-                    $counter++;
-                }
-
-                // Skip if user already exists by RSBSA
-                if ($rsbsa && User::where('rsbsa_number', $rsbsa)->exists()) {
+                // CHECK 3: Skip if email already processed in this import
+                if (in_array($email, $processedEmails)) {
                     $this->results['skipped']++;
                     continue;
+                }
+
+                // CHECK 4: Ensure email is unique in database and current import
+                $baseEmail = $email;
+                $counter = 1;
+                while (User::where('email', $email)->exists() || in_array($email, $processedEmails)) {
+                    $email = str_replace('@', $counter . '@', $baseEmail);
+                    $counter++;
                 }
 
                 $password = Str::random(10);
@@ -91,6 +106,12 @@ class UsersImport implements ToCollection, WithHeadingRow
                     'location' => $municipality ?: null,
                     'rsbsa_number' => $rsbsa,
                 ]);
+
+                // Track this RSBSA and email as processed
+                if ($rsbsa) {
+                    $processedRsbsas[] = $rsbsa;
+                }
+                $processedEmails[] = $email;
 
                 $this->results['imported']++;
             } catch (\Throwable $e) {
