@@ -23,10 +23,24 @@
         .main-container-with-banner { padding-top: 3.5rem; }
         /* Mobile responsive */
         @media (max-width: 767px) {
+            body { min-height: 100vh; height: auto; overflow: auto; }
             .sidebar-container { transform: translateX(-100%); }
             .sidebar-container.sidebar-open { transform: translateX(0); }
-            .main-container { margin-left: 0 !important; }
-            .da-banner { left: 0 !important; }
+            .main-container { margin-left: 0 !important; min-height: 100vh; height: auto; }
+            .content-scrollable { overflow: visible; }
+            .da-banner { left: 0 !important; position: sticky; padding: 0.75rem 1rem; gap: 0.75rem; }
+            .da-banner > div { min-width: 0; }
+            .da-banner span { font-size: 0.875rem; line-height: 1.25rem; }
+            .da-banner a { flex-shrink: 0; padding: 0.5rem; }
+            .da-banner a span { display: none; }
+            .main-container-with-banner { padding-top: 0; }
+
+            .sidebar-container { width: min(18rem, 85vw); }
+            .sidebar-container .p-6 { padding: 1.25rem; }
+            .sidebar-item { min-height: 2.75rem; }
+
+            input, select, textarea, button { font-size: 16px; }
+            .market-pagination { overflow-x: auto; padding-bottom: 0.25rem; }
         }
     </style>
 </head>
@@ -333,7 +347,7 @@
             <!-- 7-Day Weather Forecast -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
                 <h2 class="text-lg font-semibold text-green-700 mb-6">7-Day Weather Forecast</h2>
-                <div class="grid grid-cols-7 gap-3">
+                <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
                     <template x-for="(day, index) in weatherForecast.slice(0, 7)" :key="index">
                         <div class="text-center p-3 rounded-lg hover:bg-gray-50 transition">
                             <p class="text-xs text-gray-600 font-medium mb-2" x-text="day.dayName"></p>
@@ -368,7 +382,7 @@
 
             <!-- Current Market Prices -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-                <div class="flex items-center justify-between mb-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                     <h2 class="text-lg font-semibold text-green-700">Current Market Prices</h2>
                     <div class="flex items-center text-xs text-gray-500">
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -439,12 +453,12 @@
 
             <!-- My Crops Section -->
             <div x-show="showSection === 'my-crops'" x-cloak>
-                <div class="flex items-center justify-between mb-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                     <div>
                         <h2 class="text-3xl font-semibold text-green-700">My Planted Crops</h2>
                         <p class="text-gray-600 mt-1">Record and track your planted crops</p>
                     </div>
-                    <button @click="showAddCropForm = !showAddCropForm" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-sm">
+                    <button @click="showAddCropForm = !showAddCropForm" class="inline-flex w-full sm:w-auto justify-center items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-sm">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                         Add Crop
                     </button>
@@ -519,12 +533,12 @@
                             </div>
                         </div>
 
-                        <div class="mt-5 flex items-center gap-3">
-                            <button type="submit" :disabled="cropSaving" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed">
+                        <div class="mt-5 flex flex-col sm:flex-row sm:items-center gap-3">
+                            <button type="submit" :disabled="cropSaving" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed">
                                 <span x-show="!cropSaving">Save Crop Record</span>
                                 <span x-show="cropSaving">Saving & Predicting...</span>
                             </button>
-                            <button type="button" @click="showAddCropForm = false; resetCropForm();" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
+                            <button type="button" @click="showAddCropForm = false; resetCropForm();" class="w-full sm:w-auto px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
                         </div>
                     </form>
                 </div>
@@ -539,7 +553,7 @@
                                     <h3 class="text-2xl font-semibold text-gray-800" x-text="crop.crop_type"></h3>
                                     <p class="text-gray-500">Variety: <span x-text="crop.variety || 'N/A'"></span></p>
                                 </div>
-                                <div class="flex items-center gap-2">
+                                <div class="flex flex-wrap items-center gap-2">
                                     <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700" x-show="crop.ml_connected">ML</span>
                                     <select x-model="crop.status" @change="updateCropStatus(crop)" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500">
                                         <option value="Planning">Planning</option>
@@ -738,7 +752,7 @@
                         return level === 'very_high' ? 'Very High' : level.charAt(0).toUpperCase() + level.slice(1);
                     }
                  }">
-                <div class="flex items-center justify-between mb-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-800">Current Market Prices</h2>
                         <p class="text-gray-500 text-sm">Latest prices for major Cordillera crops (Updated: {{ now()->format('F d, Y') }})</p>
@@ -761,7 +775,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                             </svg>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex flex-wrap items-center gap-2">
                             <label class="text-sm text-gray-600">Show:</label>
                             <select x-model="pricesPerPage" @change="pricesCurrentPage = 1" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500">
                                 <option value="5">5</option>
@@ -897,7 +911,7 @@
                                     <span>No results found</span>
                                 </template>
                             </div>
-                            <div class="flex items-center gap-2" x-show="totalPages > 1">
+                            <div class="market-pagination flex items-center gap-2" x-show="totalPages > 1">
                                 <button @click="goToPage(1)" :disabled="pricesCurrentPage === 1" 
                                         class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
                                     First
@@ -952,7 +966,7 @@
                 
                 <!-- Filters -->
                 <div class="bg-white rounded-lg border border-gray-200 p-4 mb-4">
-                    <div class="flex flex-wrap items-center gap-4">
+                    <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-4">
                         <!-- Priority Filter -->
                         <div class="flex items-center gap-2">
                             <label class="text-sm font-medium text-gray-700">Priority:</label>
@@ -974,7 +988,7 @@
                         </div>
                         
                         <!-- Results Count -->
-                        <div class="ml-auto text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
+                        <div class="sm:ml-auto text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
                             <span class="font-semibold" x-text="filteredAnnouncements.length"></span>
                             <span x-text="filteredAnnouncements.length === 1 ? ' announcement' : ' announcements'"></span>
                         </div>
@@ -984,7 +998,7 @@
                 <div class="space-y-4">
                     <template x-for="(announcement, index) in filteredAnnouncements" :key="index">
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
-                            <div class="flex items-start justify-between mb-3">
+                            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
                                 <div class="flex items-center space-x-3">
                                     <div :class="{
                                         'bg-red-100': announcement.priority === 'urgent',
@@ -1042,9 +1056,9 @@
                     </div>
                 </div>
 
-                <div x-data="inboxMessenger()" @init="init()" class="bg-white rounded-xl shadow-lg overflow-hidden flex" style="height: 700px;">
+                <div x-data="inboxMessenger()" @init="init()" class="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col md:flex-row" style="height: 700px;">
                     <!-- Left Panel: Conversations List -->
-                    <div class="w-1/3 border-r border-gray-200 flex flex-col bg-gray-50">
+                    <div class="w-full md:w-1/3 md:border-r border-b md:border-b-0 border-gray-200 flex flex-col bg-gray-50 max-h-72 md:max-h-none">
                         <!-- Header -->
                         <div class="p-4 border-b border-gray-200 bg-white">
                             <div class="flex items-center justify-between mb-3">

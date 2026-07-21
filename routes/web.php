@@ -50,6 +50,12 @@ Route::get('/login', function () {
     // If already authenticated, redirect to appropriate dashboard
     if (Auth::check()) {
         $user = Auth::user();
+        if ($user->is_superadmin || $user->admin_type === 'superadmin') {
+            if (session('superadmin_2fa_verified')) {
+                return redirect()->route('superadmin.dashboard');
+            }
+            return redirect()->route('superadmin.login');
+        }
         if ($user->role === 'Admin') {
             return redirect()->route('admin.dashboard');
         }
@@ -414,6 +420,25 @@ Route::post('/superadmin/2fa-reset', [SuperadminAuthController::class, 'reset2FA
 
 Route::post('/superadmin/logout', [SuperadminAuthController::class, 'logout'])
     ->name('superadmin.logout');
+
+Route::get('/superadmin/dashboard', function () {
+    $user = Auth::user();
+
+    if (!Auth::check() || (!$user->is_superadmin && $user->admin_type !== 'superadmin')) {
+        return redirect()->route('login')->withErrors(['error' => 'Superadmin access required']);
+    }
+
+    if (!session('superadmin_2fa_verified')) {
+        Auth::logout();
+        request()->session()->invalidate();
+        request()->session()->regenerateToken();
+
+        return redirect()->route('superadmin.login')
+            ->with('info', 'Please complete two-factor authentication to access the superadmin dashboard.');
+    }
+
+    return view('superadmin_dashboard');
+})->name('superadmin.dashboard');
 
 // Admin dashboard (role-based access)
 Route::get('/admin/dashboard', function () {

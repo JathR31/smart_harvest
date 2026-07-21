@@ -34,6 +34,14 @@
             <p class="text-xs text-gray-400 mb-6" data-translate data-translate-id="login-for-all">For both Farmers and Admin</p>
         </div>
 
+        <div class="mb-5 rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-center">
+            <p class="text-sm font-semibold text-green-800">Superadmin access</p>
+            <p class="text-xs text-green-700 mt-1">Use the dedicated Superadmin login to complete password and 2FA verification.</p>
+            <a href="{{ route('superadmin.login') }}" class="mt-3 inline-flex items-center justify-center rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 transition">
+                Open Superadmin Login
+            </a>
+        </div>
+
         <div class="mb-6">
             <div class="grid grid-cols-2 gap-2 rounded-2xl bg-gray-100 p-1">
                 <button type="button" @click="loginMode = 'email'" :class="loginMode === 'email' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'" class="py-3 rounded-xl font-medium transition">

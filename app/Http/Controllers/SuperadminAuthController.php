@@ -302,7 +302,7 @@ class SuperadminAuthController extends Controller
             'ip' => $request->ip(),
         ]);
 
-        return redirect()->route('admin.dashboard')->with('success', 'Welcome, Super Administrator!');
+        return redirect()->route('superadmin.dashboard')->with('success', 'Welcome, Super Administrator!');
     }
 
     /**
