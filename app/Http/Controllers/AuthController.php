@@ -61,7 +61,7 @@ class AuthController extends Controller
 
         Auth::login($user);
 
-        return redirect()->route('farmer.dashboard');
+        return redirect()->route('dashboard');
     }
 
     public function logout(Request $request)
@@ -81,6 +81,6 @@ class AuthController extends Controller
             return redirect()->route('admin.dashboard');
         }
         
-        return redirect()->route('farmer.dashboard');
+        return redirect()->route('dashboard');
     }
 }

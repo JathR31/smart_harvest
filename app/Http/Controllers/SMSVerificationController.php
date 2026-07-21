@@ -254,7 +254,7 @@ class SMSVerificationController extends Controller
             return route('admin.dashboard');
         }
         
-        return route('farmer.dashboard');
+        return route('dashboard');
     }
     
     /**

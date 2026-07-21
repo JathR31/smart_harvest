@@ -1099,7 +1099,7 @@
     <script>
         function superadminDashboard() {
             return {
-                activeTab: 'dashboard',
+                activeTab: new URLSearchParams(window.location.search).get('tab') || 'dashboard',
                 showAddUserModal: false,
                 showPermissionsModal: false,
                 logFilter: 'all',
