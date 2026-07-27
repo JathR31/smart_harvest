@@ -816,11 +816,18 @@
                 },
 
                 filterUsers() {
+                    const query = this.searchQuery.trim().toLowerCase();
+                    const queryDigits = query.replace(/\D+/g, '');
+
                     this.filteredUsers = this.users.filter(user => {
-                        const matchesSearch = !this.searchQuery || 
-                            user.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                            user.email.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                            (user.location && user.location.toLowerCase().includes(this.searchQuery.toLowerCase()));
+                        const rsbsaValue = user.rsbsa_number ? user.rsbsa_number.toLowerCase() : '';
+                        const rsbsaDigits = rsbsaValue.replace(/\D+/g, '');
+                        const matchesSearch = !query || 
+                            user.name.toLowerCase().includes(query) ||
+                            user.email.toLowerCase().includes(query) ||
+                            (user.location && user.location.toLowerCase().includes(query)) ||
+                            rsbsaValue.includes(query) ||
+                            (queryDigits !== '' && rsbsaDigits.includes(queryDigits));
                         
                         const matchesRole = !this.filterRole || user.role === this.filterRole;
                         const matchesStatus = !this.filterStatus || user.status === this.filterStatus;

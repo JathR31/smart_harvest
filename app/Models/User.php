@@ -125,9 +125,46 @@ class User extends Authenticatable
     public static function normalizeRsbsaNumber(string $value): string
     {
         $normalized = trim($value);
+
+        if ($normalized === '') {
+            return '';
+        }
+
+        $digitsOnly = preg_replace('/\D+/', '', $normalized);
+
+        if ($digitsOnly !== '' && strlen($digitsOnly) === 13) {
+            return sprintf(
+                '%s-%s-%s-%s-%s',
+                substr($digitsOnly, 0, 1),
+                substr($digitsOnly, 1, 2),
+                substr($digitsOnly, 3, 2),
+                substr($digitsOnly, 5, 3),
+                substr($digitsOnly, 8, 5)
+            );
+        }
+
         $normalized = preg_replace('/[^0-9\-]+/', '', $normalized);
         $normalized = preg_replace('/\-+/', '-', $normalized);
+
         return trim($normalized, '-');
+    }
+
+    /**
+     * Return the lookup values used for matching an RSBSA number.
+     *
+     * @return array<int, string>
+     */
+    public static function rsbsaLookupValues(string $value): array
+    {
+        $normalized = static::normalizeRsbsaNumber($value);
+        $digitsOnly = preg_replace('/\D+/', '', $normalized);
+        $compactDigits = preg_replace('/\D+/', '', trim($value));
+
+        return array_values(array_unique(array_filter([
+            $normalized,
+            $digitsOnly,
+            $compactDigits,
+        ])));
     }
 
     /**

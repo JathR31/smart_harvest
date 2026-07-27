@@ -504,12 +504,16 @@
 
                 filterUsers() {
                     const query = this.searchQuery.trim().toLowerCase();
+                    const queryDigits = query.replace(/\D+/g, '');
                     this.filteredUsers = this.users.filter(user => {
+                        const rsbsaValue = user.rsbsa_number ? user.rsbsa_number.toLowerCase() : '';
+                        const rsbsaDigits = rsbsaValue.replace(/\D+/g, '');
                         const matchesSearch = !query || 
                             user.name.toLowerCase().includes(query) ||
                             user.email.toLowerCase().includes(query) ||
                             (user.location && user.location.toLowerCase().includes(query)) ||
-                            (user.rsbsa_number && user.rsbsa_number.toLowerCase().includes(query));
+                            rsbsaValue.includes(query) ||
+                            (queryDigits !== '' && rsbsaDigits.includes(queryDigits));
                         const matchesRole = !this.roleFilter || user.role === this.roleFilter;
                         return matchesSearch && matchesRole;
                     });

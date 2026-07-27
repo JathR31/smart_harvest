@@ -70,12 +70,14 @@ Route::post('/login', function (Request $request) {
     $request->validate([
         'email' => 'required|string',
         'login_mode' => 'nullable|in:email,rsbsa',
-        'password' => $loginMode === 'email' ? 'required|string' : 'nullable|string',
+        'password' => 'nullable|string',
     ]);
     
     $remember = $request->has('remember');
     $loginField = trim($request->input('email'));
     $normalizedLoginField = \App\Models\User::normalizeRsbsaNumber($loginField);
+    $rsbsaLookupValues = \App\Models\User::rsbsaLookupValues($loginField);
+    $loginDigitsOnly = preg_replace('/\D+/', '', $loginField);
 
     // Determine if login field is email, phone number, or RSBSA number
     $fieldType = 'email';
@@ -85,23 +87,25 @@ Route::post('/login', function (Request $request) {
         $loginField = preg_replace('/^(\+63|0)?/', '+63', $loginField);
     } elseif (filter_var($loginField, FILTER_VALIDATE_EMAIL)) {
         $fieldType = 'email';
-    } elseif ($normalizedLoginField !== '' && preg_match('/^[0-9\-]{4,}$/', $normalizedLoginField)) {
-        // Simple detection for RSBSA-like reference numbers (digits and dashes)
+    } elseif ($loginDigitsOnly !== '' && strlen($loginDigitsOnly) === 13) {
+        // RSBSA numbers are stored in a canonical hyphenated 13-digit format.
         $fieldType = 'rsbsa_number';
         $loginField = $normalizedLoginField;
     }
 
-    if ($loginMode === 'rsbsa') {
+    if ($loginMode === 'rsbsa' || $fieldType === 'rsbsa_number') {
         if ($fieldType !== 'rsbsa_number') {
             return back()->withErrors(['email' => 'Please enter a valid RSBSA number for RSBSA login.'])->withInput();
         }
 
-        $digitsOnly = preg_replace('/\D+/', '', $loginField);
         $user = \App\Models\User::where('role', 'Farmer')
-            ->where(function ($query) use ($loginField, $digitsOnly) {
-                $query->where('rsbsa_number', $loginField);
-                if ($digitsOnly !== $loginField) {
-                    $query->orWhereRaw("REPLACE(REPLACE(rsbsa_number, '-', ''), ' ', '') = ?", [$digitsOnly]);
+            ->where(function ($query) use ($rsbsaLookupValues, $loginDigitsOnly) {
+                foreach ($rsbsaLookupValues as $candidate) {
+                    $query->orWhere('rsbsa_number', $candidate);
+                }
+
+                if ($loginDigitsOnly !== '') {
+                    $query->orWhereRaw("REPLACE(REPLACE(rsbsa_number, '-', ''), ' ', '') = ?", [$loginDigitsOnly]);
                 }
             })
             ->first();
@@ -112,6 +116,10 @@ Route::post('/login', function (Request $request) {
         Auth::login($user, $remember);
         $request->session()->regenerate();
     } else {
+        if ($loginMode === 'email' && !$request->filled('password')) {
+            return back()->withErrors(['password' => 'Password is required for email login.'])->withInput();
+        }
+
         $credentials = [
             $fieldType => $loginField,
             'password' => $request->input('password'),
@@ -1339,7 +1347,9 @@ Route::post('/admin/api/users/create', function (Request $request) {
     $userData = [
         'name' => $validated['name'],
         'email' => $validated['email'],
-        'rsbsa_number' => $validated['rsbsa_number'] ?? null,
+        'rsbsa_number' => isset($validated['rsbsa_number']) && trim((string) $validated['rsbsa_number']) !== ''
+            ? \App\Models\User::normalizeRsbsaNumber($validated['rsbsa_number'])
+            : null,
         'password' => $validated['password'], // Will be auto-hashed by model
         'phone' => $validated['phone'] ?? null,
         'role' => $validated['role'],
@@ -1441,7 +1451,7 @@ Route::put('/admin/api/users/{id}', function (Request $request, $id) {
     ]);
 
     if ($request->has('rsbsa_number')) {
-        $validated['rsbsa_number'] = $validated['rsbsa_number'] !== null
+        $validated['rsbsa_number'] = trim((string) ($validated['rsbsa_number'] ?? '')) !== ''
             ? \App\Models\User::normalizeRsbsaNumber($validated['rsbsa_number'])
             : null;
     }

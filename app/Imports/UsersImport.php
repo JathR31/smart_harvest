@@ -29,13 +29,13 @@ class UsersImport implements ToCollection, WithHeadingRow
                 $values = array_values($rowArray); // Get positional values
                 
                 // Extract RSBSA - try header keys first, then first column (position 0)
-                $rsbsaRaw = trim((string)($row['rsbsa_number'] ?? $row['rsbsa'] ?? $row['reference_number'] ?? $row['reference'] ?? $values[0] ?? ''));
+                    $rsbsaRaw = trim((string)($row['rsbsa_number'] ?? $row['rsbsa'] ?? $row['reference_number'] ?? $row['reference'] ?? $values[0] ?? ''));
                 
                 // Handle "NO REFERENCE NUMBER" and similar placeholders
                 if (stripos($rsbsaRaw, 'no reference') !== false) {
                     $rsbsa = null;
                 } else {
-                    $rsbsa = \App\Models\User::normalizeRsbsaNumber($rsbsaRaw);
+                        $rsbsa = \App\Models\User::normalizeRsbsaNumber($rsbsaRaw);
                     // If normalization resulted in empty string, set to null
                     $rsbsa = empty($rsbsa) ? null : $rsbsa;
                 }
@@ -64,7 +64,7 @@ class UsersImport implements ToCollection, WithHeadingRow
                 }
 
                 // CHECK 2: Skip if RSBSA already exists in database
-                if ($rsbsa && User::where('rsbsa_number', $rsbsa)->exists()) {
+                    if ($rsbsa && User::where('rsbsa_number', $rsbsa)->exists()) {
                     $this->results['skipped']++;
                     continue;
                 }

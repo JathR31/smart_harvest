@@ -18,7 +18,7 @@
         }
     </style>
 </head>
-<body class="antialiased flex items-center justify-center min-h-screen" x-data="{ languageOpen: false, loginMode: 'email' }">
+<body class="antialiased flex items-center justify-center min-h-screen" x-data="{ languageOpen: false, loginMode: 'email', loginValue: @json(old('email', '')), isRsbsaNumber() { const digits = this.loginValue.replace(/\D+/g, ''); return digits.length === 13; } }">
 
     <div class="login-card w-full max-w-sm p-8 bg-white rounded-2xl">
         <div class="text-center">
@@ -96,19 +96,19 @@
                 <label for="email" class="block text-sm font-medium text-gray-700 mb-2" x-text="loginMode === 'rsbsa' ? 'RSBSA Number:' : 'Email or Phone:'"></label>
                 <div class="relative">
                           <input id="email" type="text" name="email" required autofocus
-                           class="w-full p-3 pl-10 border border-gray-200 rounded-xl bg-gray-50 focus:ring-green-500 focus:border-green-500 transition duration-150"
-                              :placeholder="loginMode === 'rsbsa' ? '4-11-10-001-00045' : 'farmer@example.com or +639XXXXXXXXX'" value="{{ old('email') }}">
+                                    class="w-full p-3 pl-10 border border-gray-200 rounded-xl bg-gray-50 focus:ring-green-500 focus:border-green-500 transition duration-150"
+                                        :placeholder="loginMode === 'rsbsa' || isRsbsaNumber() ? '4-11-10-001-00045' : 'farmer@example.com or +639XXXXXXXXX'" value="{{ old('email') }}" x-model="loginValue">
                     <!-- Icon for Username/Email -->
                     <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                 </div>
-                <p class="text-xs text-gray-500 mt-1 pl-1" x-text="loginMode === 'rsbsa' ? 'Use your RSBSA number to login without a password.' : 'Farmers can login using email or phone number. For RSBSA login select the RSBSA tab.'"></p>
+                <p class="text-xs text-gray-500 mt-1 pl-1" x-text="loginMode === 'rsbsa' || isRsbsaNumber() ? 'Use your RSBSA number to login without a password.' : 'Farmers can login using email or phone number. For RSBSA login select the RSBSA tab.'"></p>
             </div>
 
             <!-- Password Field -->
-            <div class="mb-6" x-show="loginMode === 'email'" x-cloak>
+            <div class="mb-6" x-show="loginMode === 'email' && !isRsbsaNumber()" x-cloak>
                 <label for="password" class="block text-sm font-medium text-gray-700 mb-2" data-translate data-translate-id="password">Password</label>
                 <div class="relative">
-                    <input id="password" type="password" name="password" :required="loginMode === 'email'" autocomplete="current-password"
+                    <input id="password" type="password" name="password" :required="loginMode === 'email' && !isRsbsaNumber()" autocomplete="current-password"
                            class="w-full p-3 pl-10 pr-12 border border-gray-200 rounded-xl bg-gray-50 focus:ring-green-500 focus:border-green-500 transition duration-150"
                            placeholder="••••••••">
                     <!-- Icon for Password -->
