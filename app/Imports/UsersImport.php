@@ -28,8 +28,19 @@ class UsersImport implements ToCollection, WithHeadingRow
                 $rowArray = $row->toArray();
                 $values = array_values($rowArray); // Get positional values
                 
-                // Extract RSBSA - try header keys first, then first column (position 0)
-                    $rsbsaRaw = trim((string)($row['rsbsa_number'] ?? $row['rsbsa'] ?? $row['reference_number'] ?? $row['reference'] ?? $values[0] ?? ''));
+                // Accept the common RSBSA column names produced by uploaded DA user datasets.
+                // WithHeadingRow turns labels such as "RSBSA Reference No." into
+                // snake-cased keys, so aliases are more reliable than a fixed column name.
+                $rsbsaRaw = trim((string) $this->firstRowValue($rowArray, [
+                    'rsbsa_number',
+                    'rsbsa_no',
+                    'rsbsa',
+                    'rsbsa_reference_number',
+                    'rsbsa_reference_no',
+                    'reference_number',
+                    'reference_no',
+                    'reference',
+                ], $values[0] ?? ''));
                 
                 // Handle "NO REFERENCE NUMBER" and similar placeholders
                 if (stripos($rsbsaRaw, 'no reference') !== false) {
@@ -40,12 +51,17 @@ class UsersImport implements ToCollection, WithHeadingRow
                     $rsbsa = empty($rsbsa) ? null : $rsbsa;
                 }
 
-                // Extract Name - try header keys, then fallback to position 1
-                $name = trim((string)($row['name'] ?? $values[1] ?? ''));
+                // Extract Name - try the headers used by farmer registries, then fallback to position 1.
+                $name = trim((string) $this->firstRowValue($rowArray, [
+                    'name',
+                    'full_name',
+                    'farmer_name',
+                    'name_of_farmer',
+                ], $values[1] ?? ''));
                 if (empty($name)) {
                     // Try firstname + lastname
-                    $firstname = trim((string)($row['firstname'] ?? ''));
-                    $lastname = trim((string)($row['lastname'] ?? ''));
+                    $firstname = trim((string) $this->firstRowValue($rowArray, ['firstname', 'first_name'], ''));
+                    $lastname = trim((string) $this->firstRowValue($rowArray, ['lastname', 'last_name', 'surname'], ''));
                     $name = trim($firstname . ' ' . $lastname);
                 }
 
@@ -54,8 +70,15 @@ class UsersImport implements ToCollection, WithHeadingRow
                     continue;
                 }
 
-                // Extract Location/Municipality - try header keys, then position 2
-                $municipality = trim((string)($row['municipality'] ?? $row['location'] ?? $row['barangay'] ?? $values[2] ?? ''));
+                // Extract Location/Municipality - try header keys, then position 2.
+                $municipality = trim((string) $this->firstRowValue($rowArray, [
+                    'municipality',
+                    'city_municipality',
+                    'municipality_city',
+                    'location',
+                    'barangay',
+                    'address',
+                ], $values[2] ?? ''));
 
                 // CHECK 1: Skip if RSBSA already processed in this import (duplicate in file)
                 if ($rsbsa && in_array($rsbsa, $processedRsbsas)) {
@@ -64,7 +87,7 @@ class UsersImport implements ToCollection, WithHeadingRow
                 }
 
                 // CHECK 2: Skip if RSBSA already exists in database
-                    if ($rsbsa && User::where('rsbsa_number', $rsbsa)->exists()) {
+                if ($rsbsa && User::whereIn('rsbsa_number', User::rsbsaLookupValues($rsbsa))->exists()) {
                     $this->results['skipped']++;
                     continue;
                 }
@@ -123,5 +146,22 @@ class UsersImport implements ToCollection, WithHeadingRow
     public function getResults()
     {
         return $this->results;
+    }
+
+    /**
+     * Get the first populated value from a heading-normalized spreadsheet row.
+     *
+     * @param array<string, mixed> $row
+     * @param array<int, string> $keys
+     */
+    private function firstRowValue(array $row, array $keys, mixed $fallback = null): mixed
+    {
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $row) && trim((string) $row[$key]) !== '') {
+                return $row[$key];
+            }
+        }
+
+        return $fallback;
     }
 }
