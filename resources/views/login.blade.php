@@ -98,10 +98,10 @@
             </div>
 
             <!-- Password Field -->
-            <div class="mb-6" x-show="loginMode === 'email' && !isRsbsaNumber()" x-cloak>
+            <div class="mb-6" x-show="loginMode === 'email'" x-cloak>
                 <label for="password" class="block text-sm font-medium text-gray-700 mb-2" data-translate data-translate-id="password">Password</label>
                 <div class="relative">
-                    <input id="password" type="password" name="password" :required="loginMode === 'email' && !isRsbsaNumber()" autocomplete="current-password"
+                    <input id="password" type="password" name="password" :required="loginMode === 'email'" autocomplete="current-password"
                            class="w-full p-3 pl-10 pr-12 border border-gray-200 rounded-xl bg-gray-50 focus:ring-green-500 focus:border-green-500 transition duration-150"
                            placeholder="••••••••">
                     <!-- Icon for Password -->

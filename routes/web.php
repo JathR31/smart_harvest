@@ -89,7 +89,7 @@ Route::post('/login', function (Request $request) {
         $loginField = $normalizedLoginField;
     }
 
-    if ($loginMode === 'rsbsa' || $fieldType === 'rsbsa_number') {
+    if ($loginMode === 'rsbsa') {
         if ($fieldType !== 'rsbsa_number') {
             return back()->withErrors(['email' => 'Please enter a valid RSBSA number for RSBSA login.'])->withInput();
         }
@@ -112,8 +112,12 @@ Route::post('/login', function (Request $request) {
         Auth::login($user, $remember);
         $request->session()->regenerate();
     } else {
-        if ($loginMode === 'email' && !$request->filled('password')) {
-            return back()->withErrors(['password' => 'Password is required for email login.'])->withInput();
+        if ($fieldType === 'rsbsa_number') {
+            return back()->withErrors(['email' => 'Use the RSBSA tab to log in with your RSBSA number.'])->withInput();
+        }
+
+        if (!$request->filled('password')) {
+            return back()->withErrors(['password' => 'Password is required for email or phone login.'])->withInput();
         }
 
         $credentials = [
