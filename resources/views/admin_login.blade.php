@@ -88,13 +88,6 @@
             </a>
         </div>
 
-        <!-- Superadmin Login Link -->
-        <div class="text-center mt-4">
-            <a href="{{ route('superadmin.login') }}" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition duration-150">
-                🛡️ Super Admin Login
-            </a>
-        </div>
-
         <!-- Demo Credentials -->
         <div class="mt-6 pt-4 border-t border-gray-100 text-sm text-gray-500 text-left">
             <p class="font-semibold mb-1">Demo Credentials:</p>
