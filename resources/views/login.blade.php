@@ -18,7 +18,7 @@
         }
     </style>
 </head>
-<body class="antialiased flex items-center justify-center min-h-screen" x-data="{ languageOpen: false, loginMode: 'email', loginValue: @json(old('email', '')), isRsbsaNumber() { const digits = this.loginValue.replace(/\D+/g, ''); return digits.length === 13; } }">
+<body class="antialiased flex items-center justify-center min-h-screen" x-data="{ languageOpen: false, loginMode: 'rsbsa', loginValue: @json(old('email', '')), isRsbsaNumber() { const digits = this.loginValue.replace(/\D+/g, ''); return digits.length === 13; } }">
 
     <div class="login-card w-full max-w-sm p-8 bg-white rounded-2xl">
         <div class="text-center">
@@ -36,13 +36,14 @@
 
         <div class="mb-6">
             <div class="grid grid-cols-2 gap-2 rounded-2xl bg-gray-100 p-1">
-                <button type="button" @click="loginMode = 'email'" :class="loginMode === 'email' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'" class="py-3 rounded-xl font-medium transition">
-                    Email / Phone
-                </button>
                 <button type="button" @click="loginMode = 'rsbsa'" :class="loginMode === 'rsbsa' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'" class="py-3 rounded-xl font-medium transition">
                     RSBSA Login
                 </button>
+                <button type="button" @click="loginMode = 'email'" :class="loginMode === 'email' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'" class="py-3 rounded-xl font-medium transition">
+                    Email / Phone
+                </button>
             </div>
+            <p class="mt-2 text-xs text-gray-500 px-1">RSBSA login is the default for farmers. Email and phone remain available as a secondary option.</p>
         </div>
 
         <!-- Language Selector -->
@@ -85,7 +86,7 @@
             
             <!-- Email / Username / RSBSA Field -->
             <div class="mb-4">
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-2" x-text="loginMode === 'rsbsa' ? 'RSBSA Number:' : 'Email or Phone:'"></label>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-2" x-text="loginMode === 'rsbsa' ? 'RSBSA Number:' : 'Email or Phone (secondary):'"></label>
                 <div class="relative">
                           <input id="email" type="text" name="email" required autofocus
                                     class="w-full p-3 pl-10 border border-gray-200 rounded-xl bg-gray-50 focus:ring-green-500 focus:border-green-500 transition duration-150"
@@ -93,7 +94,7 @@
                     <!-- Icon for Username/Email -->
                     <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                 </div>
-                <p class="text-xs text-gray-500 mt-1 pl-1" x-text="loginMode === 'rsbsa' || isRsbsaNumber() ? 'Use your RSBSA number to login without a password.' : 'Farmers can login using email or phone number. For RSBSA login select the RSBSA tab.'"></p>
+                <p class="text-xs text-gray-500 mt-1 pl-1" x-text="loginMode === 'rsbsa' || isRsbsaNumber() ? 'Use your RSBSA number to login without a password.' : 'Email and phone login are available as a secondary option.'"></p>
             </div>
 
             <!-- Password Field -->
