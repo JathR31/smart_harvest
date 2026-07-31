@@ -41,6 +41,10 @@ if (app()->environment(['local', 'testing'])) {
     Route::get('/api/create-test-user', [\App\Http\Controllers\AccountRecoveryController::class, 'createTestUser'])->name('create.test.user');
 }
 
+// Google OAuth Routes
+Route::get('/auth/google', [\App\Http\Controllers\GoogleAuthController::class, 'redirect'])->name('auth.google');
+Route::get('/auth/google/callback', [\App\Http\Controllers\GoogleAuthController::class, 'callback'])->name('auth.google.callback');
+
 // You would also have routes for login, admin, and register (Get Started)
 Route::get('/login', function () {
     // If already authenticated, redirect to appropriate dashboard
@@ -89,7 +93,7 @@ Route::post('/login', function (Request $request) {
         $loginField = $normalizedLoginField;
     }
 
-    if ($loginMode === 'rsbsa') {
+    if ($loginMode === 'rsbsa' || $fieldType === 'rsbsa_number') {
         if ($fieldType !== 'rsbsa_number') {
             return back()->withErrors(['email' => 'Please enter a valid RSBSA number for RSBSA login.'])->withInput();
         }
@@ -112,12 +116,18 @@ Route::post('/login', function (Request $request) {
         Auth::login($user, $remember);
         $request->session()->regenerate();
     } else {
-        if ($fieldType === 'rsbsa_number') {
-            return back()->withErrors(['email' => 'Use the RSBSA tab to log in with your RSBSA number.'])->withInput();
-        }
-
         if (!$request->filled('password')) {
-            return back()->withErrors(['password' => 'Password is required for email or phone login.'])->withInput();
+            $daOfficer = $fieldType === 'email'
+                ? \App\Models\User::where('email', $loginField)
+                    ->whereIn('role', ['Admin', 'DA Admin'])
+                    ->exists()
+                : false;
+
+            return back()->withErrors([
+                'password' => $daOfficer
+                    ? 'Password is required for DA officer accounts.'
+                    : 'Password is required for email or phone login.',
+            ])->withInput();
         }
 
         $credentials = [

@@ -37,6 +37,33 @@ class AuthController extends Controller
         ])->withInput($request->only('email'));
     }
 
+    public function adminLogin(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string',
+        ]);
+
+        $user = User::where('email', $request->input('email'))->first();
+
+        if (!$user || !Hash::check($request->input('password'), $user->password)) {
+            return back()->withErrors([
+                'email' => 'The provided credentials do not match our records.',
+            ])->withInput($request->only('email'));
+        }
+
+        if (!$this->isAdminAccount($user)) {
+            return back()->withErrors([
+                'email' => 'This account does not have admin access.',
+            ])->withInput($request->only('email'));
+        }
+
+        Auth::login($user, $request->boolean('remember'));
+        $request->session()->regenerate();
+
+        return $this->redirectBasedOnRole();
+    }
+
     public function showSignupForm()
     {
         return view('signup');
@@ -76,11 +103,20 @@ class AuthController extends Controller
     protected function redirectBasedOnRole()
     {
         $user = Auth::user();
+
+        if ($user->is_superadmin || $user->admin_type === 'superadmin') {
+            return redirect()->route('superadmin.login');
+        }
         
-        if ($user->role === 'Admin') {
+        if ($this->isAdminAccount($user)) {
             return redirect()->route('admin.dashboard');
         }
         
         return redirect()->route('dashboard');
+    }
+
+    protected function isAdminAccount(User $user): bool
+    {
+        return $user->role === 'Admin' || $user->role === 'DA Admin';
     }
 }
