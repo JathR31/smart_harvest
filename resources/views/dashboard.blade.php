@@ -1308,6 +1308,7 @@
                 cropSaving: false,
                 showAddCropForm: false,
                 myCrops: [],
+                refreshTimer: null,
                 cropStats: {
                     total_crops: 0,
                     total_area: 0,
@@ -1335,11 +1336,27 @@
                     this.loadMyCrops();
                     this.loadOfficers();
                     this.loadFarmers();
+                    this.startRealtimeSync();
                     
                     // Initialize translation system
                     if (typeof SmartHarvestTranslation !== 'undefined') {
                         SmartHarvestTranslation.init();
                     }
+                },
+
+                startRealtimeSync() {
+                    if (this.refreshTimer) {
+                        clearInterval(this.refreshTimer);
+                    }
+
+                    this.refreshTimer = setInterval(() => this.syncRealtimeData(), 15000);
+                },
+
+                async syncRealtimeData() {
+                    await Promise.all([
+                        this.loadAnnouncements(),
+                        this.loadMessages()
+                    ]);
                 },
 
                 async loadAnnouncements() {
@@ -1936,6 +1953,7 @@
                 sendSMS: false,
                 sending: false,
                 officers: [],
+                refreshTimer: null,
                 showNewMessageModal: false,
                 newMessage: {
                     recipient_id: '',
@@ -1963,8 +1981,25 @@
                 async init() {
                     await this.loadConversations();
                     await this.loadOfficers();
-                    // Auto-refresh every 10 seconds
-                    setInterval(() => this.loadConversations(), 10000);
+                    this.startRealtimeSync();
+                },
+
+                startRealtimeSync() {
+                    if (this.refreshTimer) {
+                        clearInterval(this.refreshTimer);
+                    }
+
+                    this.refreshTimer = setInterval(() => this.refreshConversations(), 10000);
+                },
+
+                async refreshConversations() {
+                    const selectedConversationId = this.selectedConversation?.id || null;
+
+                    await this.loadConversations();
+
+                    if (selectedConversationId) {
+                        await this.reloadSelectedConversation(selectedConversationId);
+                    }
                 },
 
                 async loadConversations() {
@@ -1973,9 +2008,42 @@
                         if (response.ok) {
                             const data = await response.json();
                             this.conversations = data.received || [];
+                            if (this.selectedConversation) {
+                                const refreshedConversation = this.conversations.find(conversation => conversation.id === this.selectedConversation.id);
+                                if (refreshedConversation) {
+                                    this.selectedConversation = { ...this.selectedConversation, ...refreshedConversation };
+                                }
+                            }
                         }
                     } catch (error) {
                         console.error('Error loading conversations:', error);
+                    }
+                },
+
+                async reloadSelectedConversation(conversationId) {
+                    try {
+                        const response = await fetch(`/api/messages/${conversationId}`);
+                        if (!response.ok) {
+                            return;
+                        }
+
+                        const data = await response.json();
+                        if (data?.message) {
+                            this.selectedConversation = {
+                                ...(this.selectedConversation || {}),
+                                ...data.message,
+                                messages: data.conversation || []
+                            };
+
+                            this.$nextTick(() => {
+                                const container = this.$refs.messagesContainer;
+                                if (container) {
+                                    container.scrollTop = container.scrollHeight;
+                                }
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error refreshing selected conversation:', error);
                     }
                 },
 

@@ -212,7 +212,7 @@
                              class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition cursor-pointer"
                              :class="{'border-blue-500 bg-blue-50': isDragging}"
                              @click="$refs.fileInput.click()">
-                            <input type="file" x-ref="fileInput" @change="handleFileSelect" accept=".csv,.xlsx,.xls" class="hidden">
+                            <input type="file" x-ref="fileInput" @change="handleFileSelect" accept=".csv" class="hidden">
                             
                             <svg class="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
@@ -221,7 +221,7 @@
                             <p class="text-gray-600 mb-2" x-show="!selectedFile">
                                 <span class="font-semibold text-blue-600">Click to upload</span> or drag and drop
                             </p>
-                            <p class="text-sm text-gray-500" x-show="!selectedFile">CSV or Excel files only</p>
+                            <p class="text-sm text-gray-500" x-show="!selectedFile">CSV files only</p>
                             
                             <div x-show="selectedFile" class="flex items-center justify-center space-x-2">
                                 <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -361,6 +361,12 @@
                 handleFileSelect(event) {
                     const file = event.target.files[0];
                     if (file) {
+                        if (!file.name.toLowerCase().endsWith('.csv')) {
+                            this.showError('Please upload a CSV file only.');
+                            event.target.value = '';
+                            return;
+                        }
+
                         this.selectedFile = file;
                     }
                 },
@@ -368,10 +374,10 @@
                 handleDrop(event) {
                     this.isDragging = false;
                     const file = event.dataTransfer.files[0];
-                    if (file && (file.name.endsWith('.csv') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+                    if (file && file.name.toLowerCase().endsWith('.csv')) {
                         this.selectedFile = file;
                     } else {
-                        this.showError('Please upload a CSV or Excel file');
+                        this.showError('Please upload a CSV file only.');
                     }
                 },
 

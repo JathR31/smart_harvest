@@ -146,7 +146,7 @@ class DataImportApiController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'file' => 'required|file|mimes:csv,txt|max:10240',
+                'file' => 'required|file|mimetypes:text/csv,text/plain,application/csv,application/vnd.ms-excel|extensions:csv|max:10240',
                 'dataset_id' => 'required|string'
             ]);
 
@@ -154,6 +154,13 @@ class DataImportApiController extends Controller
                 return response()->json([
                     'success' => false,
                     'errors' => $validator->errors()
+                ], 422);
+            }
+
+            if (!$this->isCsvUpload($request)) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['file' => ['Only CSV files are allowed.']]
                 ], 422);
             }
 
@@ -231,7 +238,7 @@ class DataImportApiController extends Controller
             Log::info('Data import request received');
 
             $validator = Validator::make($request->all(), [
-                'file' => 'required|file|mimes:csv,txt,xlsx,xls|max:10240',
+                'file' => 'required|file|mimetypes:text/csv,text/plain,application/csv,application/vnd.ms-excel|extensions:csv|max:10240',
                 'dataset_id' => 'required|string'
             ]);
 
@@ -239,6 +246,13 @@ class DataImportApiController extends Controller
                 return response()->json([
                     'success' => false,
                     'errors' => $validator->errors()
+                ], 422);
+            }
+
+            if (!$this->isCsvUpload($request)) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['file' => ['Only CSV files are allowed.']]
                 ], 422);
             }
 
@@ -377,6 +391,17 @@ class DataImportApiController extends Controller
         ];
 
         return $fields[$datasetId] ?? [];
+    }
+
+    private function isCsvUpload(Request $request): bool
+    {
+        $file = $request->file('file');
+
+        if (!$file) {
+            return false;
+        }
+
+        return strtolower($file->getClientOriginalExtension()) === 'csv';
     }
 
     private function getDatasetName($datasetId)

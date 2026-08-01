@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
@@ -40,11 +41,14 @@ class AuthController extends Controller
     public function adminLogin(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email' => 'required|string',
             'password' => 'required|string',
         ]);
 
-        $user = User::where('email', $request->input('email'))->first();
+        $loginIdentifier = trim($request->input('email'));
+        $user = User::where('email', $loginIdentifier)
+            ->orWhere('username', $loginIdentifier)
+            ->first();
 
         if (!$user || !Hash::check($request->input('password'), $user->password)) {
             return back()->withErrors([
@@ -71,11 +75,17 @@ class AuthController extends Controller
 
     public function signup(Request $request)
     {
+        $allowedMunicipalities = [
+            'Atok', 'Bakun', 'Bokod', 'Buguias', 'Itogon',
+            'Kabayan', 'Kapangan', 'Kibungan', 'La Trinidad', 'Mankayan',
+            'Sablan', 'Tuba', 'Tublay',
+        ];
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'municipality' => 'required|string',
+            'municipality' => ['required', 'string', Rule::in($allowedMunicipalities)],
         ]);
 
         $user = User::create([

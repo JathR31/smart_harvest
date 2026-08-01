@@ -74,7 +74,6 @@
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
                     <option value="">Select municipality</option>
                     <option value="Atok">Atok</option>
-                    <option value="Baguio City">Baguio City</option>
                     <option value="Bakun">Bakun</option>
                     <option value="Bokod">Bokod</option>
                     <option value="Buguias">Buguias</option>

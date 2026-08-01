@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use App\Http\Controllers\AuthController;
 
 if (!function_exists('safe_log')) {
     function safe_log(string $level, string $message, array $context = []): void
@@ -405,12 +406,19 @@ Route::post('/reset-password', function (Request $request) {
     return redirect()->route('login')->with('success', 'Password has been reset successfully! You can now log in.');
 })->name('password.update');
 
-// Redirect /admin to main login page
+Route::get('/admin/login', [AuthController::class, 'showLoginForm'])
+    ->name('admin.login.form');
+
+Route::post('/admin/login', [AuthController::class, 'adminLogin'])
+    ->name('admin.login.attempt');
+
+// Redirect /admin to the dedicated admin login page unless the user is already authenticated.
 Route::get('/admin', function () {
     if (Auth::check() && Auth::user()->role === 'Admin') {
         return redirect()->route('admin.dashboard');
     }
-    return redirect()->route('login')->with('admin_login', true);
+
+    return redirect()->route('admin.login.form');
 })->name('admin.login');
 
 // =============================================================================
@@ -4936,15 +4944,8 @@ Route::put('/api/market-prices/{id}', function (Request $request, $id) {
     $price = \App\Models\MarketPrice::findOrFail($id);
     
     $validated = $request->validate([
-        'crop_name' => 'required|string|max:100',
-        'variety' => 'nullable|string|max:100',
         'price_per_kg' => 'required|numeric|min:0',
-        'price_trend' => 'nullable|in:up,down,stable',
-        'demand_level' => 'nullable|in:low,moderate,high,very_high',
-        'market_location' => 'nullable|string|max:255',
-        'is_active' => 'nullable|boolean',
-        'price_date' => 'nullable|date',
-        'notes' => 'nullable|string'
+        'price_date' => 'required|date',
     ]);
     
     // Store old price before updating
@@ -4959,16 +4960,10 @@ Route::put('/api/market-prices/{id}', function (Request $request, $id) {
     }
     
     $price->update([
-        'crop_name' => $validated['crop_name'],
-        'variety' => $validated['variety'] ?? $price->variety,
         'price_per_kg' => $validated['price_per_kg'],
         'previous_price' => $oldPrice,
         'price_trend' => $priceTrend,
-        'demand_level' => $validated['demand_level'] ?? $price->demand_level,
-        'market_location' => $validated['market_location'] ?? $price->market_location,
-        'is_active' => $validated['is_active'] ?? $price->is_active,
-        'price_date' => $validated['price_date'] ?? now()->toDateString(),
-        'notes' => $validated['notes'] ?? $price->notes,
+        'price_date' => $validated['price_date'],
     ]);
     
     return response()->json($price);

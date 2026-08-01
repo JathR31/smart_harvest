@@ -569,14 +569,8 @@
                     async savePrice() {
                         try {
                             const payload = {
-                                crop_name: this.editForm.crop_name,
-                                variety: this.editForm.variety || '',
                                 price_per_kg: parseFloat(this.editForm.price_per_kg),
-                                demand_level: this.editForm.demand_level || 'moderate',
-                                market_location: this.editForm.market_location || 'La Trinidad Trading Post',
-                                is_active: this.editForm.is_active !== false,
-                                price_date: this.editForm.price_date || new Date().toISOString().split('T')[0],
-                                price_trend: this.editForm.price_trend || 'stable'
+                                price_date: this.editForm.price_date || new Date().toISOString().split('T')[0]
                             };
                             const response = await fetch(`{{ url('/api/market-prices') }}/${this.editForm.id}`, {
                                 method: 'PUT',
@@ -763,7 +757,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Variety</label>
-                                    <input type="text" x-model="editForm.variety" class="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="e.g., Highland">
+                                    <input type="text" x-model="editForm.variety" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100 text-gray-500 cursor-not-allowed" placeholder="e.g., Highland" disabled>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Price per kg (₱) <span class="text-red-500">*</span></label>
@@ -771,7 +765,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Demand Level</label>
-                                    <select x-model="editForm.demand_level" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                    <select x-model="editForm.demand_level" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100 text-gray-500 cursor-not-allowed" disabled>
                                         <option value="low">Low</option>
                                         <option value="moderate">Moderate</option>
                                         <option value="high">High</option>
@@ -780,7 +774,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Market Location</label>
-                                    <input type="text" x-model="editForm.market_location" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                    <input type="text" x-model="editForm.market_location" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100 text-gray-500 cursor-not-allowed" disabled>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Price Date <span class="text-red-500">*</span></label>
@@ -1065,7 +1059,6 @@
                                         <option value="all">All</option>
                                         <option value="La Trinidad">La Trinidad</option>
                                         <option value="Benguet">Benguet</option>
-                                        <option value="Baguio">Baguio</option>
                                     </select>
                                 </div>
                                 <div class="border-t pt-4 mt-2">
@@ -1362,11 +1355,14 @@
                                     label: 'Expected Yield (MT)',
                                     data: yields,
                                     backgroundColor: labels.map((_, i) => colors[i % colors.length]),
-                                    borderRadius: 4
+                                refreshTimer: null,
                                 }]
                             },
                             options: {
-                                responsive: true, maintainAspectRatio: false,
+                                    if (this.refreshTimer) {
+                                        clearInterval(this.refreshTimer);
+                                    }
+                                    this.refreshTimer = setInterval(() => this.loadAnnouncementsList(), 15000);
                                 plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y.toFixed(2) + ' MT' } } },
                                 scales: { y: { beginAtZero: true, title: { display: true, text: 'Expected Yield (MT)' } }, x: { grid: { display: false } } }
                             }
@@ -1659,7 +1655,7 @@
                 municipalities: [
                     'La Trinidad', 'Bokod', 'Tublay', 'Atok', 'Itogon',
                     'Kapangan', 'Kibungan', 'Mancayan', 'Sablan', 'Tuba',
-                    'Bugias', 'Bontoc', 'Baguio City', 'Pugo'
+                    'Bugias', 'Bontoc', 'Pugo'
                 ],
                 baseUrl: '{{ url("/") }}',  // Laravel base URL
                 stats: {
@@ -2387,6 +2383,7 @@
                 sendSMS: false,
                 sending: false,
                 officers: [],
+                refreshTimer: null,
                 showNewMessageModal: false,
                 newMessage: {
                     recipient_id: '',
@@ -2414,8 +2411,25 @@
                 async init() {
                     await this.loadConversations();
                     await this.loadOfficers();
-                    // Auto-refresh every 10 seconds
-                    setInterval(() => this.loadConversations(), 10000);
+                    this.startRealtimeSync();
+                },
+
+                startRealtimeSync() {
+                    if (this.refreshTimer) {
+                        clearInterval(this.refreshTimer);
+                    }
+
+                    this.refreshTimer = setInterval(() => this.refreshConversations(), 10000);
+                },
+
+                async refreshConversations() {
+                    const selectedConversationId = this.selectedConversation?.id || null;
+
+                    await this.loadConversations();
+
+                    if (selectedConversationId) {
+                        await this.reloadSelectedConversation(selectedConversationId);
+                    }
                 },
 
                 async loadConversations() {
@@ -2424,9 +2438,42 @@
                         if (response.ok) {
                             const data = await response.json();
                             this.conversations = data.sent || [];
+                            if (this.selectedConversation) {
+                                const refreshedConversation = this.conversations.find(conversation => conversation.id === this.selectedConversation.id);
+                                if (refreshedConversation) {
+                                    this.selectedConversation = { ...this.selectedConversation, ...refreshedConversation };
+                                }
+                            }
                         }
                     } catch (error) {
                         console.error('Error loading conversations:', error);
+                    }
+                },
+
+                async reloadSelectedConversation(conversationId) {
+                    try {
+                        const response = await fetch(`/api/messages/${conversationId}`);
+                        if (!response.ok) {
+                            return;
+                        }
+
+                        const data = await response.json();
+                        if (data?.message) {
+                            this.selectedConversation = {
+                                ...(this.selectedConversation || {}),
+                                ...data.message,
+                                messages: data.conversation || []
+                            };
+
+                            this.$nextTick(() => {
+                                const container = this.$refs.messagesContainer;
+                                if (container) {
+                                    container.scrollTop = container.scrollHeight;
+                                }
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error refreshing selected conversation:', error);
                     }
                 },
 

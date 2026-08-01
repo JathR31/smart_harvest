@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>SmartHarvest - Admin Login</title>
+    <title>SmartHarvest - DA Admin Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Custom light green background to match the image */
@@ -27,8 +27,8 @@
                     <svg class="w-6 h-6 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                 </div>
             </div>
-            <h1 class="text-2xl font-semibold text-green-700 mb-1">SmartHarvest Admin</h1>
-            <p class="text-gray-500 mb-8 text-sm">Sign in to access the admin dashboard</p>
+            <h1 class="text-2xl font-semibold text-green-700 mb-1">SmartHarvest DA Admin</h1>
+            <p class="text-gray-500 mb-8 text-sm">Sign in to access the DA admin dashboard</p>
         </div>
 
         <!-- NOTE: In a real app, this form would post to a separate admin login controller/route -->
@@ -42,13 +42,13 @@
         <form method="POST" action="{{ route('admin.login.attempt') }}">
             @csrf
             
-            <!-- Email Address Field -->
+            <!-- Email or Username Field -->
             <div class="mb-4">
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email or Username</label>
                 <div class="relative">
-                    <input id="email" type="email" name="email" required autofocus
+                    <input id="email" type="text" name="email" required autofocus
                            class="w-full p-3 pl-10 border border-gray-200 rounded-xl bg-gray-50 focus:ring-green-500 focus:border-green-500 transition duration-150"
-                           placeholder="admin@smartharvest.com">
+                           placeholder="admin@smartharvest.com or admin.username">
                     <!-- Icon for Email -->
                     <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 00-5 0V12m4-9H8a2 2 0 00-2 2v14a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2z"></path></svg>
                 </div>

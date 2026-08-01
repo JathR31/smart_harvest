@@ -260,7 +260,7 @@
                 originalTexts: {},
                 selectedMunicipality: '{{ $userMunicipality ?? "La Trinidad" }}',
                 municipalities: [
-                    'Atok', 'Baguio City', 'Bakun', 'Bokod', 'Buguias', 'Itogon', 
+                    'Atok', 'Bakun', 'Bokod', 'Buguias', 'Itogon', 
                     'Kabayan', 'Kapangan', 'Kibungan', 'La Trinidad', 'Mankayan', 
                     'Sablan', 'Tuba', 'Tublay'
                 ],
