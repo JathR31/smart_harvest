@@ -1087,7 +1087,7 @@
                                     <div class="flex items-start gap-3">
                                         <div :class="!conv.is_read ? 'bg-green-500' : 'bg-gray-400'" class="w-2 h-2 rounded-full flex-shrink-0 mt-2"></div>
                                         <div class="flex-1 min-w-0">
-                                            <p class="font-semibold text-gray-800 text-sm" x-text="conv.sender_name"></p>
+                                            <p class="font-semibold text-gray-800 text-sm" x-text="getConversationTitle(conv)"></p>
                                             <p class="text-xs text-gray-600 truncate mt-0.5" x-text="conv.content"></p>
                                         </div>
                                     </div>
@@ -1102,7 +1102,7 @@
                         <template x-if="selectedConversation">
                             <!-- Chat Header -->
                             <div class="border-b border-gray-200 p-4 bg-gradient-to-r from-green-50 to-blue-50">
-                                <p class="font-semibold text-gray-800" x-text="selectedConversation.sender_name"></p>
+                                <p class="font-semibold text-gray-800" x-text="getConversationTitle(selectedConversation)"></p>
                                 <p class="text-xs text-gray-500 mt-1" x-text="'Last message: ' + formatDate(selectedConversation.created_at)"></p>
                             </div>
 
@@ -1973,9 +1973,13 @@
                     if (!this.searchFilter.trim()) return this.conversations;
                     const filter = this.searchFilter.toLowerCase();
                     return this.conversations.filter(c => 
-                        c.sender_name.toLowerCase().includes(filter) ||
+                        this.getConversationTitle(c).toLowerCase().includes(filter) ||
                         (c.content && c.content.toLowerCase().includes(filter))
                     );
+                },
+
+                getConversationTitle(conversation) {
+                    return conversation?.sender_name || conversation?.receiver_name || conversation?.subject || 'Unknown';
                 },
 
                 async init() {
@@ -2007,7 +2011,20 @@
                         const response = await fetch('/api/messages');
                         if (response.ok) {
                             const data = await response.json();
-                            this.conversations = data.received || [];
+                            const merged = [...(data.received || []), ...(data.sent || [])];
+                            const deduped = [];
+                            const seen = new Set();
+
+                            merged.forEach(conversation => {
+                                if (!conversation || !conversation.id || seen.has(conversation.id)) {
+                                    return;
+                                }
+
+                                seen.add(conversation.id);
+                                deduped.push(conversation);
+                            });
+
+                            this.conversations = deduped;
                             if (this.selectedConversation) {
                                 const refreshedConversation = this.conversations.find(conversation => conversation.id === this.selectedConversation.id);
                                 if (refreshedConversation) {
@@ -2060,6 +2077,7 @@
 
                 openNewMessageModal() {
                     console.log('Opening new message modal');
+                    this.newMessage = { recipient_id: '', subject: '', content: '', send_sms: false };
                     this.showNewMessageModal = true;
                 },
 
@@ -2101,13 +2119,18 @@
                             })
                         });
 
+                        const data = await response.json().catch(() => ({}));
+
                         if (response.ok) {
                             alert('Message sent successfully!');
                             this.showNewMessageModal = false;
                             this.newMessage = { recipient_id: '', subject: '', content: '', send_sms: false };
                             await this.loadConversations();
+                            if (data?.data?.id) {
+                                await this.reloadSelectedConversation(data.data.id);
+                            }
                         } else {
-                            alert('Error sending message. Please try again.');
+                            alert(data?.message || data?.error || 'Error sending message. Please try again.');
                         }
                     } catch (error) {
                         console.error('Error sending message:', error);

@@ -563,14 +563,23 @@
                         } else {
                             this.editForm.price_date = new Date().toISOString().split('T')[0];
                         }
+                        this.editForm.demand_level = this.editForm.demand_level || 'moderate';
+                        this.editForm.market_location = this.editForm.market_location || 'La Trinidad Trading Post';
                         this.showEditModal = true;
                     },
                     
                     async savePrice() {
                         try {
+                            if (!this.editForm.price_per_kg || !this.editForm.price_date) {
+                                alert('Price and price date are required.');
+                                return;
+                            }
+
                             const payload = {
                                 price_per_kg: parseFloat(this.editForm.price_per_kg),
-                                price_date: this.editForm.price_date || new Date().toISOString().split('T')[0]
+                                price_date: this.editForm.price_date || new Date().toISOString().split('T')[0],
+                                demand_level: this.editForm.demand_level || 'moderate',
+                                market_location: this.editForm.market_location || 'La Trinidad Trading Post'
                             };
                             const response = await fetch(`{{ url('/api/market-prices') }}/${this.editForm.id}`, {
                                 method: 'PUT',
@@ -753,7 +762,7 @@
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Crop Name</label>
-                                    <input type="text" x-model="editForm.crop_name" class="w-full border border-gray-300 rounded-lg px-3 py-2" readonly>
+                                    <input type="text" x-model="editForm.crop_name" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100 text-gray-500 cursor-not-allowed" disabled>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Variety</label>
@@ -765,7 +774,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Demand Level</label>
-                                    <select x-model="editForm.demand_level" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100 text-gray-500 cursor-not-allowed" disabled>
+                                    <select x-model="editForm.demand_level" class="w-full border border-gray-300 rounded-lg px-3 py-2">
                                         <option value="low">Low</option>
                                         <option value="moderate">Moderate</option>
                                         <option value="high">High</option>
@@ -774,7 +783,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Market Location</label>
-                                    <input type="text" x-model="editForm.market_location" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100 text-gray-500 cursor-not-allowed" disabled>
+                                    <input type="text" x-model="editForm.market_location" class="w-full border border-gray-300 rounded-lg px-3 py-2">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Price Date <span class="text-red-500">*</span></label>
@@ -1124,7 +1133,7 @@
                                         <div class="flex items-start gap-3">
                                             <div :class="!conv.is_read ? 'bg-green-500' : 'bg-gray-400'" class="w-2 h-2 rounded-full flex-shrink-0 mt-2"></div>
                                             <div class="flex-1 min-w-0">
-                                                <p class="font-semibold text-gray-800 text-sm" x-text="conv.sender_name"></p>
+                                                <p class="font-semibold text-gray-800 text-sm" x-text="getConversationTitle(conv)"></p>
                                                 <p class="text-xs text-gray-600 truncate mt-0.5" x-text="conv.content"></p>
                                             </div>
                                         </div>
@@ -1139,7 +1148,7 @@
                             <template x-if="selectedConversation">
                                 <!-- Chat Header -->
                                 <div class="border-b border-gray-200 p-4 bg-gradient-to-r from-green-50 to-blue-50">
-                                    <p class="font-semibold text-gray-800" x-text="selectedConversation.sender_name"></p>
+                                    <p class="font-semibold text-gray-800" x-text="getConversationTitle(selectedConversation)"></p>
                                     <p class="text-xs text-gray-500 mt-1" x-text="'Last message: ' + formatDate(selectedConversation.created_at)"></p>
                                 </div>
 
@@ -2403,9 +2412,13 @@
                     if (!this.searchFilter.trim()) return this.conversations;
                     const filter = this.searchFilter.toLowerCase();
                     return this.conversations.filter(c => 
-                        c.sender_name.toLowerCase().includes(filter) ||
+                        this.getConversationTitle(c).toLowerCase().includes(filter) ||
                         (c.content && c.content.toLowerCase().includes(filter))
                     );
+                },
+
+                getConversationTitle(conversation) {
+                    return conversation?.sender_name || conversation?.receiver_name || conversation?.subject || 'Unknown';
                 },
 
                 async init() {
@@ -2437,7 +2450,20 @@
                         const response = await fetch('/api/messages');
                         if (response.ok) {
                             const data = await response.json();
-                            this.conversations = data.sent || [];
+                            const merged = [...(data.received || []), ...(data.sent || [])];
+                            const deduped = [];
+                            const seen = new Set();
+
+                            merged.forEach(conversation => {
+                                if (!conversation || !conversation.id || seen.has(conversation.id)) {
+                                    return;
+                                }
+
+                                seen.add(conversation.id);
+                                deduped.push(conversation);
+                            });
+
+                            this.conversations = deduped;
                             if (this.selectedConversation) {
                                 const refreshedConversation = this.conversations.find(conversation => conversation.id === this.selectedConversation.id);
                                 if (refreshedConversation) {
@@ -2490,6 +2516,7 @@
 
                 openNewMessageModal() {
                     console.log('Opening new message modal');
+                    this.newMessage = { recipient_id: '', subject: '', content: '', send_sms: false };
                     this.showNewMessageModal = true;
                 },
 
@@ -2531,13 +2558,18 @@
                             })
                         });
 
+                        const data = await response.json().catch(() => ({}));
+
                         if (response.ok) {
                             alert('Message sent successfully!');
                             this.showNewMessageModal = false;
                             this.newMessage = { recipient_id: '', subject: '', content: '', send_sms: false };
                             await this.loadConversations();
+                            if (data?.data?.id) {
+                                await this.reloadSelectedConversation(data.data.id);
+                            }
                         } else {
-                            alert('Error sending message. Please try again.');
+                            alert(data?.message || data?.error || 'Error sending message. Please try again.');
                         }
                     } catch (error) {
                         console.error('Error sending message:', error);

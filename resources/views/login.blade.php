@@ -40,7 +40,68 @@
         }
     </style>
 </head>
-<body class="antialiased flex items-center justify-center min-h-screen" x-data="{ languageOpen: false, loginMode: 'email', loginValue: @json(old('email', '')), isRsbsaNumber() { const digits = this.loginValue.replace(/\D+/g, ''); return digits.length === 13; } }">
+<body class="antialiased flex items-center justify-center min-h-screen" x-data="{
+        languageOpen: false,
+        loginMode: 'email',
+        loginValue: @json(old('email', '')),
+        requiresPassword: false,
+        passwordStatus: '',
+        lookupTimer: null,
+        isRsbsaNumber() {
+            const digits = this.loginValue.replace(/\D+/g, '');
+            return digits.length === 13;
+        },
+        async syncPasswordRequirement(force = false) {
+            if (this.loginMode === 'rsbsa' || this.isRsbsaNumber()) {
+                this.requiresPassword = false;
+                this.passwordStatus = '';
+                return;
+            }
+
+            const identifier = this.loginValue.trim();
+            if (!identifier) {
+                this.requiresPassword = false;
+                this.passwordStatus = '';
+                return;
+            }
+
+            if (force) {
+                if (this.lookupTimer) {
+                    clearTimeout(this.lookupTimer);
+                    this.lookupTimer = null;
+                }
+            } else {
+                if (this.lookupTimer) {
+                    clearTimeout(this.lookupTimer);
+                }
+
+                this.lookupTimer = setTimeout(() => this.syncPasswordRequirement(true), 250);
+                return;
+            }
+
+            try {
+                const response = await fetch(`{{ route('api.login.account-type') }}?identifier=${encodeURIComponent(identifier)}&login_mode=${encodeURIComponent(this.loginMode)}`, {
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    this.requiresPassword = false;
+                    this.passwordStatus = '';
+                    return;
+                }
+
+                const data = await response.json();
+                this.requiresPassword = !!data.requires_password;
+                this.passwordStatus = this.requiresPassword ? 'DA Admin account detected. Password required.' : '';
+            } catch (error) {
+                this.requiresPassword = false;
+                this.passwordStatus = '';
+            }
+        }
+    }" x-init="syncPasswordRequirement(true)">
 
     <div class="login-card w-full max-w-sm p-8 bg-white rounded-2xl">
         <div class="text-center">
@@ -66,10 +127,10 @@
 
         <div class="mb-6">
             <div class="grid grid-cols-2 gap-2 rounded-2xl bg-gray-100 p-1">
-                <button type="button" @click="loginMode = 'email'" :class="{ 'is-active': loginMode === 'email' }" :aria-pressed="loginMode === 'email'" class="login-tab">
+                <button type="button" @click="loginMode = 'email'; syncPasswordRequirement(true)" :class="{ 'is-active': loginMode === 'email' }" :aria-pressed="loginMode === 'email'" class="login-tab">
                     Email / Phone
                 </button>
-                <button type="button" @click="loginMode = 'rsbsa'" :class="{ 'is-active': loginMode === 'rsbsa' }" :aria-pressed="loginMode === 'rsbsa'" class="login-tab">
+                <button type="button" @click="loginMode = 'rsbsa'; syncPasswordRequirement(true)" :class="{ 'is-active': loginMode === 'rsbsa' }" :aria-pressed="loginMode === 'rsbsa'" class="login-tab">
                     RSBSA Login
                 </button>
             </div>
@@ -119,18 +180,19 @@
                 <div class="relative">
                           <input id="email" type="text" name="email" required autofocus
                                     class="w-full p-3 pl-10 border border-gray-200 rounded-xl bg-gray-50 focus:ring-green-500 focus:border-green-500 transition duration-150"
-                                        :placeholder="loginMode === 'rsbsa' || isRsbsaNumber() ? '4-11-10-001-00045' : 'farmer@example.com or +639XXXXXXXXX'" value="{{ old('email') }}" x-model="loginValue">
+                                        :placeholder="loginMode === 'rsbsa' || isRsbsaNumber() ? '4-11-10-001-00045' : 'farmer@example.com or +639XXXXXXXXX'" value="{{ old('email') }}" x-model="loginValue" @input.debounce.300ms="syncPasswordRequirement()" @blur="syncPasswordRequirement(true)">
                     <!-- Icon for Username/Email -->
                     <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                 </div>
                 <p class="text-xs text-gray-500 mt-1 pl-1" x-text="loginMode === 'rsbsa' || isRsbsaNumber() ? 'Use your RSBSA number to login without a password.' : 'Farmers can login using email or phone number. For RSBSA login select the RSBSA tab.'"></p>
+                <p class="text-xs text-green-700 mt-1 pl-1" x-show="passwordStatus" x-cloak x-text="passwordStatus"></p>
             </div>
 
             <!-- Password Field -->
-            <div class="mb-6" x-show="loginMode === 'email' && !isRsbsaNumber()" x-cloak>
+            <div class="mb-6" x-show="requiresPassword" x-cloak>
                 <label for="password" class="block text-sm font-medium text-gray-700 mb-2" data-translate data-translate-id="password">Password</label>
                 <div class="relative">
-                    <input id="password" type="password" name="password" :required="loginMode === 'email' && !isRsbsaNumber()" autocomplete="current-password"
+                    <input id="password" type="password" name="password" :required="requiresPassword" autocomplete="current-password"
                            class="w-full p-3 pl-10 pr-12 border border-gray-200 rounded-xl bg-gray-50 focus:ring-green-500 focus:border-green-500 transition duration-150"
                            placeholder="••••••••">
                     <!-- Icon for Password -->

@@ -11,7 +11,7 @@ class AdminLoginPasswordTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_email_login_requires_a_password(): void
+    public function test_email_login_without_password_logs_in_farmer(): void
     {
         $user = User::factory()->create([
             'email' => 'farmer@example.com',
@@ -21,12 +21,12 @@ class AdminLoginPasswordTest extends TestCase
         $this->post('/login', [
             'email' => $user->email,
             'login_mode' => 'email',
-        ])->assertSessionHasErrors('password');
+        ])->assertRedirect(route('dashboard'));
 
-        $this->assertGuest();
+        $this->assertAuthenticatedAs($user);
     }
 
-    public function test_da_officer_login_requires_a_password(): void
+    public function test_admin_login_without_password_uses_the_dashboard(): void
     {
         $officer = User::factory()->create([
             'email' => 'officer-login@example.com',
@@ -36,33 +36,33 @@ class AdminLoginPasswordTest extends TestCase
         $this->post('/login', [
             'email' => $officer->email,
             'login_mode' => 'email',
-        ])->assertSessionHasErrors('password');
+        ])->assertRedirect(route('admin.dashboard'));
 
-        $this->assertGuest();
+        $this->assertAuthenticatedAs($officer);
     }
 
-    public function test_da_officer_email_login_requires_a_password(): void
+    public function test_da_admin_login_requires_a_password(): void
     {
         $officer = User::factory()->create([
             'email' => 'officer@example.com',
             'role' => 'Admin',
+            'admin_type' => 'da_admin',
         ]);
 
         $this->post('/login', [
             'email' => $officer->email,
             'login_mode' => 'email',
-        ])->assertSessionHasErrors([
-            'password' => 'Password is required for DA officer accounts.',
-        ]);
+        ])->assertSessionHasErrors('password');
 
         $this->assertGuest();
     }
 
-    public function test_da_officer_email_login_accepts_a_valid_password(): void
+    public function test_da_admin_email_login_accepts_a_valid_password(): void
     {
         $officer = User::factory()->create([
             'email' => 'officer-valid@example.com',
             'role' => 'Admin',
+            'admin_type' => 'da_admin',
         ]);
 
         $this->post('/login', [

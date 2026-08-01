@@ -65,110 +65,10 @@ Route::get('/login', function () {
     return view('login');
 })->name('login');
 
+Route::get('/api/login/account-type', [AuthController::class, 'resolveLoginType'])->name('api.login.account-type');
+
 // POST handler for unified login (farmers and admin)
-Route::post('/login', function (Request $request) {
-    $loginMode = $request->input('login_mode', 'email');
-    $request->validate([
-        'email' => 'required|string',
-        'login_mode' => 'nullable|in:email,rsbsa',
-        'password' => 'nullable|string',
-    ]);
-    
-    $remember = $request->has('remember');
-    $loginField = trim($request->input('email'));
-    $normalizedLoginField = \App\Models\User::normalizeRsbsaNumber($loginField);
-    $rsbsaLookupValues = \App\Models\User::rsbsaLookupValues($loginField);
-    $loginDigitsOnly = preg_replace('/\D+/', '', $loginField);
-
-    // Determine if login field is email, phone number, or RSBSA number
-    $fieldType = 'email';
-    if (preg_match('/^(\+63|0)?9[0-9]{9}$/', $loginField)) {
-        $fieldType = 'phone_number';
-        // Normalize phone number to +639XXXXXXXXX format
-        $loginField = preg_replace('/^(\+63|0)?/', '+63', $loginField);
-    } elseif (filter_var($loginField, FILTER_VALIDATE_EMAIL)) {
-        $fieldType = 'email';
-    } elseif ($loginDigitsOnly !== '' && strlen($loginDigitsOnly) === 13) {
-        // RSBSA numbers are stored in a canonical hyphenated 13-digit format.
-        $fieldType = 'rsbsa_number';
-        $loginField = $normalizedLoginField;
-    }
-
-    if ($loginMode === 'rsbsa' || $fieldType === 'rsbsa_number') {
-        if ($fieldType !== 'rsbsa_number') {
-            return back()->withErrors(['email' => 'Please enter a valid RSBSA number for RSBSA login.'])->withInput();
-        }
-
-        $user = \App\Models\User::where('role', 'Farmer')
-            ->where(function ($query) use ($rsbsaLookupValues, $loginDigitsOnly) {
-                foreach ($rsbsaLookupValues as $candidate) {
-                    $query->orWhere('rsbsa_number', $candidate);
-                }
-
-                if ($loginDigitsOnly !== '') {
-                    $query->orWhereRaw("REPLACE(REPLACE(rsbsa_number, '-', ''), ' ', '') = ?", [$loginDigitsOnly]);
-                }
-            })
-            ->first();
-        if (!$user) {
-            return back()->withErrors(['email' => 'RSBSA login failed. Please check your RSBSA number.'])->withInput();
-        }
-
-        Auth::login($user, $remember);
-        $request->session()->regenerate();
-    } else {
-        if (!$request->filled('password')) {
-            $daOfficer = $fieldType === 'email'
-                ? \App\Models\User::where('email', $loginField)
-                    ->whereIn('role', ['Admin', 'DA Admin'])
-                    ->exists()
-                : false;
-
-            return back()->withErrors([
-                'password' => $daOfficer
-                    ? 'Password is required for DA officer accounts.'
-                    : 'Password is required for email or phone login.',
-            ])->withInput();
-        }
-
-        $credentials = [
-            $fieldType => $loginField,
-            'password' => $request->input('password'),
-        ];
-
-        if (!Auth::attempt($credentials, $remember)) {
-            return back()->withErrors(['email' => 'Invalid credentials'])->withInput();
-        }
-
-        $request->session()->regenerate();
-    }
-
-    $user = Auth::user();
-
-    // Superadmin starts from normal login, then continues to existing 2FA flow.
-    if ($user->is_superadmin || $user->admin_type === 'superadmin') {
-        Auth::logout();
-        $request->session()->put('superadmin_credentials_verified', true);
-        $request->session()->put('superadmin_user_id', $user->id);
-
-        if (!$user->google2fa_enabled || !$user->google2fa_secret) {
-            $request->session()->put('superadmin_needs_2fa_setup', true);
-            return redirect()->route('superadmin.2fa.setup');
-        }
-
-        return redirect()->route('superadmin.login');
-    }
-    
-    // Update last login timestamp
-    $user->update(['last_login' => now()]);
-    
-    // Redirect based on user role
-    if ($user->is_superadmin || $user->role === 'Admin' || $user->role === 'DA Admin') {
-        return redirect()->route('admin.dashboard');
-    } else {
-        return redirect()->route('dashboard');
-    }
-})->name('login.attempt');
+Route::post('/login', [AuthController::class, 'login'])->name('login.attempt');
 
 // Email Verification Routes
 Route::get('/email/verify', function () {
@@ -4936,37 +4836,53 @@ Route::post('/api/market-prices', function (Request $request) {
 })->middleware('auth')->name('api.market-prices.store');
 
 Route::put('/api/market-prices/{id}', function (Request $request, $id) {
-    $user = Auth::user();
-    if (!$user || ($user->role !== 'Admin' && $user->role !== 'DA Admin' && !$user->is_superadmin)) {
-        return response()->json(['error' => 'Unauthorized'], 401);
+    try {
+        $user = Auth::user();
+        if (!$user || ($user->role !== 'Admin' && $user->role !== 'DA Admin' && !$user->is_superadmin)) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $price = \App\Models\MarketPrice::find($id);
+        if (!$price) {
+            return response()->json(['error' => 'Market price not found'], 404);
+        }
+
+        $validated = $request->validate([
+            'price_per_kg' => 'required|numeric|min:0',
+            'price_date' => 'required|date_format:Y-m-d',
+            'demand_level' => 'nullable|in:low,moderate,high,very_high',
+            'market_location' => 'nullable|string|max:255',
+        ]);
+
+        $oldPrice = $price->price_per_kg;
+        $priceTrend = 'stable';
+
+        if ($validated['price_per_kg'] > $oldPrice) {
+            $priceTrend = 'up';
+        } elseif ($validated['price_per_kg'] < $oldPrice) {
+            $priceTrend = 'down';
+        }
+
+        $price->update([
+            'price_per_kg' => $validated['price_per_kg'],
+            'previous_price' => $oldPrice,
+            'price_trend' => $priceTrend,
+            'demand_level' => $validated['demand_level'] ?? $price->demand_level ?? 'moderate',
+            'market_location' => $validated['market_location'] ?? $price->market_location,
+            'price_date' => $validated['price_date'],
+        ]);
+
+        return response()->json($price->fresh());
+    } catch (\Throwable $e) {
+        safe_log('error', 'Failed to update market price', [
+            'id' => $id,
+            'error' => $e->getMessage(),
+        ]);
+
+        return response()->json([
+            'error' => 'Failed to update market price. Please try again.'
+        ], 500);
     }
-    
-    $price = \App\Models\MarketPrice::findOrFail($id);
-    
-    $validated = $request->validate([
-        'price_per_kg' => 'required|numeric|min:0',
-        'price_date' => 'required|date',
-    ]);
-    
-    // Store old price before updating
-    $oldPrice = $price->price_per_kg;
-    
-    // Calculate trend based on price change
-    $priceTrend = $validated['price_trend'] ?? 'stable';
-    if ($validated['price_per_kg'] > $oldPrice) {
-        $priceTrend = 'up';
-    } elseif ($validated['price_per_kg'] < $oldPrice) {
-        $priceTrend = 'down';
-    }
-    
-    $price->update([
-        'price_per_kg' => $validated['price_per_kg'],
-        'previous_price' => $oldPrice,
-        'price_trend' => $priceTrend,
-        'price_date' => $validated['price_date'],
-    ]);
-    
-    return response()->json($price);
 })->middleware('auth')->name('api.market-prices.update');
 
 // Announcements API

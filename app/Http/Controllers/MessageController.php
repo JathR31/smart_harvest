@@ -214,7 +214,11 @@ class MessageController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Message sent to all DA officers!',
-                'count' => count($messages)
+                            'count' => count($messages),
+                            'data' => $this->formatMessageSummary($messages[0], $user),
+                            'messages' => array_map(function (Message $message) use ($user) {
+                                return $this->formatMessageSummary($message, $user);
+                            }, $messages)
             ], 201);
         }
         
@@ -245,8 +249,33 @@ class MessageController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Message sent successfully!',
-            'data' => $message
+            'data' => $this->formatMessageSummary($message, $user)
         ], 201);
+    }
+
+    protected function formatMessageSummary(Message $message, User $user): array
+    {
+        $message->loadMissing(['sender:id,name,phone_number', 'receiver:id,name,phone_number']);
+
+        return [
+            'id' => $message->id,
+            'conversation_id' => $message->conversation_id,
+            'sender_id' => $message->sender_id,
+            'sender_name' => $message->sender->name ?? 'Unknown',
+            'sender_phone' => $message->sender->phone_number ?? null,
+            'receiver_id' => $message->receiver_id,
+            'receiver_name' => $message->receiver->name ?? 'Unknown',
+            'receiver_phone' => $message->receiver->phone_number ?? null,
+            'subject' => $message->subject,
+            'content' => $message->content,
+            'priority' => $message->priority,
+            'is_read' => $message->is_read,
+            'sent_as_sms' => $message->sent_as_sms,
+            'sms_status' => $message->sms_status,
+            'created_at' => $message->created_at->diffForHumans(),
+            'created_at_full' => $message->created_at->format('M d, Y h:i A'),
+            'is_mine' => $message->sender_id === $user->id,
+        ];
     }
 
     /**
