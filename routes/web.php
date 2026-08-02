@@ -4797,7 +4797,7 @@ Route::get('/api/market-prices', function () {
 
 Route::post('/api/market-prices', function (Request $request) {
     $user = Auth::user();
-    if (!$user || ($user->role !== 'Admin' && $user->role !== 'DA Admin' && !$user->is_superadmin)) {
+    if (!$user || !in_array($user->role, ['Admin', 'DA Admin', 'DA Officer'], true) && !$user->is_superadmin) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
     
@@ -4838,7 +4838,7 @@ Route::post('/api/market-prices', function (Request $request) {
 Route::put('/api/market-prices/{id}', function (Request $request, $id) {
     try {
         $user = Auth::user();
-        if (!$user || ($user->role !== 'Admin' && $user->role !== 'DA Admin' && !$user->is_superadmin)) {
+        if (!$user || !in_array($user->role, ['Admin', 'DA Admin', 'DA Officer'], true) && !$user->is_superadmin) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 

@@ -116,7 +116,9 @@ class MarketPrice extends Model
     public static function getLatestPrices()
     {
         return self::active()
-            ->select('crop_name', 'variety', 'price_per_kg', 'previous_price', 'price_trend', 'demand_level', 'price_date', 'market_location')
+            // The management UI updates an existing record by ID, so the list
+            // endpoint must include it rather than returning display-only data.
+            ->select('id', 'crop_name', 'variety', 'price_per_kg', 'previous_price', 'price_trend', 'demand_level', 'price_date', 'market_location')
             ->whereIn('id', function ($query) {
                 $query->selectRaw('MAX(id)')
                     ->from('market_prices')
