@@ -74,7 +74,7 @@
     <style>
         /* Custom style to overlay the background image with a slight dark filter */
         .hero-background {
-            background-image: url('{{ asset('images/homepagebg.jpg') }}'); /* Placeholder for your image */
+            background-image: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjNqnOKK1BzBLPu217JJwN2Ixer_X34OXBHHqhCRrkdlgwpXO2ERQMzRbsFHWCXxvuv7dfgw9GrMGAKFnC7jrSJQXTHPi4OImzTyioEDJcZnKk_mWIaWlikqj_4ohmLq7uRG74-Mlp5Uo8/s1600/image009.jpg');
             background-size: cover;
             background-position: center;
         }
