@@ -1048,7 +1048,7 @@
             <!-- End Announcements Section -->
 
             <!-- INBOX SECTION - Modern Messaging App -->
-            <div x-cloak x-show="showSection === 'inbox'" class="space-y-6">
+            <div x-cloak x-show="showSection === 'inbox'" x-data="inboxMessenger()" x-init="init()" class="space-y-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-800" data-translate data-translate-id="inbox-title">Inbox</h2>
@@ -1056,7 +1056,7 @@
                     </div>
                 </div>
 
-                <div x-data="inboxMessenger()" @init="init()" class="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col md:flex-row" style="height: 700px;">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col md:flex-row" style="height: 700px;">
                     <!-- Left Panel: Conversations List -->
                     <div class="w-full md:w-1/3 md:border-r border-b md:border-b-0 border-gray-200 flex flex-col bg-gray-50 max-h-72 md:max-h-none">
                         <!-- Header -->
