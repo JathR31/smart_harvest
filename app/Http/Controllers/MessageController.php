@@ -182,9 +182,9 @@ class MessageController extends Controller
         
         // Handle "DA" (all officers) special case
         if ($receiverId === 'DA') {
-            // Get all officers (Admin, DA Admin, and Superadmins)
+            // Get all officer accounts, including legacy DA Officer roles.
             $officers = User::where(function ($query) {
-                $query->whereIn('role', ['Admin', 'DA Admin'])
+                $query->whereIn('role', ['Admin', 'DA Admin', 'DA Officer'])
                       ->orWhere('is_superadmin', true);
             })->pluck('id')->toArray();
             
@@ -405,13 +405,13 @@ class MessageController extends Controller
 
     /**
      * Get list of DA officers (for farmers to send messages to)
-     * Includes all Admin, DA Admin, and Superadmin users
+     * Includes all Admin, DA Admin, DA Officer, and Superadmin users.
      */
     public function getOfficers()
     {
-        // Get all admin/DA admin users - the complete list
+        // Get all officer accounts, including the legacy DA Officer role.
         $officers = User::where(function ($query) {
-                $query->whereIn('role', ['Admin', 'DA Admin'])
+                $query->whereIn('role', ['Admin', 'DA Admin', 'DA Officer'])
                       ->orWhere('is_superadmin', true);
             })
             ->select('id', 'name', 'email', 'phone_number', 'municipality', 'role')

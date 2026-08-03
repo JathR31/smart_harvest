@@ -17,6 +17,16 @@ class InboxMessagingTest extends TestCase
         // itself is role-agnostic, so DA Admin accounts use this same flow.
         $admin = User::factory()->create(['role' => 'Admin']);
 
+        $this->actingAs($farmer)
+            ->getJson('/api/officers')
+            ->assertOk()
+            ->assertJsonFragment(['id' => $admin->id]);
+
+        $this->actingAs($admin)
+            ->getJson('/api/farmers')
+            ->assertOk()
+            ->assertJsonFragment(['id' => $farmer->id]);
+
         $created = $this->actingAs($farmer)
             ->postJson('/api/messages', [
                 'receiver_id' => (string) $admin->id,
