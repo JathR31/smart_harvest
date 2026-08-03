@@ -49,7 +49,8 @@ class MessageController extends Controller
                         'sender_name' => $msg->replies->last()->sender->name ?? 'Unknown',
                         'created_at' => $msg->replies->last()->created_at->diffForHumans(),
                     ] : null,
-                    'created_at' => $msg->created_at->diffForHumans(),
+                    'created_at' => $msg->created_at->toIso8601String(),
+                    'created_at_human' => $msg->created_at->diffForHumans(),
                     'created_at_full' => $msg->created_at->format('M d, Y h:i A'),
                 ];
             });
@@ -77,7 +78,8 @@ class MessageController extends Controller
                         'receiver_name' => $msg->replies->last()->receiver->name ?? 'Unknown',
                         'created_at' => $msg->replies->last()->created_at->diffForHumans(),
                     ] : null,
-                    'created_at' => $msg->created_at->diffForHumans(),
+                    'created_at' => $msg->created_at->toIso8601String(),
+                    'created_at_human' => $msg->created_at->diffForHumans(),
                     'created_at_full' => $msg->created_at->format('M d, Y h:i A'),
                 ];
             });
@@ -126,15 +128,17 @@ class MessageController extends Controller
                     'sent_as_sms' => $msg->sent_as_sms,
                     'sms_status' => $msg->sms_status,
                     'is_mine' => $msg->sender_id === $user->id,
-                    'created_at' => $msg->created_at->diffForHumans(),
+                    'created_at' => $msg->created_at->toIso8601String(),
+                    'created_at_human' => $msg->created_at->diffForHumans(),
                     'created_at_full' => $msg->created_at->format('M d, Y h:i A'),
                 ];
             });
         
-        // Mark as read if user is the receiver
-        if ($message->receiver_id === $user->id && !$message->is_read) {
-            $message->markAsRead();
-        }
+        // Opening a conversation reads every message addressed to this user.
+        Message::where('conversation_id', $rootMessage->conversation_id)
+            ->where('receiver_id', $user->id)
+            ->where('is_read', false)
+            ->update(['is_read' => true, 'read_at' => now()]);
         
         return response()->json([
             'success' => true,
@@ -272,7 +276,8 @@ class MessageController extends Controller
             'is_read' => $message->is_read,
             'sent_as_sms' => $message->sent_as_sms,
             'sms_status' => $message->sms_status,
-            'created_at' => $message->created_at->diffForHumans(),
+            'created_at' => $message->created_at->toIso8601String(),
+            'created_at_human' => $message->created_at->diffForHumans(),
             'created_at_full' => $message->created_at->format('M d, Y h:i A'),
             'is_mine' => $message->sender_id === $user->id,
         ];

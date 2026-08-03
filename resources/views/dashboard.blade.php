@@ -2085,12 +2085,7 @@
                     this.selectedConversation = conversation;
                     this.replyContent = '';
                     this.sendSMS = false;
-                    this.$nextTick(() => {
-                        const container = this.$refs.messagesContainer;
-                        if (container) {
-                            container.scrollTop = container.scrollHeight;
-                        }
-                    });
+                    this.reloadSelectedConversation(conversation.id);
                 },
 
                 filterConversations() {
