@@ -26,6 +26,7 @@ class MessageController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
+        $conversations = $this->conversationSummaries($user);
         
         // Get received messages (threads only - no replies)
         $received = Message::with(['sender:id,name,phone_number', 'replies.sender:id,name'])
@@ -86,6 +87,7 @@ class MessageController extends Controller
         
         return response()->json([
             'success' => true,
+            'conversations' => $conversations,
             'received' => $received,
             'sent' => $sent,
             'unread_count' => Message::inbox($user->id)->unread()->count()
@@ -110,6 +112,12 @@ class MessageController extends Controller
         // Get the root message of the conversation
         $rootMessage = $message->parent_id ? $message->parent : $message;
         
+        // Opening a conversation reads every message addressed to this user.
+        Message::where('conversation_id', $rootMessage->conversation_id)
+            ->where('receiver_id', $user->id)
+            ->where('is_read', false)
+            ->update(['is_read' => true, 'read_at' => now()]);
+
         // Get all messages in this conversation
         $conversationMessages = Message::with(['sender:id,name', 'receiver:id,name'])
             ->where('conversation_id', $rootMessage->conversation_id)
@@ -134,11 +142,9 @@ class MessageController extends Controller
                 ];
             });
         
-        // Opening a conversation reads every message addressed to this user.
-        Message::where('conversation_id', $rootMessage->conversation_id)
-            ->where('receiver_id', $user->id)
-            ->where('is_read', false)
-            ->update(['is_read' => true, 'read_at' => now()]);
+        $participant = $rootMessage->sender_id === $user->id
+            ? $rootMessage->receiver
+            : $rootMessage->sender;
         
         return response()->json([
             'success' => true,
@@ -148,6 +154,9 @@ class MessageController extends Controller
                 'subject' => $rootMessage->subject,
                 'sender_name' => $rootMessage->sender->name ?? 'Unknown',
                 'receiver_name' => $rootMessage->receiver->name ?? 'Unknown',
+                'participant_name' => $participant->name ?? 'DA Admin / Regional Support',
+                'participant_role' => $participant->role ?? 'DA Admin',
+                'participant_rsbsa' => $participant->rsbsa_number ?? null,
                 'created_at' => $rootMessage->created_at->format('M d, Y h:i A'),
             ],
             'conversation' => $conversationMessages
@@ -250,10 +259,17 @@ class MessageController extends Controller
             ], 422);
         }
         
+        // Farmer follow-ups remain in one support thread with the DA Admin.
+        $supportThread = $isFarmer
+            ? $this->findSupportThread($user->id, (int) $receiverId)
+            : null;
+
         // Create the message
         $message = Message::create([
             'sender_id' => $user->id,
             'receiver_id' => $receiverId,
+            'parent_id' => $supportThread?->id,
+            'conversation_id' => $supportThread?->conversation_id,
             'subject' => $data['subject'],
             'content' => $data['content'],
             'priority' => $data['priority'] ?? 'normal',
@@ -298,6 +314,67 @@ class MessageController extends Controller
             'created_at_full' => $message->created_at->format('M d, Y h:i A'),
             'is_mine' => $message->sender_id === $user->id,
         ];
+    }
+
+    /**
+     * Return one rich summary for each chat thread visible to the current user.
+     */
+    private function conversationSummaries(User $user)
+    {
+        return Message::with([
+                'sender:id,name,role,rsbsa_number',
+                'receiver:id,name,role,rsbsa_number',
+                'replies.sender:id,name,role,rsbsa_number',
+                'replies.receiver:id,name,role,rsbsa_number',
+            ])
+            ->threads()
+            ->where(function ($query) use ($user) {
+                $query->where('sender_id', $user->id)
+                    ->orWhere('receiver_id', $user->id);
+            })
+            ->get()
+            ->map(function (Message $root) use ($user) {
+                $messages = collect([$root])->merge($root->replies)->sortBy('created_at')->values();
+                $latest = $messages->last();
+                $participant = $root->sender_id === $user->id ? $root->receiver : $root->sender;
+                $unreadCount = $messages
+                    ->where('receiver_id', $user->id)
+                    ->where('is_read', false)
+                    ->count();
+
+                return [
+                    'id' => $root->id,
+                    'conversation_id' => $root->conversation_id,
+                    'participant_id' => $participant->id ?? null,
+                    'participant_name' => $participant->name ?? 'DA Admin / Regional Support',
+                    'participant_role' => $participant->role ?? 'DA Admin',
+                    'participant_rsbsa' => $participant->rsbsa_number ?? null,
+                    'subject' => $root->subject,
+                    'content' => $latest->content,
+                    'latest_content' => $latest->content,
+                    'last_message_at' => $latest->created_at->toIso8601String(),
+                    'created_at' => $root->created_at->toIso8601String(),
+                    'unread_count' => $unreadCount,
+                    'is_read' => $unreadCount === 0,
+                ];
+            })
+            ->sortByDesc('last_message_at')
+            ->values();
+    }
+
+    /** Find the latest direct support thread between a farmer and the DA Admin. */
+    private function findSupportThread(int $farmerId, int $adminId): ?Message
+    {
+        return Message::threads()
+            ->where(function ($query) use ($farmerId, $adminId) {
+                $query->where(function ($pair) use ($farmerId, $adminId) {
+                    $pair->where('sender_id', $farmerId)->where('receiver_id', $adminId);
+                })->orWhere(function ($pair) use ($farmerId, $adminId) {
+                    $pair->where('sender_id', $adminId)->where('receiver_id', $farmerId);
+                });
+            })
+            ->latest('created_at')
+            ->first();
     }
 
     /**

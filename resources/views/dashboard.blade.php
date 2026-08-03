@@ -1085,13 +1085,15 @@
                             <template x-for="conv in filteredConversations" :key="conv.id">
                                 <div @click="selectConversation(conv)" :class="selectedConversation?.id === conv.id ? 'bg-green-50 border-l-4 border-green-600' : 'hover:bg-gray-100'" class="p-3 cursor-pointer border-b border-gray-100 transition">
                                     <div class="flex items-start gap-3">
-                                        <div :class="!conv.is_read ? 'bg-green-500' : 'bg-gray-400'" class="w-2 h-2 rounded-full flex-shrink-0 mt-2"></div>
-                                        <div class="flex-1 min-w-0">
-                                            <p class="font-semibold text-gray-800 text-sm" x-text="getConversationTitle(conv)"></p>
-                                            <p class="text-xs text-gray-600 truncate mt-0.5" x-text="conv.content"></p>
+                                            <div :class="conv.unread_count ? 'bg-green-500' : 'bg-gray-400'" class="w-2 h-2 rounded-full flex-shrink-0 mt-2"></div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="font-semibold text-gray-800 text-sm" x-text="getConversationTitle(conv)"></p>
+                                                <p class="text-xs text-gray-600 truncate mt-0.5" x-text="conv.latest_content || conv.content"></p>
+                                                <p class="text-xs text-gray-400 truncate" x-show="conv.participant_rsbsa" x-text="'RSBSA: ' + conv.participant_rsbsa"></p>
+                                            </div>
+                                            <span x-show="conv.unread_count" class="min-w-5 h-5 px-1 rounded-full bg-green-600 text-white text-xs flex items-center justify-center" x-text="conv.unread_count"></span>
                                         </div>
-                                    </div>
-                                    <p class="text-xs text-gray-400 mt-2" x-text="formatDate(conv.created_at)"></p>
+                                    <p class="text-xs text-gray-400 mt-2" x-text="formatDate(conv.last_message_at || conv.created_at)"></p>
                                 </div>
                             </template>
                         </div>
@@ -1102,8 +1104,8 @@
                         <template x-if="selectedConversation">
                             <!-- Chat Header -->
                             <div class="border-b border-gray-200 p-4 bg-gradient-to-r from-green-50 to-blue-50">
-                                <p class="font-semibold text-gray-800" x-text="getConversationTitle(selectedConversation)"></p>
-                                <p class="text-xs text-gray-500 mt-1" x-text="'Last message: ' + formatDate(selectedConversation.created_at)"></p>
+                                    <p class="font-semibold text-gray-800" x-text="getConversationTitle(selectedConversation)"></p>
+                                    <p class="text-xs text-gray-500 mt-1" x-text="(selectedConversation.participant_role || 'DA Admin / Regional Support') + ' · Active support conversation'"></p>
                             </div>
 
                             <!-- Quick Reply Templates -->
@@ -1133,7 +1135,7 @@
                             <!-- Message Input -->
                             <div class="border-t border-gray-200 p-4 bg-white">
                                 <div class="flex gap-2">
-                                    <textarea x-model="replyContent" @keydown.enter.ctrl="sendMessage()" placeholder="Type a message... (Ctrl+Enter to send)" rows="2" class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"></textarea>
+                                        <textarea x-model="replyContent" @keydown.enter.prevent="sendMessage()" placeholder="Type a message... (Press Enter to send)" rows="2" class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"></textarea>
                                     <button @click="sendMessage()" :disabled="!replyContent.trim() || sending" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-60 transition font-semibold flex items-center gap-2">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
@@ -1968,7 +1970,7 @@
                 },
 
                 getConversationTitle(conversation) {
-                    return conversation?.sender_name || conversation?.receiver_name || conversation?.subject || 'Unknown';
+                    return conversation?.participant_name || conversation?.sender_name || conversation?.receiver_name || conversation?.subject || 'DA Admin / Regional Support';
                 },
 
                 async init() {
@@ -1981,7 +1983,7 @@
                         clearInterval(this.refreshTimer);
                     }
 
-                    this.refreshTimer = setInterval(() => this.refreshConversations(), 10000);
+                    this.refreshTimer = setInterval(() => this.refreshConversations(), 5000);
                 },
 
                 async refreshConversations() {
@@ -1999,7 +2001,7 @@
                         const response = await fetch('/api/messages');
                         if (response.ok) {
                             const data = await response.json();
-                            const merged = [...(data.received || []), ...(data.sent || [])];
+                            const merged = data.conversations || [...(data.received || []), ...(data.sent || [])];
                             const deduped = [];
                             const seen = new Set();
 
@@ -2058,11 +2060,12 @@
                     this.showNewMessageModal = true;
                 },
 
-                selectConversation(conversation) {
+                async selectConversation(conversation) {
                     this.selectedConversation = conversation;
                     this.replyContent = '';
                     this.sendSMS = false;
-                    this.reloadSelectedConversation(conversation.id);
+                    await this.reloadSelectedConversation(conversation.id);
+                    await this.loadConversations();
                 },
 
                 filterConversations() {
@@ -2130,6 +2133,7 @@
                         });
 
                         if (response.ok) {
+                            await response.json();
                             // Add message to local state immediately
                             if (!this.selectedConversation.messages) {
                                 this.selectedConversation.messages = [];
@@ -2155,6 +2159,7 @@
 
                             // Reload conversations
                             await this.loadConversations();
+                            await this.reloadSelectedConversation(this.selectedConversation.id);
                         } else {
                             alert('Error sending message. Please try again.');
                         }

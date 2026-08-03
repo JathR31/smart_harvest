@@ -47,6 +47,7 @@ class InboxMessagingTest extends TestCase
             ->assertJsonPath('data.sent_as_sms', true);
 
         $messageId = $created->json('data.id');
+        $conversationId = $created->json('data.conversation_id');
 
         $this->actingAs($admin)
             ->getJson('/api/messages')
@@ -76,7 +77,22 @@ class InboxMessagingTest extends TestCase
             ->assertJsonCount(2, 'conversation')
             ->assertJsonPath('conversation.1.content', 'You can harvest next week.');
 
-        $this->assertSame(1, $sms->sentCount);
+        $this->actingAs($farmer)
+            ->postJson('/api/messages', [
+                'subject' => 'Crop question',
+                'content' => 'Thank you for the guidance.',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.conversation_id', $conversationId);
+
+        $this->actingAs($admin)
+            ->getJson('/api/messages')
+            ->assertOk()
+            ->assertJsonCount(1, 'conversations')
+            ->assertJsonPath('conversations.0.latest_content', 'Thank you for the guidance.')
+            ->assertJsonPath('conversations.0.unread_count', 1);
+
+        $this->assertSame(2, $sms->sentCount);
     }
 
     public function test_farmer_message_is_saved_when_sms_notification_fails(): void
