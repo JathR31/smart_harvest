@@ -160,9 +160,12 @@ class MessageController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
+        $isFarmer = $user->role === 'Farmer';
         
         $validator = Validator::make($request->all(), [
-            'receiver_id' => 'required|string',
+            // Farmers always write to the administrative inbox, so they never
+            // need to know or select an individual officer account.
+            'receiver_id' => $isFarmer ? 'nullable|string' : 'required|string',
             'subject' => 'required|string|max:255',
             'content' => 'required|string',
             'priority' => 'in:low,normal,high,urgent',
@@ -177,8 +180,21 @@ class MessageController extends Controller
         }
         
         $data = $validator->validated();
-        $sendSMS = $data['send_sms'] ?? false;
-        $receiverId = $data['receiver_id'];
+        $sendSMS = $isFarmer || ($data['send_sms'] ?? false);
+        $receiverId = $data['receiver_id'] ?? null;
+
+        if ($isFarmer) {
+            $daAdmin = $this->resolveAdministrativeRecipient();
+
+            if (!$daAdmin) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['receiver_id' => ['No DA Admin account is available to receive messages.']]
+                ], 422);
+            }
+
+            $receiverId = (string) $daAdmin->id;
+        }
         
         // Handle "DA" (all officers) special case
         if ($receiverId === 'DA') {
@@ -245,7 +261,8 @@ class MessageController extends Controller
             'sms_status' => $sendSMS ? 'pending' : 'not_sent',
         ]);
         
-        // Send SMS if requested
+        // Farmer messages always notify the DA Admin by SMS. SMS failures are
+        // recorded on the message and never undo the saved web-inbox message.
         if ($sendSMS) {
             $this->sendMessageAsSMS($message);
         }
@@ -310,7 +327,7 @@ class MessageController extends Controller
         }
         
         $data = $validator->validated();
-        $sendSMS = $data['send_sms'] ?? false;
+        $sendSMS = $user->role === 'Farmer' || ($data['send_sms'] ?? false);
         
         // Determine the receiver (reply goes to the other person in the conversation)
         $receiverId = ($parentMessage->sender_id === $user->id) 
@@ -422,6 +439,24 @@ class MessageController extends Controller
     }
 
     /**
+     * Choose the administrative inbox recipient for farmer-initiated messages.
+     * DA Admin is preferred, followed by legacy administrative roles.
+     */
+    private function resolveAdministrativeRecipient(): ?User
+    {
+        return User::where(function ($query) {
+                $query->whereIn('role', ['DA Admin', 'Admin', 'DA Officer'])
+                    ->orWhere('admin_type', 'da_admin')
+                    ->orWhere('is_superadmin', true);
+            })
+            ->orderByRaw(
+                "CASE WHEN role = 'DA Admin' OR admin_type = 'da_admin' THEN 0 WHEN role = 'Admin' THEN 1 WHEN role = 'DA Officer' THEN 2 ELSE 3 END"
+            )
+            ->orderBy('id')
+            ->first();
+    }
+
+    /**
      * Send a message via SMS
      */
     private function sendMessageAsSMS($message)
@@ -457,7 +492,7 @@ class MessageController extends Controller
             );
             
             // Update message status
-            if ($result['success']) {
+            if ($result['success'] ?? false) {
                 $message->update([
                     'sms_status' => 'sent'
                 ]);
@@ -477,7 +512,7 @@ class MessageController extends Controller
                     'error' => $result['message'] ?? 'Unknown error'
                 ]);
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $message->update([
                 'sms_status' => 'failed',
                 'sms_error' => $e->getMessage()

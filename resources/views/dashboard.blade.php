@@ -1177,14 +1177,9 @@
                         </div>
 
                         <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">To (Officer)</label>
-                                <select x-model="newMessage.recipient_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" required>
-                                    <option value="">Select an officer...</option>
-                                    <template x-for="officer in officers" :key="officer.id">
-                                        <option :value="officer.id" x-text="officer.name"></option>
-                                    </template>
-                                </select>
+                            <div class="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+                                <span class="font-semibold">To: DA Admin</span>
+                                <p class="mt-1 text-xs text-green-700">Your message is sent to the DA Admin inbox and an SMS notification is dispatched automatically.</p>
                             </div>
 
                             <div>
@@ -1197,14 +1192,9 @@
                                 <textarea x-model="newMessage.content" placeholder="Type your message..." rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none" required></textarea>
                             </div>
 
-                            <label class="flex items-center gap-2 text-sm text-gray-600">
-                                <input type="checkbox" x-model="newMessage.send_sms" class="w-4 h-4 text-green-600 rounded">
-                                <span>Also send as SMS</span>
-                            </label>
-
                             <div class="flex gap-3 pt-2">
                                 <button type="button" @click="showNewMessageModal = false" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
-                                <button type="button" @click="sendNewMessage()" :disabled="!newMessage.recipient_id || !newMessage.subject || !newMessage.content || sending" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed transition">
+                                <button type="button" @click="sendNewMessage()" :disabled="!newMessage.subject || !newMessage.content || sending" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed transition">
                                     <span x-show="!sending">Send Message</span>
                                     <span x-show="sending">Sending...</span>
                                 </button>
@@ -1956,10 +1946,9 @@
                 refreshTimer: null,
                 showNewMessageModal: false,
                 newMessage: {
-                    recipient_id: '',
                     subject: '',
                     content: '',
-                    send_sms: false
+                    send_sms: true
                 },
                 quickReplyTemplates: [
                     'Thank you for the update',
@@ -1984,7 +1973,6 @@
 
                 async init() {
                     await this.loadConversations();
-                    await this.loadOfficers();
                     this.startRealtimeSync();
                 },
 
@@ -2064,20 +2052,9 @@
                     }
                 },
 
-                async loadOfficers() {
-                    try {
-                        const response = await fetch('/api/officers');
-                        if (response.ok) {
-                            this.officers = await response.json();
-                        }
-                    } catch (error) {
-                        console.error('Error loading officers:', error);
-                    }
-                },
-
                 openNewMessageModal() {
                     console.log('Opening new message modal');
-                    this.newMessage = { recipient_id: '', subject: '', content: '', send_sms: false };
+                    this.newMessage = { subject: '', content: '', send_sms: true };
                     this.showNewMessageModal = true;
                 },
 
@@ -2093,8 +2070,8 @@
                 },
 
                 async sendNewMessage() {
-                    if (!this.newMessage.recipient_id || !this.newMessage.subject || !this.newMessage.content) {
-                        alert('Please fill in all fields');
+                    if (!this.newMessage.subject || !this.newMessage.content) {
+                        alert('Please enter a subject and message.');
                         return;
                     }
 
@@ -2107,10 +2084,9 @@
                                 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || ''
                             },
                             body: JSON.stringify({
-                                receiver_id: this.newMessage.recipient_id,
                                 subject: this.newMessage.subject,
                                 content: this.newMessage.content,
-                                send_sms: this.newMessage.send_sms
+                                send_sms: true
                             })
                         });
 
@@ -2119,13 +2095,14 @@
                         if (response.ok) {
                             alert('Message sent successfully!');
                             this.showNewMessageModal = false;
-                            this.newMessage = { recipient_id: '', subject: '', content: '', send_sms: false };
+                            this.newMessage = { subject: '', content: '', send_sms: true };
                             await this.loadConversations();
                             if (data?.data?.id) {
                                 await this.reloadSelectedConversation(data.data.id);
                             }
                         } else {
-                            alert(data?.message || data?.error || 'Error sending message. Please try again.');
+                            const validationErrors = Object.values(data?.errors || {}).flat().join(' ');
+                            alert(data?.message || data?.error || validationErrors || 'Error sending message. Please try again.');
                         }
                     } catch (error) {
                         console.error('Error sending message:', error);
