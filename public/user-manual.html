@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartHarvest User Manual</title>
+<style>
+    :root {
+        --green-dark: #065f46;
+        --green: #047857;
+        --green-light: #059669;
+        --green-bg: #ecfdf5;
+        --green-border: #a7f3d0;
+        --text: #1f2937;
+        --text-light: #6b7280;
+        --bg: #f9fafb;
+        --white: #ffffff;
+        --red: #dc2626;
+        --orange: #d97706;
+        --blue: #2563eb;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        background: var(--bg);
+        line-height: 1.6;
+    }
+    a { color: var(--green); }
+
+    /* Header */
+    .top-header {
+        background: linear-gradient(135deg, var(--green-dark) 0%, var(--green) 100%);
+        color: white;
+        padding: 1.5rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    .top-header h1 { margin: 0; font-size: 1.5rem; display: flex; align-items: center; gap: 0.6rem; }
+    .top-header p { margin: 0.25rem 0 0; opacity: 0.9; font-size: 0.9rem; }
+    .role-switch {
+        display: flex;
+        background: rgba(255,255,255,0.15);
+        border-radius: 999px;
+        padding: 4px;
+        gap: 4px;
+    }
+    .role-switch button {
+        border: none;
+        background: transparent;
+        color: white;
+        padding: 0.6rem 1.25rem;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .role-switch button.active {
+        background: white;
+        color: var(--green-dark);
+    }
+
+    /* Layout */
+    .layout {
+        display: flex;
+        max-width: 1200px;
+        margin: 0 auto;
+        align-items: flex-start;
+    }
+    nav.toc {
+        position: sticky;
+        top: 0;
+        width: 260px;
+        flex-shrink: 0;
+        max-height: 100vh;
+        overflow-y: auto;
+        padding: 1.5rem 1rem;
+        border-right: 1px solid #e5e7eb;
+    }
+    nav.toc h2 {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-light);
+        margin: 1.25rem 0 0.5rem;
+    }
+    nav.toc h2:first-child { margin-top: 0; }
+    nav.toc a {
+        display: block;
+        padding: 0.4rem 0.6rem;
+        border-radius: 6px;
+        color: var(--text);
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+    nav.toc a:hover { background: var(--green-bg); }
+
+    main {
+        flex: 1;
+        min-width: 0;
+        padding: 2rem 2.5rem 6rem;
+    }
+    section.guide-section {
+        margin-bottom: 3rem;
+        scroll-margin-top: 1rem;
+    }
+    section.guide-section h2 {
+        color: var(--green-dark);
+        border-bottom: 3px solid var(--green-border);
+        padding-bottom: 0.5rem;
+        font-size: 1.4rem;
+    }
+    section.guide-section h3 {
+        color: var(--green);
+        margin-top: 1.75rem;
+        font-size: 1.1rem;
+    }
+    .badge {
+        display: inline-block;
+        background: var(--green-bg);
+        color: var(--green-dark);
+        border: 1px solid var(--green-border);
+        border-radius: 999px;
+        padding: 0.15rem 0.7rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+        vertical-align: middle;
+    }
+    .path {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 0.1rem 0.5rem;
+        font-size: 0.85rem;
+    }
+    .steps {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 1.25rem 1.5rem;
+        margin: 1rem 0;
+    }
+    .steps ol { margin: 0; padding-left: 1.2rem; }
+    .steps li { margin-bottom: 0.6rem; }
+    .steps li:last-child { margin-bottom: 0; }
+    table.field-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0;
+        font-size: 0.9rem;
+        background: white;
+    }
+    table.field-table th, table.field-table td {
+        text-align: left;
+        padding: 0.6rem 0.8rem;
+        border: 1px solid #e5e7eb;
+    }
+    table.field-table th {
+        background: var(--green-bg);
+        color: var(--green-dark);
+        font-weight: 600;
+    }
+    .callout {
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        margin: 1.25rem 0;
+        border-left: 4px solid;
+        font-size: 0.92rem;
+    }
+    .callout.tip { background: var(--green-bg); border-color: var(--green); }
+    .callout.note { background: #eff6ff; border-color: var(--blue); }
+    .callout.caution { background: #fffbeb; border-color: var(--orange); }
+    .callout strong { display: block; margin-bottom: 0.25rem; }
+    .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+    .mini-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 1rem;
+    }
+    .mini-card h4 { margin: 0 0 0.4rem; color: var(--green-dark); font-size: 0.95rem; }
+    .mini-card p { margin: 0; font-size: 0.85rem; color: var(--text-light); }
+    code.ui { background: #f3f4f6; border-radius: 4px; padding: 0.1rem 0.4rem; font-weight: 600; color: var(--green-dark); }
+
+    .role-content { display: none; }
+    .role-content.active { display: block; }
+
+    .mobile-toggle { display: none; }
+
+    footer {
+        text-align: center;
+        color: var(--text-light);
+        font-size: 0.8rem;
+        padding: 2rem;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    @media (max-width: 900px) {
+        .layout { flex-direction: column; }
+        nav.toc {
+            position: relative;
+            width: 100%;
+            border-right: none;
+            border-bottom: 1px solid #e5e7eb;
+            max-height: none;
+            display: none;
+        }
+        nav.toc.open { display: block; }
+        .mobile-toggle {
+            display: block;
+            width: calc(100% - 2rem);
+            margin: 1rem;
+            padding: 0.75rem;
+            background: var(--green);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        main { padding: 1rem 1.25rem 4rem; }
+        .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+        nav.toc, .role-switch, .mobile-toggle { display: none !important; }
+        .role-content { display: block !important; }
+        main { padding: 0; }
+        .top-header { background: var(--green-dark) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        section.guide-section { page-break-inside: avoid; }
+    }
+</style>
+</head>
+<body>
+
+<header class="top-header">
+    <div>
+        <h1>🌾 SmartHarvest User Manual</h1>
+        <p>A guide for Farmers and DA-CAR Officers/Admins</p>
+    </div>
+    <div class="role-switch" role="tablist" aria-label="Choose guide">
+        <button id="btn-farmer" class="active" onclick="setRole('farmer')">Farmer Guide</button>
+        <button id="btn-admin" onclick="setRole('admin')">DA Officer / Admin Guide</button>
+    </div>
+</header>
+
+<button class="mobile-toggle" onclick="document.querySelector('nav.toc').classList.toggle('open')">☰ Table of Contents</button>
+
+<div class="layout">
+    <nav class="toc">
+        <div id="toc-farmer">
+            <h2>Farmer Guide</h2>
+            <a href="#f-start">1. Getting Started</a>
+            <a href="#f-dashboard">2. Dashboard</a>
+            <a href="#f-crops">3. My Crops</a>
+            <a href="#f-forecast">4. Weather Forecast</a>
+            <a href="#f-schedule">5. Planting Schedule</a>
+            <a href="#f-yield">6. Yield Analysis</a>
+            <a href="#f-prices">7. Market Prices</a>
+            <a href="#f-announcements">8. Announcements</a>
+            <a href="#f-inbox">9. Inbox / Messages</a>
+            <a href="#f-chatbot">10. Chat Assistant</a>
+            <a href="#f-settings">11. Settings</a>
+            <a href="#f-logout">12. Language &amp; Logout</a>
+        </div>
+        <div id="toc-admin" style="display:none">
+            <h2>DA Officer / Admin Guide</h2>
+            <a href="#a-start">1. Getting Started</a>
+            <a href="#a-dashboard">2. Dashboard</a>
+            <a href="#a-prices">3. Market Prices</a>
+            <a href="#a-announcements">4. Announcements</a>
+            <a href="#a-inbox">5. Inbox / Messages</a>
+            <a href="#a-users">6. Users Management</a>
+            <a href="#a-datasets">7. Datasets</a>
+            <a href="#a-import">8. Data Import</a>
+            <a href="#a-cropmon">9. Crop Monitoring</a>
+            <a href="#a-provincial">10. Provincial Monitoring</a>
+            <a href="#a-settings">11. Language &amp; Logout</a>
+        </div>
+    </nav>
+
+    <main>
+        <!-- ==================== FARMER GUIDE ==================== -->
+        <div id="role-farmer" class="role-content active">
+
+        <section class="guide-section" id="f-start">
+            <h2>1. Getting Started</h2>
+
+            <h3>Creating an account</h3>
+            <p>If you don't have an account yet, open the SmartHarvest login page and click <strong>"Register here"</strong> to go to the sign-up form.</p>
+            <table class="field-table">
+                <tr><th>Field</th><th>Notes</th></tr>
+                <tr><td>Full Name</td><td>Required</td></tr>
+                <tr><td>Email Address</td><td>Required, must not already be registered</td></tr>
+                <tr><td>Password / Confirm Password</td><td>Required, at least 8 characters, both must match</td></tr>
+                <tr><td>Municipality / City</td><td>Required — choose your municipality in Benguet from the dropdown</td></tr>
+                <tr><td>Mobile Number</td><td>Optional — Philippine format, the "+63" is already filled in for you</td></tr>
+                <tr><td>Terms &amp; Privacy checkbox</td><td>Required before you can create your account</td></tr>
+            </table>
+            <p>Once you click <strong>"Create Account"</strong>, you're signed in immediately and taken straight to your Dashboard.</p>
+
+            <h3>Logging in</h3>
+            <div class="steps">
+                <ol>
+                    <li>Go to the SmartHarvest login page.</li>
+                    <li>Choose a login method at the top: <code class="ui">Email Login</code> or <code class="ui">RSBSA Login</code>.</li>
+                    <li><strong>Email Login:</strong> enter your email and password, optionally check "Remember me," then click <strong>Sign In</strong>.</li>
+                    <li><strong>RSBSA Login:</strong> enter only your RSBSA number (e.g. <code>4-11-10-001-00045</code>) — no password needed — then click <strong>Sign In</strong>.</li>
+                </ol>
+            </div>
+            <div class="callout tip">
+                <strong>Tip</strong>
+                RSBSA login only works if a DA officer has already registered your RSBSA number in the system. If it doesn't work, use Email Login instead or message your DA officer.
+            </div>
+            <p>Forgot your password? Click <strong>"Forgot password?"</strong> on the login page to receive a reset code by email.</p>
+        </section>
+
+        <section class="guide-section" id="f-dashboard">
+            <h2>2. Dashboard</h2>
+            <p>Your Dashboard is the home screen after logging in. It gives you a quick overview of your farm and the region:</p>
+            <div class="grid-2">
+                <div class="mini-card"><h4>Expected Harvest</h4><p>An estimate of your upcoming harvest, powered by the system's machine-learning model.</p></div>
+                <div class="mini-card"><h4>Top Crops</h4><p>The best-performing crops for your municipality based on historical and current data.</p></div>
+                <div class="mini-card"><h4>Climate Snapshot</h4><p>Current climate conditions compared to the historical average for your area.</p></div>
+                <div class="mini-card"><h4>Optimal Planting</h4><p>A recommendation for what to plant next and when, based on ML analysis.</p></div>
+            </div>
+            <p>The left sidebar is how you move around the whole app — Dashboard, My Crops, Planting Schedule, Yield Analysis, Forecast, Market Prices, Announcements, Inbox, and Settings.</p>
+            <p>You can also switch your location using the dropdown in the top bar (e.g. <em>"La Trinidad, Benguet"</em>) to see data for a different municipality.</p>
+        </section>
+
+        <section class="guide-section" id="f-crops">
+            <h2>3. My Crops</h2>
+            <p>This is where you record and track everything you've planted.</p>
+            <p>At the top you'll see four summary cards: <strong>Total Crops</strong>, <strong>Total Area</strong> (hectares), <strong>Expected Yield</strong> (metric tons, ML-estimated), and <strong>Growing</strong> (how many crops are currently active).</p>
+
+            <h3>Adding a crop</h3>
+            <p>Click <strong>"Add Crop"</strong> and fill in:</p>
+            <table class="field-table">
+                <tr><th>Field</th><th>Notes</th></tr>
+                <tr><td>Crop Type</td><td>Required</td></tr>
+                <tr><td>Variety</td><td>Optional</td></tr>
+                <tr><td>Planting Date</td><td>Required</td></tr>
+                <tr><td>Expected Harvest Date</td><td>Optional — the system will estimate it for you if left blank</td></tr>
+                <tr><td>Area Planted (hectares)</td><td>Required</td></tr>
+                <tr><td>Municipality</td><td>Required</td></tr>
+                <tr><td>Plot Location</td><td>Optional, e.g. "Lot 3, Barangay Wangal"</td></tr>
+                <tr><td>Seed Source</td><td>Optional</td></tr>
+                <tr><td>Notes</td><td>Optional</td></tr>
+            </table>
+            <p>When you save, the button shows <em>"Saving &amp; Predicting..."</em> while the system calculates your expected yield and a confidence percentage.</p>
+
+            <h3>Managing your crops</h3>
+            <p>Each crop appears as its own card. You can:</p>
+            <ul>
+                <li>Update its <strong>Status</strong> at any time: Planning → Planted → Growing → Harvested (or Failed).</li>
+                <li>See its expected yield, confidence %, planting/harvest dates, and any notes you added.</li>
+                <li>Delete it using the trash icon.</li>
+            </ul>
+            <div class="callout tip">
+                <strong>Tip</strong>
+                If you haven't added any crops yet, this page will suggest high-potential crops for your area to help you decide what to plant.
+            </div>
+        </section>
+
+        <section class="guide-section" id="f-forecast">
+            <h2>4. Weather Forecast</h2>
+            <p>Open <strong>Forecast</strong> from the sidebar to see:</p>
+            <ul>
+                <li><strong>Current Conditions</strong> — temperature, "feels like," humidity, and today's rainfall.</li>
+                <li><strong>7-Day Temperature Forecast</strong> — a chart of expected highs and lows for the week.</li>
+                <li><strong>Monthly Rainfall Prediction</strong> — a longer-range view to help with planning.</li>
+            </ul>
+            <p>Use the municipality dropdown at the top to check the forecast for a different area.</p>
+        </section>
+
+        <section class="guide-section" id="f-schedule">
+            <h2>5. Planting Schedule</h2>
+            <p>This page recommends the best planting windows for different crops, based on machine-learning predictions combined with historical data for your municipality. Each entry shows the crop, recommended planting date, expected harvest date, and an expected yield with confidence level.</p>
+        </section>
+
+        <section class="guide-section" id="f-yield">
+            <h2>6. Yield Analysis</h2>
+            <p>This page shows how your crops (and crops in your area) are performing over time — average yield, best-performing crop, total production, and total area, along with monthly trends and a forecast chart.</p>
+        </section>
+
+        <section class="guide-section" id="f-prices">
+            <h2>7. Market Prices</h2>
+            <p>Found under the <strong>Market Prices</strong> tab on your Dashboard. Shows current prices per kilogram for different crops, the demand level (e.g. High, Moderate), and whether prices are trending up or down — useful for deciding when and where to sell.</p>
+        </section>
+
+        <section class="guide-section" id="f-announcements">
+            <h2>8. Announcements</h2>
+            <p>DA officers post announcements (advisories, weather warnings, market updates, urgent notices) that appear here. Open the <strong>Announcements</strong> tab to see the full list.</p>
+            <div class="callout tip">
+                <strong>Real-time notifications</strong>
+                You don't need to keep checking the Announcements tab — whenever a new announcement is posted, a floating notification card pops up at the top of your screen automatically, no matter which page you're on (Dashboard, Forecast, Yield Analysis, or Planting Schedule). Click it to jump straight to the full announcement, or click the ✕ to dismiss it.
+            </div>
+        </section>
+
+        <section class="guide-section" id="f-inbox">
+            <h2>9. Inbox / Messages</h2>
+            <p>Use the <strong>Inbox</strong> to message your DA officer directly.</p>
+            <div class="steps">
+                <ol>
+                    <li>Click <strong>"New"</strong> to start a conversation, add a subject and your message, and send.</li>
+                    <li>Your message can also be sent as an SMS automatically, in case the officer isn't online.</li>
+                    <li>Existing conversations appear in a list on the left; click one to open the full chat thread on the right.</li>
+                    <li>Use the <strong>Quick Replies</strong> buttons for common responses, or type your own message and press Enter (or click Send) to reply.</li>
+                </ol>
+            </div>
+            <p>New messages arrive automatically while you have the Inbox open, and an unread-message badge appears on the Inbox link in the sidebar whenever you have something new waiting.</p>
+        </section>
+
+        <section class="guide-section" id="f-chatbot">
+            <h2>10. Chat Assistant</h2>
+            <p>Look for the round chat icon in the bottom-right corner of the screen — it's available on Dashboard, Forecast, Yield Analysis, and Planting Schedule.</p>
+            <p>This is a quick-answer assistant that responds to common questions typed in your own words, such as:</p>
+            <ul>
+                <li>"How do I check the weather forecast?"</li>
+                <li>"Where can I see market prices?"</li>
+                <li>"How do I message a DA officer?"</li>
+                <li>"How do I update my profile?"</li>
+                <li>"How does RSBSA login work?"</li>
+            </ul>
+            <p>If it doesn't recognize your question, it will suggest topics it can help with instead.</p>
+        </section>
+
+        <section class="guide-section" id="f-settings">
+            <h2>11. Settings</h2>
+            <p>Open <strong>Settings</strong> from the sidebar to view and manage your profile.</p>
+            <ul>
+                <li><strong>Personal Information:</strong> Full Name, Email, Phone, Location.</li>
+                <li><strong>Farm Information:</strong> Farm Name, Farm Size, Primary Crop Types, Years of Experience, and a short bio about your farm.</li>
+                <li>Click <strong>"Edit Profile"</strong> to update any of these details, then <strong>"Save Changes."</strong></li>
+                <li>Notification preferences (weather alerts, planting reminders, weekly yield reports) can be toggled here.</li>
+            </ul>
+            <div class="callout note">
+                <strong>Note</strong>
+                The "Change Password" option currently shows a "coming soon" message — it isn't active yet. If you need your password changed, use "Forgot password?" on the login page, or contact your DA officer.
+            </div>
+        </section>
+
+        <section class="guide-section" id="f-logout">
+            <h2>12. Language &amp; Logout</h2>
+            <p>Use the language dropdown in the top bar to switch the interface into Tagalog, Ilocano, or other supported languages.</p>
+            <p>To sign out, click your profile icon (or the Logout option) in the top-right corner.</p>
+        </section>
+
+        </div>
+
+        <!-- ==================== ADMIN GUIDE ==================== -->
+        <div id="role-admin" class="role-content">
+
+        <section class="guide-section" id="a-start">
+            <h2>1. Getting Started</h2>
+            <p>DA Officers and Admins sign in through a separate, dedicated login page from farmers.</p>
+            <div class="steps">
+                <ol>
+                    <li>Go to the <strong>DA Admin</strong> login page.</li>
+                    <li>Enter your <strong>Email or Username</strong> (this login accepts either).</li>
+                    <li>Enter your <strong>Password</strong>.</li>
+                    <li>Optionally check <strong>"Remember me"</strong>, then click <strong>Sign In</strong>.</li>
+                </ol>
+            </div>
+            <div class="callout note">
+                <strong>Note</strong>
+                This admin login is separate from the Superadmin login, which requires an additional authenticator-app code (two-factor authentication) and is used only by the top-level system administrator.
+            </div>
+        </section>
+
+        <section class="guide-section" id="a-dashboard">
+            <h2>2. Dashboard</h2>
+            <p>Your Dashboard gives you an at-a-glance view of the whole system: total registered farmers, new farmers this month, total data records, and any urgent actions that need your attention. The sidebar is your main way of navigating between Market Prices, Announcements, Inbox, Users, Datasets, Data Import, Crop Monitoring, and Provincial Monitoring.</p>
+        </section>
+
+        <section class="guide-section" id="a-prices">
+            <h2>3. Market Prices</h2>
+            <p>Manage the crop prices that farmers see on their end. You can add new price entries or update existing ones — price per kilogram, demand level, and market location — which farmers will see reflected in their own Market Prices tab.</p>
+        </section>
+
+        <section class="guide-section" id="a-announcements">
+            <h2>4. Announcements</h2>
+            <p>Use this to post advisories, weather warnings, or general updates to farmers.</p>
+            <div class="steps">
+                <ol>
+                    <li>Click <strong>"New Announcement."</strong></li>
+                    <li>Fill in the title, message content, type (e.g. general, weather, market, advisory, urgent), and priority.</li>
+                    <li>Optionally target specific municipalities instead of broadcasting province-wide.</li>
+                    <li>Optionally send it as an SMS blast to farmers in the targeted area(s), in addition to it appearing in-app.</li>
+                    <li>Publish it.</li>
+                </ol>
+            </div>
+            <div class="callout tip">
+                <strong>It shows up fast</strong>
+                As soon as you publish, farmers see a floating notification pop up on their screen within a few seconds — no matter which page they're on.
+            </div>
+        </section>
+
+        <section class="guide-section" id="a-inbox">
+            <h2>5. Inbox / Messages</h2>
+            <p>This works the same way as the farmer's Inbox, but from your side: view every conversation with farmers, reply directly, use Quick Replies for common responses, and start new conversations with a specific farmer using the <strong>"New"</strong> button. An unread-message badge on the sidebar lets you know when a farmer is waiting for a reply.</p>
+        </section>
+
+        <section class="guide-section" id="a-users">
+            <h2>6. Users Management</h2>
+            <p>Open <strong>Users</strong> to manage every account in the system — farmers, DA Admins, and Admins.</p>
+            <p>You'll see stat cards (Total Users, Farmers, DA Admins, Active Users) and a searchable, filterable table of all accounts with their role, location, and status.</p>
+
+            <h3>Adding a user</h3>
+            <p>Click <strong>"Add User"</strong> and provide: Full Name, Email, Password, RSBSA Number, Role (Farmer or DA Admin), and Municipality.</p>
+
+            <h3>Importing many farmers at once</h3>
+            <p>Click <strong>"Import Users"</strong> and upload a CSV or Excel file. Make sure it includes an RSBSA Number column for each farmer — this is what allows them to use passwordless RSBSA login afterward.</p>
+
+            <h3>Editing and removing accounts</h3>
+            <ul>
+                <li><strong>Edit</strong> updates a user's name, email, RSBSA number, phone, location, or status.</li>
+                <li><strong>Archive/Restore</strong> and <strong>Delete</strong> are available for farmer accounts.</li>
+                <li><strong>"Delete All Farmers"</strong> is a bulk action — use with care, as it removes every farmer account.</li>
+            </ul>
+            <div class="callout caution">
+                <strong>Heads up</strong>
+                As a DA Officer, new accounts you create start with "Pending" status and need approval. Full Admins can set any status directly.
+            </div>
+        </section>
+
+        <section class="guide-section" id="a-datasets">
+            <h2>7. Datasets</h2>
+            <p>This is your library of the data already loaded into SmartHarvest — Crop Production Statistics, Climate &amp; Weather Data, Market Prices, and Livestock &amp; Poultry Inventory. Each dataset card shows how many records it has and when it was last updated. Use <strong>View</strong> to preview the records, <strong>Export</strong> to download them, or <strong>Delete</strong> to remove a dataset entirely.</p>
+            <div class="callout note">
+                <strong>Note</strong>
+                This page is for browsing data that's already in the system. To bring in new data, use Data Import instead.
+            </div>
+        </section>
+
+        <section class="guide-section" id="a-import">
+            <h2>8. Data Import</h2>
+            <p>Use this page to upload new data into SmartHarvest via CSV file.</p>
+            <div class="steps">
+                <ol>
+                    <li>Choose a <strong>Dataset Type</strong> from the dropdown.</li>
+                    <li>Click <strong>"Download CSV Template"</strong> to get a correctly formatted blank file for that type.</li>
+                    <li>Fill in the template with your data.</li>
+                    <li>Drag-and-drop the completed CSV file (or click to browse), then click <strong>"Upload Dataset."</strong></li>
+                </ol>
+            </div>
+            <table class="field-table">
+                <tr><th>Dataset Type</th><th>Required Columns</th></tr>
+                <tr><td>Crop Production Statistics (Monthly)</td><td>Municipality, Farm_Type, Year, Month, Crop, Area_Planted_Ha, Area_Harvested_Ha, Production_MT, Productivity_MT_Ha</td></tr>
+                <tr><td>Climate &amp; Weather Data</td><td>Year, Month, Municipality, Rainfall, Avg_Temperature, Humidity</td></tr>
+                <tr><td>Agricultural Market Prices</td><td>Date, Crop_Name, Price_Per_Kg, Market_Location, Demand_Level</td></tr>
+                <tr><td>Livestock &amp; Poultry Inventory (Bi-annual)</td><td>Year, Period, Municipality, Animal_Type, Headcount, Farm_Type</td></tr>
+            </table>
+            <p>A <strong>Recent Uploads</strong> table at the bottom keeps a log of past imports and their status.</p>
+        </section>
+
+        <section class="guide-section" id="a-cropmon">
+            <h2>9. Crop Monitoring</h2>
+            <p>This gives you a province-wide view of everything farmers have entered in their own "My Crops" section.</p>
+            <ul>
+                <li>Stat cards: Total Farmers, Total Crop Records, Total Area, Expected Yield.</li>
+                <li>Charts: Crop Production by Type, Crop Status Distribution, and Production by Municipality.</li>
+                <li>A detailed, searchable table of every farmer-submitted crop record — filterable by status, location, and harvest month.</li>
+            </ul>
+            <p>Click <strong>Refresh</strong> any time to pull the latest data.</p>
+        </section>
+
+        <section class="guide-section" id="a-provincial">
+            <h2>10. Provincial Monitoring</h2>
+            <p>A climate and weather risk dashboard covering all 13 municipalities in Benguet.</p>
+            <ul>
+                <li>Stat cards: Watch Status Areas, Municipalities Monitored, Favorable, Under Watch.</li>
+                <li>Pick a municipality to see its current hazard alerts (if any) and a 7-day rainfall forecast.</li>
+                <li>A grid of all 13 municipalities shows each one's status (Favorable, Normal, or Watch) along with live rainfall, temperature, and humidity readings.</li>
+            </ul>
+            <p>This page auto-refreshes every 5 minutes, or you can refresh manually.</p>
+        </section>
+
+        <section class="guide-section" id="a-settings">
+            <h2>11. Language &amp; Logout</h2>
+            <p>Use the language dropdown in the top bar to change the interface language. To sign out, use the Logout option in the top-right corner.</p>
+        </section>
+
+        </div>
+    </main>
+</div>
+
+<footer>
+    SmartHarvest User Manual — for internal use by farmers and DA-CAR officers/admins.
+</footer>
+
+<script>
+    function setRole(role) {
+        document.getElementById('role-farmer').classList.toggle('active', role === 'farmer');
+        document.getElementById('role-admin').classList.toggle('active', role === 'admin');
+        document.getElementById('toc-farmer').style.display = role === 'farmer' ? 'block' : 'none';
+        document.getElementById('toc-admin').style.display = role === 'admin' ? 'block' : 'none';
+        document.getElementById('btn-farmer').classList.toggle('active', role === 'farmer');
+        document.getElementById('btn-admin').classList.toggle('active', role === 'admin');
+        window.scrollTo(0, 0);
+    }
+</script>
+
+</body>
+</html>
