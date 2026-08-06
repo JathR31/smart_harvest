@@ -463,5 +463,7 @@
         }
     </script>
 
+    @include('partials.announcement-toast')
+    @include('partials.chat-widget')
 </body>
 </html>

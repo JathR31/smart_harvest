@@ -1,0 +1,40 @@
+{
+    "fallback": "I didn't quite understand that. Try asking about: reading the weather forecast, checking market prices, messaging a DA officer, updating your farm profile, or how RSBSA login works.",
+    "topics": [
+        {
+            "id": "weather",
+            "keywords": ["weather", "forecast", "rain", "rainfall", "temperature", "climate", "sunny", "storm"],
+            "answer": "Go to the Forecast page (left sidebar under Weather) to see rainfall and temperature predictions for your municipality. The Dashboard's Weather card also shows a quick summary."
+        },
+        {
+            "id": "market_prices",
+            "keywords": ["price", "prices", "market", "sell", "selling", "cost", "how much", "magkano"],
+            "answer": "Market Prices are on your Dashboard under Information. Prices update per crop and municipality; look for the trend arrow to see if prices are rising or falling."
+        },
+        {
+            "id": "message_officer",
+            "keywords": ["message", "contact", "officer", "da officer", "admin", "help from da", "ask da", "text da"],
+            "answer": "Open Inbox from the sidebar and click 'New' to send a message. It goes straight to your DA Admin and, if enabled, is also sent as SMS."
+        },
+        {
+            "id": "farm_profile",
+            "keywords": ["profile", "update profile", "my farm", "farm details", "municipality change", "edit info", "account settings"],
+            "answer": "Go to Settings (sidebar, under Account) to update your farm profile, municipality, and contact details."
+        },
+        {
+            "id": "rsbsa",
+            "keywords": ["rsbsa", "rsbsa number", "rsbsa login", "registration", "register"],
+            "answer": "Your RSBSA number can be used to log in without a password. If you're having trouble, double check the number in Settings or message a DA officer for help."
+        },
+        {
+            "id": "navigation",
+            "keywords": ["how do i", "where is", "navigate", "menu", "help", "how to use", "lost", "confused"],
+            "answer": "Use the sidebar on the left: Dashboard for an overview, Forecast for weather, Market Prices and Announcements under Information, Inbox for messages, and Settings for your account."
+        },
+        {
+            "id": "greeting",
+            "keywords": ["hi", "hello", "hey", "kumusta", "kamusta"],
+            "answer": "Hi! I'm the SmartHarvest assistant. Ask me about weather, market prices, messaging a DA officer, your farm profile, or RSBSA login."
+        }
+    ]
+}
