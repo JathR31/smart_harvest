@@ -4,12 +4,80 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Services\SMSService;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class InboxMessagingTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_legacy_null_conversation_messages_do_not_cross_contaminate(): void
+    {
+        // Simulate pre-threading data: relax the NOT NULL constraint the
+        // backfill migration applies, so we can insert rows the way they
+        // existed before 2026_02_28_000001_add_threading_and_sms_to_messages_table.
+        Schema::table('messages', function (Blueprint $table) {
+            $table->string('conversation_id')->nullable()->change();
+        });
+
+        $farmerA = User::factory()->create(['role' => 'Farmer']);
+        $adminA = User::factory()->create(['role' => 'Admin']);
+        $farmerB = User::factory()->create(['role' => 'Farmer']);
+        $adminB = User::factory()->create(['role' => 'Admin']);
+
+        $now = now();
+
+        // Insert directly via the query builder (bypassing Message::boot(),
+        // which would auto-assign a UUID) to reproduce true legacy rows.
+        $messageAId = DB::table('messages')->insertGetId([
+            'sender_id' => $farmerA->id,
+            'receiver_id' => $adminA->id,
+            'subject' => 'Pair A private question',
+            'content' => 'Pair A secret content',
+            'is_read' => false,
+            'priority' => 'normal',
+            'conversation_id' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        $messageBId = DB::table('messages')->insertGetId([
+            'sender_id' => $farmerB->id,
+            'receiver_id' => $adminB->id,
+            'subject' => 'Pair B private question',
+            'content' => 'Pair B secret content',
+            'is_read' => false,
+            'priority' => 'normal',
+            'conversation_id' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        // Run the actual backfill migration's logic.
+        $migration = require database_path('migrations/2026_08_05_000001_backfill_legacy_message_conversation_ids.php');
+        $migration->up();
+
+        $this->assertSame(0, DB::table('messages')->whereNull('conversation_id')->count());
+
+        $conversationIdA = DB::table('messages')->where('id', $messageAId)->value('conversation_id');
+        $conversationIdB = DB::table('messages')->where('id', $messageBId)->value('conversation_id');
+        $this->assertNotSame($conversationIdA, $conversationIdB);
+
+        // Opening pair A's conversation must never touch or expose pair B's message.
+        $this->actingAs($adminA)
+            ->getJson("/api/messages/{$messageAId}")
+            ->assertOk()
+            ->assertJsonCount(1, 'conversation')
+            ->assertJsonPath('conversation.0.content', 'Pair A secret content');
+
+        $this->assertDatabaseHas('messages', [
+            'id' => $messageBId,
+            'is_read' => false,
+        ]);
+    }
 
     public function test_farmer_and_admin_can_exchange_messages_in_one_conversation(): void
     {

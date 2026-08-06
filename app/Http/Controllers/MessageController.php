@@ -111,7 +111,12 @@ class MessageController extends Controller
         
         // Get the root message of the conversation
         $rootMessage = $message->parent_id ? $message->parent : $message;
-        
+
+        if (!$rootMessage->conversation_id) {
+            \Log::error('Message root has no conversation_id', ['message_id' => $rootMessage->id]);
+            return response()->json(['error' => 'This conversation could not be loaded. Please contact support.'], 500);
+        }
+
         // Opening a conversation reads every message addressed to this user.
         Message::where('conversation_id', $rootMessage->conversation_id)
             ->where('receiver_id', $user->id)
@@ -490,7 +495,7 @@ class MessageController extends Controller
     {
         // Get all farmer role users
         $farmers = User::where('role', 'Farmer')
-            ->select('id', 'name', 'email', 'phone_number', 'municipality')
+            ->select('id', 'name', 'email', 'phone_number', 'location')
             ->orderBy('name')
             ->get();
         
@@ -508,7 +513,7 @@ class MessageController extends Controller
                 $query->whereIn('role', ['Admin', 'DA Admin', 'DA Officer'])
                       ->orWhere('is_superadmin', true);
             })
-            ->select('id', 'name', 'email', 'phone_number', 'municipality', 'role')
+            ->select('id', 'name', 'email', 'phone_number', 'location', 'role')
             ->orderBy('name')
             ->get();
         

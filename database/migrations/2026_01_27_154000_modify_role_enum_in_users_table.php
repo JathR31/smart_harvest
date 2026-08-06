@@ -25,6 +25,13 @@ return new class extends Migration
 
         if ($driver === 'mysql') {
             DB::statement("ALTER TABLE `users` MODIFY COLUMN `role` ENUM('Farmer', 'Field Agent', 'Admin', 'Researcher', 'DA Admin', 'Regional Manager', 'Extension Officer') DEFAULT 'Farmer'");
+            return;
+        }
+
+        if ($driver === 'sqlite') {
+            Schema::table('users', function (Blueprint $table) {
+                $table->enum('role', ['Farmer', 'Field Agent', 'Admin', 'Researcher', 'DA Admin', 'Regional Manager', 'Extension Officer'])->default('Farmer')->change();
+            });
         }
     }
 
@@ -45,6 +52,13 @@ return new class extends Migration
 
         if ($driver === 'mysql') {
             DB::statement("ALTER TABLE `users` MODIFY COLUMN `role` ENUM('Farmer', 'Field Agent', 'Admin', 'Researcher') DEFAULT 'Farmer'");
+            return;
+        }
+
+        if ($driver === 'sqlite') {
+            Schema::table('users', function (Blueprint $table) {
+                $table->enum('role', ['Farmer', 'Field Agent', 'Admin', 'Researcher'])->default('Farmer')->change();
+            });
         }
     }
 };

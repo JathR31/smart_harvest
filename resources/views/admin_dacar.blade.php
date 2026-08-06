@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DA Officer Dashboard - SmartHarvest</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.store('notifications', {
+                unreadMessages: 0,
+                unreadAnnouncements: 0,
+            });
+        });
+    </script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -70,12 +78,14 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
                         </svg>
                         <span>Announcements</span>
+                        <span x-show="$store.notifications.unreadAnnouncements > 0" class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5" x-text="$store.notifications.unreadAnnouncements"></span>
                     </button>
                     <button @click="currentSection = 'inbox'" :class="currentSection === 'inbox' ? 'bg-green-600' : 'hover:bg-green-800'" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded transition-colors w-full text-left">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                         </svg>
                         <span>Inbox</span>
+                        <span x-show="$store.notifications.unreadMessages > 0" class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5" x-text="$store.notifications.unreadMessages"></span>
                     </button>
                 </div>
 
@@ -1148,52 +1158,54 @@
                         <!-- Right Panel: Chat Messages -->
                         <div class="flex-1 flex flex-col bg-white">
                             <template x-if="selectedConversation">
-                                <!-- Chat Header -->
-                                <div class="border-b border-gray-200 p-4 bg-gradient-to-r from-green-50 to-blue-50">
-                                    <p class="font-semibold text-gray-800" x-text="getConversationTitle(selectedConversation)"></p>
-                                    <p class="text-xs text-gray-500 mt-1" x-text="(selectedConversation.participant_role || 'Farmer') + (selectedConversation.participant_rsbsa ? ' · RSBSA: ' + selectedConversation.participant_rsbsa : '')"></p>
-                                </div>
+                                <div class="flex-1 flex flex-col min-h-0">
+                                    <!-- Chat Header -->
+                                    <div class="border-b border-gray-200 p-4 bg-gradient-to-r from-green-50 to-blue-50">
+                                        <p class="font-semibold text-gray-800" x-text="getConversationTitle(selectedConversation)"></p>
+                                        <p class="text-xs text-gray-500 mt-1" x-text="(selectedConversation.participant_role || 'Farmer') + (selectedConversation.participant_rsbsa ? ' · RSBSA: ' + selectedConversation.participant_rsbsa : '')"></p>
+                                    </div>
 
-                                <!-- Quick Reply Templates -->
-                                <div class="px-4 pt-3 pb-2 bg-gray-50 border-b border-gray-200">
-                                    <p class="text-xs font-semibold text-gray-600 mb-2">Quick Replies:</p>
-                                    <div class="flex flex-wrap gap-2">
-                                        <template x-for="template in quickReplyTemplates" :key="template">
-                                            <button @click="replyContent = template; $nextTick(() => sendMessage())" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded-full hover:bg-green-50 hover:border-green-500 transition">
-                                                <span x-text="template.substring(0, 20) + (template.length > 20 ? '...' : '')"></span>
-                                            </button>
+                                    <!-- Quick Reply Templates -->
+                                    <div class="px-4 pt-3 pb-2 bg-gray-50 border-b border-gray-200">
+                                        <p class="text-xs font-semibold text-gray-600 mb-2">Quick Replies:</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            <template x-for="template in quickReplyTemplates" :key="template">
+                                                <button @click="replyContent = template; $nextTick(() => sendMessage())" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded-full hover:bg-green-50 hover:border-green-500 transition">
+                                                    <span x-text="template.substring(0, 20) + (template.length > 20 ? '...' : '')"></span>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </div>
+
+                                    <!-- Messages -->
+                                    <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-white via-gray-50 to-gray-50" x-ref="messagesContainer">
+                                        <template x-for="msg in selectedConversation.messages || []" :key="msg.id">
+                                            <div :class="msg.is_mine ? 'flex justify-end' : 'flex justify-start'" class="flex">
+                                                <div :class="msg.is_mine ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-900'" class="max-w-xs px-4 py-2.5 rounded-lg break-words">
+                                                    <p class="text-sm" x-text="msg.content"></p>
+                                                    <p :class="msg.is_mine ? 'text-green-100' : 'text-gray-500'" class="text-xs mt-1" x-text="formatTime(msg.created_at)"></p>
+                                                </div>
+                                            </div>
                                         </template>
                                     </div>
-                                </div>
 
-                                <!-- Messages -->
-                                <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-white via-gray-50 to-gray-50" x-ref="messagesContainer">
-                                    <template x-for="msg in selectedConversation.messages || []" :key="msg.id">
-                                        <div :class="msg.is_mine ? 'flex justify-end' : 'flex justify-start'" class="flex">
-                                            <div :class="msg.is_mine ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-900'" class="max-w-xs px-4 py-2.5 rounded-lg break-words">
-                                                <p class="text-sm" x-text="msg.content"></p>
-                                                <p :class="msg.is_mine ? 'text-green-100' : 'text-gray-500'" class="text-xs mt-1" x-text="formatTime(msg.created_at)"></p>
-                                            </div>
+                                    <!-- Message Input -->
+                                    <div class="border-t border-gray-200 p-4 bg-white">
+                                        <div class="flex gap-2">
+                                            <textarea x-model="replyContent" @keydown.enter.prevent="sendMessage()" placeholder="Type a message... (Press Enter to send)" rows="2" class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"></textarea>
+                                            <button @click="sendMessage()" :disabled="!replyContent.trim() || sending" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-60 transition font-semibold flex items-center gap-2">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                                                </svg>
+                                                <span x-show="!sending">Send</span>
+                                                <span x-show="sending">Sending...</span>
+                                            </button>
                                         </div>
-                                    </template>
-                                </div>
-
-                                <!-- Message Input -->
-                                <div class="border-t border-gray-200 p-4 bg-white">
-                                    <div class="flex gap-2">
-                                        <textarea x-model="replyContent" @keydown.enter.prevent="sendMessage()" placeholder="Type a message... (Press Enter to send)" rows="2" class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"></textarea>
-                                        <button @click="sendMessage()" :disabled="!replyContent.trim() || sending" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-60 transition font-semibold flex items-center gap-2">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-                                            </svg>
-                                            <span x-show="!sending">Send</span>
-                                            <span x-show="sending">Sending...</span>
-                                        </button>
+                                        <label class="flex items-center gap-2 mt-2 text-xs text-gray-600">
+                                            <input type="checkbox" x-model="sendSMS" class="w-4 h-4 text-green-600 rounded">
+                                            <span>Also send as SMS</span>
+                                        </label>
                                     </div>
-                                    <label class="flex items-center gap-2 mt-2 text-xs text-gray-600">
-                                        <input type="checkbox" x-model="sendSMS" class="w-4 h-4 text-green-600 rounded">
-                                        <span>Also send as SMS</span>
-                                    </label>
                                 </div>
                             </template>
 
@@ -1661,7 +1673,7 @@
             return {
                 loading: true,
                 currentSection: new URLSearchParams(window.location.search).get('section') || 'dashboard',
-                unreadMessages: 5,
+                notificationTimer: null,
                 selectedMunicipality: 'La Trinidad',
                 municipalities: [
                     'La Trinidad', 'Bokod', 'Tublay', 'Atok', 'Itogon',
@@ -1756,10 +1768,37 @@
                     await this.loadCropPerformance();
                     await this.loadEnhancedCropPerformance();
                     await this.loadPriceInsights();
-                    await this.loadUnreadMessageCount();
+                    this.startNotificationPolling();
                     this.loading = false;
-                    
+
                     console.log('===== DASHBOARD INITIALIZATION COMPLETE =====');
+                },
+
+                startNotificationPolling() {
+                    this.pollNotifications();
+                    if (this.notificationTimer) {
+                        clearInterval(this.notificationTimer);
+                    }
+                    this.notificationTimer = setInterval(() => this.pollNotifications(), 15000);
+                },
+
+                async pollNotifications() {
+                    await Promise.all([
+                        this.loadUnreadMessageCount(),
+                        this.loadUnreadAnnouncementCount()
+                    ]);
+                },
+
+                async loadUnreadAnnouncementCount() {
+                    try {
+                        const response = await fetch(this.baseUrl + '/api/announcements');
+                        if (response.ok) {
+                            const data = await response.json();
+                            Alpine.store('notifications').unreadAnnouncements = Array.isArray(data) ? data.length : 0;
+                        }
+                    } catch (error) {
+                        console.error('Error loading unread announcement count:', error);
+                    }
                 },
 
                 async loadUnreadMessageCount() {
@@ -1767,11 +1806,11 @@
                         const response = await fetch(this.baseUrl + '/api/messages');
                         if (response.ok) {
                             const data = await response.json();
-                            this.unreadMessages = data.unread_count || 0;
+                            Alpine.store('notifications').unreadMessages = data.unread_count || 0;
                         }
                     } catch (error) {
                         console.error('Error loading unread message count:', error);
-                        this.unreadMessages = 0;
+                        Alpine.store('notifications').unreadMessages = 0;
                     }
                 },
 

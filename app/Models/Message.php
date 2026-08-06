@@ -86,6 +86,10 @@ class Message extends Model
      */
     public function conversation()
     {
+        if (!$this->conversation_id) {
+            return static::query()->whereRaw('1 = 0')->get();
+        }
+
         return $this->where('conversation_id', $this->conversation_id)
                     ->orderBy('created_at', 'asc')
                     ->get();

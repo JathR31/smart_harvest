@@ -7,6 +7,7 @@
     <title>Dashboard - SmartHarvest</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="{{ asset('js/translation-v2.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/http-cache.js') }}?v={{ filemtime(public_path('js/http-cache.js')) }}"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         [x-cloak] { display: none !important; }
@@ -121,6 +122,7 @@
                 <a href="#" @click.prevent="showSection = 'inbox'" class="sidebar-item flex items-center space-x-3 px-4 py-2.5 rounded transition" :class="{'active': showSection === 'inbox'}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                     <span data-translate data-translate-id="menu-inbox">Inbox</span>
+                    <span x-show="unreadMessages.length > 0" class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5" x-text="unreadMessages.length"></span>
                 </a>
             </div>
 
@@ -1102,52 +1104,54 @@
                     <!-- Right Panel: Chat Messages -->
                     <div class="flex-1 flex flex-col bg-white">
                         <template x-if="selectedConversation">
-                            <!-- Chat Header -->
-                            <div class="border-b border-gray-200 p-4 bg-gradient-to-r from-green-50 to-blue-50">
-                                    <p class="font-semibold text-gray-800" x-text="getConversationTitle(selectedConversation)"></p>
-                                    <p class="text-xs text-gray-500 mt-1" x-text="(selectedConversation.participant_role || 'DA Admin / Regional Support') + ' · Active support conversation'"></p>
-                            </div>
+                            <div class="flex-1 flex flex-col min-h-0">
+                                <!-- Chat Header -->
+                                <div class="border-b border-gray-200 p-4 bg-gradient-to-r from-green-50 to-blue-50">
+                                        <p class="font-semibold text-gray-800" x-text="getConversationTitle(selectedConversation)"></p>
+                                        <p class="text-xs text-gray-500 mt-1" x-text="(selectedConversation.participant_role || 'DA Admin / Regional Support') + ' · Active support conversation'"></p>
+                                </div>
 
-                            <!-- Quick Reply Templates -->
-                            <div class="px-4 pt-3 pb-2 bg-gray-50 border-b border-gray-200">
-                                <p class="text-xs font-semibold text-gray-600 mb-2">Quick Replies:</p>
-                                <div class="flex flex-wrap gap-2">
-                                    <template x-for="template in quickReplyTemplates" :key="template">
-                                        <button @click="replyContent = template; $nextTick(() => sendMessage())" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded-full hover:bg-green-50 hover:border-green-500 transition">
-                                            <span x-text="template.substring(0, 20) + (template.length > 20 ? '...' : '')"></span>
-                                        </button>
+                                <!-- Quick Reply Templates -->
+                                <div class="px-4 pt-3 pb-2 bg-gray-50 border-b border-gray-200">
+                                    <p class="text-xs font-semibold text-gray-600 mb-2">Quick Replies:</p>
+                                    <div class="flex flex-wrap gap-2">
+                                        <template x-for="template in quickReplyTemplates" :key="template">
+                                            <button @click="replyContent = template; $nextTick(() => sendMessage())" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded-full hover:bg-green-50 hover:border-green-500 transition">
+                                                <span x-text="template.substring(0, 20) + (template.length > 20 ? '...' : '')"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- Messages -->
+                                <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-white via-gray-50 to-gray-50" x-ref="messagesContainer">
+                                    <template x-for="msg in selectedConversation.messages || []" :key="msg.id">
+                                        <div :class="msg.is_mine ? 'flex justify-end' : 'flex justify-start'" class="flex">
+                                            <div :class="msg.is_mine ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-900'" class="max-w-xs px-4 py-2.5 rounded-lg break-words">
+                                                <p class="text-sm" x-text="msg.content"></p>
+                                                <p :class="msg.is_mine ? 'text-green-100' : 'text-gray-500'" class="text-xs mt-1" x-text="formatTime(msg.created_at)"></p>
+                                            </div>
+                                        </div>
                                     </template>
                                 </div>
-                            </div>
 
-                            <!-- Messages -->
-                            <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-white via-gray-50 to-gray-50" x-ref="messagesContainer">
-                                <template x-for="msg in selectedConversation.messages || []" :key="msg.id">
-                                    <div :class="msg.is_mine ? 'flex justify-end' : 'flex justify-start'" class="flex">
-                                        <div :class="msg.is_mine ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-900'" class="max-w-xs px-4 py-2.5 rounded-lg break-words">
-                                            <p class="text-sm" x-text="msg.content"></p>
-                                            <p :class="msg.is_mine ? 'text-green-100' : 'text-gray-500'" class="text-xs mt-1" x-text="formatTime(msg.created_at)"></p>
-                                        </div>
+                                <!-- Message Input -->
+                                <div class="border-t border-gray-200 p-4 bg-white">
+                                    <div class="flex gap-2">
+                                            <textarea x-model="replyContent" @keydown.enter.prevent="sendMessage()" placeholder="Type a message... (Press Enter to send)" rows="2" class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"></textarea>
+                                        <button @click="sendMessage()" :disabled="!replyContent.trim() || sending" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-60 transition font-semibold flex items-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                                            </svg>
+                                            <span x-show="!sending">Send</span>
+                                            <span x-show="sending">Sending...</span>
+                                        </button>
                                     </div>
-                                </template>
-                            </div>
-
-                            <!-- Message Input -->
-                            <div class="border-t border-gray-200 p-4 bg-white">
-                                <div class="flex gap-2">
-                                        <textarea x-model="replyContent" @keydown.enter.prevent="sendMessage()" placeholder="Type a message... (Press Enter to send)" rows="2" class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"></textarea>
-                                    <button @click="sendMessage()" :disabled="!replyContent.trim() || sending" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-60 transition font-semibold flex items-center gap-2">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-                                        </svg>
-                                        <span x-show="!sending">Send</span>
-                                        <span x-show="sending">Sending...</span>
-                                    </button>
+                                    <label class="flex items-center gap-2 mt-2 text-xs text-gray-600">
+                                        <input type="checkbox" x-model="sendSMS" class="w-4 h-4 text-green-600 rounded">
+                                        <span>Also send as SMS</span>
+                                    </label>
                                 </div>
-                                <label class="flex items-center gap-2 mt-2 text-xs text-gray-600">
-                                    <input type="checkbox" x-model="sendSMS" class="w-4 h-4 text-green-600 rounded">
-                                    <span>Also send as SMS</span>
-                                </label>
                             </div>
                         </template>
 
@@ -1255,10 +1259,6 @@
                     return this.messages.received.filter(m => m.is_read);
                 },
                 messages: { received: [], sent: [] },
-                daOfficers: [],
-                otherFarmers: [],
-                showComposeModal: false,
-                newMessage: { receiver_id: '', subject: '', content: '', send_sms: false, recipientType: 'officer' },
                 municipalities: [
                     'Atok', 'Bakun', 'Bokod', 'Buguias', 'Itogon', 
                     'Kabayan', 'Kapangan', 'Kibungan', 'La Trinidad', 'Mankayan', 
@@ -1326,8 +1326,6 @@
                     this.loadAnnouncements();
                     this.loadMessages();
                     this.loadMyCrops();
-                    this.loadOfficers();
-                    this.loadFarmers();
                     this.startRealtimeSync();
                     
                     // Initialize translation system
@@ -1414,33 +1412,6 @@
                         }
                     } catch (error) {
                         console.error('Error loading messages:', error);
-                    }
-                },
-
-                async loadOfficers() {
-                    try {
-                        const response = await fetch(`{{ url('/api/officers') }}`);
-                        if (response.ok) {
-                            this.daOfficers = await response.json();
-                            console.log('Officers loaded:', this.daOfficers.length);
-                        }
-                    } catch (error) {
-                        console.error('Error loading officers:', error);
-                    }
-                },
-
-                async loadFarmers() {
-                    try {
-                        const response = await fetch(`{{ url('/api/farmers') }}`);
-                        if (response.ok) {
-                            const allFarmers = await response.json();
-                            // Filter out current user
-                            const userId = parseInt(document.querySelector('[data-user-id]')?.dataset.userId || '0');
-                            this.otherFarmers = allFarmers.filter(f => f.id !== userId);
-                            console.log('Farmers loaded:', this.otherFarmers.length);
-                        }
-                    } catch (error) {
-                        console.error('Error loading farmers:', error);
                     }
                 },
 
@@ -1566,47 +1537,6 @@
                     }
                 },
 
-                async sendMessage() {
-                    if (!this.newMessage.receiver_id || !this.newMessage.subject || !this.newMessage.content) {
-                        alert('Please fill all fields');
-                        return;
-                    }
-                    try {
-                        // Ensure receiver_id is sent as integer
-                        const messageData = {
-                            receiver_id: parseInt(this.newMessage.receiver_id),
-                            subject: this.newMessage.subject,
-                            content: this.newMessage.content,
-                            send_sms: this.newMessage.send_sms
-                        };
-
-                        const response = await fetch(`{{ url('/api/messages') }}`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            },
-                            body: JSON.stringify(messageData)
-                        });
-                        
-                        const result = await response.json();
-                        
-                        if (response.ok) {
-                            this.showComposeModal = false;
-                            this.newMessage = { receiver_id: '', subject: '', content: '', send_sms: false, recipientType: 'officer' };
-                            await this.loadMessages();
-                            alert(result.message || 'Message sent successfully!');
-                        } else {
-                            const errorMessage = result.errors ? JSON.stringify(result.errors) : (result.message || 'Error sending message');
-                            alert(errorMessage);
-                            console.error('API Error:', result);
-                        }
-                    } catch (error) {
-                        console.error('Error sending message:', error);
-                        alert('Error sending message: ' + error.message);
-                    }
-                },
-                
                 async changeLanguage(code, name) {
                     this.selectedLanguage = code;
                     this.selectedLanguageName = name;
@@ -1659,19 +1589,16 @@
                         console.log('Loading dashboard data for:', this.selectedMunicipality);
                         
                         // Load dashboard stats using ML yield analysis API (same as Yield Analysis tab)
-                        const timestamp = new Date().getTime();
-                        const yieldAnalysisResponse = await fetch(`{{ url('/api/ml/yield/analysis') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}&year=2025&_t=${timestamp}`);
-                        
-                        if (yieldAnalysisResponse.ok) {
-                            const yieldData = await yieldAnalysisResponse.json();
+                        try {
+                            const { data: yieldData } = await cachedFetch(`{{ url('/api/ml/yield/analysis') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}&year=2025`, { ttlMs: 60000 });
                             console.log('📊 ML Yield Analysis Response:', yieldData);
-                            
+
                             // Use ML data from yield analysis (same source as Yield Analysis tab)
                             if (yieldData.stats && yieldData.ml_api_connected) {
                                 this.stats.expected_harvest = yieldData.stats.total_production || '0';
                                 this.stats.ml_confidence = 85;
                                 this.mlConnected = true;
-                                
+
                                 // Calculate percentage change from comparison data
                                 if (yieldData.comparison && yieldData.comparison.length > 1) {
                                     const latest = yieldData.comparison[yieldData.comparison.length - 1];
@@ -1680,23 +1607,29 @@
                                         this.stats.percentage_change = Math.round(((latest.predicted - previous.actual) / previous.actual) * 100);
                                     }
                                 }
-                                
+
                                 console.log('✓ Using ML data from Yield Analysis API');
                                 console.log('✓ Expected Harvest:', this.stats.expected_harvest);
                                 console.log('✓ ML Connected:', this.mlConnected);
                             }
+                        } catch (err) {
+                            console.error('❌ Failed to load ML yield analysis:', err);
                         }
                         
                         // Load recent harvests from database
                         console.log('📋 Fetching recent harvests for:', this.selectedMunicipality);
-                        const harvestsResponse = await fetch(`{{ url('/api/dashboard/stats') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}&_t=${timestamp}`);
-                        console.log('📋 Harvests response status:', harvestsResponse.status);
-                        
-                        if (harvestsResponse.ok) {
-                            const harvestsData = await harvestsResponse.json();
+                        try {
+                            const { data: harvestsData } = await cachedFetch(`{{ url('/api/dashboard/stats') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`, {
+                                ttlMs: 60000,
+                                onStale: (fresh) => {
+                                    if (fresh.recent_harvests && Array.isArray(fresh.recent_harvests)) {
+                                        this.recentHarvests = fresh.recent_harvests;
+                                    }
+                                }
+                            });
                             console.log('📋 Full harvests response:', harvestsData);
                             console.log('📋 Recent harvests array:', harvestsData.recent_harvests);
-                            
+
                             // Ensure we have an array
                             if (harvestsData.recent_harvests && Array.isArray(harvestsData.recent_harvests)) {
                                 this.recentHarvests = harvestsData.recent_harvests;
@@ -1706,25 +1639,26 @@
                                 console.error('❌ recent_harvests is not an array:', typeof harvestsData.recent_harvests);
                                 this.recentHarvests = [];
                             }
-                        } else {
-                            console.error('❌ Failed to load recent harvests:', harvestsResponse.status);
-                            const errorText = await harvestsResponse.text();
-                            console.error('❌ Error response:', errorText);
+                        } catch (err) {
+                            console.error('❌ Failed to load recent harvests:', err);
                             this.recentHarvests = [];
                         }
 
                         // Load top crops recommendations
                         console.log('🌾 Fetching top crops for municipality:', this.selectedMunicipality);
-                        console.log('🌾 API URL:', `{{ url('/api/planting/schedule') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}&_t=${timestamp}`);
-                        const topCropsResponse = await fetch(`{{ url('/api/planting/schedule') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}&_t=${timestamp}`);
-                        console.log('🌾 Response status:', topCropsResponse.status);
-                        
-                        if (topCropsResponse.ok) {
-                            const topCropsData = await topCropsResponse.json();
+                        try {
+                            const { data: topCropsData } = await cachedFetch(`{{ url('/api/planting/schedule') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`, {
+                                ttlMs: 60000,
+                                onStale: (fresh) => {
+                                    if (Array.isArray(fresh) && fresh.length > 0) {
+                                        this.topCrops = fresh.slice(0, 5);
+                                    }
+                                }
+                            });
                             console.log('🌾 Full API Response:', topCropsData); // Log complete response
                             console.log('📊 Response is array?', Array.isArray(topCropsData));
                             console.log('📊 Response length:', topCropsData.length);
-                            
+
                             if (Array.isArray(topCropsData) && topCropsData.length > 0) {
                                 this.topCrops = topCropsData.slice(0, 5); // Get top 5
                                 console.log('✓ Top Crops loaded:', this.topCrops.length, 'crops');
@@ -1737,13 +1671,8 @@
                                 });
                                 this.topCrops = [];
                             }
-                        } else {
-                            console.error('❌ Failed to load top crops', {
-                                status: topCropsResponse.status,
-                                statusText: topCropsResponse.statusText
-                            });
-                            const errorText = await topCropsResponse.text();
-                            console.error('❌ Error response body:', errorText);
+                        } catch (err) {
+                            console.error('❌ Failed to load top crops', err);
                             this.topCrops = [];
                         }
 
@@ -1796,9 +1725,8 @@
                         }
 
                         // Load 7-day weather forecast and generate dynamic weather outlook
-                        const weatherResponse = await fetch(`{{ url('/api/weather') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}&_t=${timestamp}`);
-                        if (weatherResponse.ok) {
-                            const weatherData = await weatherResponse.json();
+                        try {
+                            const { data: weatherData } = await cachedFetch(`{{ url('/api/weather') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`, { ttlMs: 300000 });
                             console.log('🌤️ Weather data:', weatherData);
                             
                             if (weatherData.daily && Array.isArray(weatherData.daily)) {
@@ -1844,8 +1772,10 @@
                                     humidity: weatherData.current.humidity || 70
                                 };
                             }
+                        } catch (err) {
+                            console.error('❌ Failed to load weather:', err);
                         }
-                        
+
                         // Generate dynamic conclusion and outlook based on loaded data
                         this.generateDynamicInsights();
                         
@@ -2242,5 +2172,7 @@
         };
     </script>
 
+    @include('partials.announcement-toast')
+    @include('partials.chat-widget')
 </body>
 </html>
