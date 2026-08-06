@@ -7,6 +7,7 @@
     <title>Yield Analysis - SmartHarvest</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="{{ asset('js/translation-v2.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/http-cache.js') }}?v={{ filemtime(public_path('js/http-cache.js')) }}"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -420,11 +421,8 @@
                         // Load all data from API endpoint
                         console.log('Loading yield analysis...');
                         console.log('Fetching from municipality:', this.selectedMunicipality, 'year:', this.selectedYear);
-                        const response = await fetch(`{{ url('/api/ml/yield/analysis') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}&year=${this.selectedYear}`);
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            console.log('API Response:', data);
+                        const { data } = await cachedFetch(`{{ url('/api/ml/yield/analysis') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}&year=${this.selectedYear}`, { ttlMs: 60000 });
+                        console.log('API Response:', data);
 
                             const fallbackPayload = this.getFallbackYieldPayload();
                             const hasValidCrops = Array.isArray(data.crops) && data.crops.length > 0;
@@ -456,10 +454,6 @@
                                     console.error('API Error:', data.error);
                                 }
                             }
-                        } else {
-                            console.error('Failed to load ML data:', response.status);
-                            this.applyYieldFallback('http_error_fallback');
-                        }
                     } catch (error) {
                         console.error('Error loading yield data:', error);
                         this.applyYieldFallback('network_error_fallback');

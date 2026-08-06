@@ -7,6 +7,7 @@
     <title>Weather Forecast - SmartHarvest</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="{{ asset('js/translation-v2.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/http-cache.js') }}?v={{ filemtime(public_path('js/http-cache.js')) }}"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -373,12 +374,7 @@
                     this.error = false;
                     
                     try {
-                        const response = await fetch(`{{ url('/api/weather') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
-                        const data = await response.json();
-                        
-                        if (!response.ok) {
-                            throw new Error(data.message || 'Failed to fetch weather data');
-                        }
+                        const { data } = await cachedFetch(`{{ url('/api/weather') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`, { ttlMs: 300000 });
 
                         // Update current weather (but don't override rain/precipitation/clouds yet)
                         this.current = {

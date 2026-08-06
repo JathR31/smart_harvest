@@ -7,6 +7,7 @@
     <title>Planting Schedule - SmartHarvest</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="{{ asset('js/translation-v2.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/http-cache.js') }}?v={{ filemtime(public_path('js/http-cache.js')) }}"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         .sidebar { background: linear-gradient(180deg, #047857 0%, #065f46 100%); }
@@ -334,33 +335,41 @@
 
                         // Load planting schedule from API
                         console.log('Loading planting schedule...');
-                        const scheduleResponse = await fetch(`{{ url('/api/planting/schedule') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`);
-                        console.log('Schedule API response status:', scheduleResponse.status);
-                        
-                        if (scheduleResponse.ok) {
-                            const scheduleData = await scheduleResponse.json();
-                            console.log('Schedule data received:', scheduleData);
-                            this.schedules = scheduleData.map(item => ({
-                                crop: item.crop,
-                                variety: item.variety,
-                                optimal_planting: item.optimal_planting,
-                                expected_harvest: item.expected_harvest,
-                                duration: item.duration,
-                                yield_prediction: item.yield_prediction,
-                                historical_yield: item.historical_yield,
-                                confidence: item.confidence,
-                                confidence_score: item.confidence_score,
-                                status: item.status,
-                                ml_prediction: item.ml_prediction || false
-                            }));
-                            console.log('✓ Planting schedules loaded:', this.schedules.length, 'crops');
-                            console.log('✓ Predictions:', this.schedules.filter(s => s.ml_prediction).length);
-                            console.log('✓ Database records:', this.schedules.filter(s => !s.ml_prediction).length);
-                        } else {
-                            console.error('Schedule API failed with status:', scheduleResponse.status);
-                            const errorText = await scheduleResponse.text();
-                            console.error('Error response:', errorText);
-                        }
+                        const { data: scheduleData } = await cachedFetch(`{{ url('/api/planting/schedule') }}?municipality=${encodeURIComponent(this.selectedMunicipality)}`, {
+                            ttlMs: 60000,
+                            onStale: (fresh) => {
+                                this.schedules = fresh.map(item => ({
+                                    crop: item.crop,
+                                    variety: item.variety,
+                                    optimal_planting: item.optimal_planting,
+                                    expected_harvest: item.expected_harvest,
+                                    duration: item.duration,
+                                    yield_prediction: item.yield_prediction,
+                                    historical_yield: item.historical_yield,
+                                    confidence: item.confidence,
+                                    confidence_score: item.confidence_score,
+                                    status: item.status,
+                                    ml_prediction: item.ml_prediction || false
+                                }));
+                            }
+                        });
+                        console.log('Schedule data received:', scheduleData);
+                        this.schedules = scheduleData.map(item => ({
+                            crop: item.crop,
+                            variety: item.variety,
+                            optimal_planting: item.optimal_planting,
+                            expected_harvest: item.expected_harvest,
+                            duration: item.duration,
+                            yield_prediction: item.yield_prediction,
+                            historical_yield: item.historical_yield,
+                            confidence: item.confidence,
+                            confidence_score: item.confidence_score,
+                            status: item.status,
+                            ml_prediction: item.ml_prediction || false
+                        }));
+                        console.log('✓ Planting schedules loaded:', this.schedules.length, 'crops');
+                        console.log('✓ Predictions:', this.schedules.filter(s => s.ml_prediction).length);
+                        console.log('✓ Database records:', this.schedules.filter(s => !s.ml_prediction).length);
                     } catch (error) {
                         console.error('Error loading planting data:', error);
                     } finally {
