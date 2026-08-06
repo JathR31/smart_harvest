@@ -585,15 +585,6 @@ class AdminController extends Controller
         return view('monitoring');
     }
 
-    public function users()
-    {
-        if (!Auth::check() || Auth::user()->role !== 'Admin') {
-            return redirect()->route('login');
-        }
-
-        return view('users');
-    }
-
     public function roles()
     {
         if (!Auth::check() || Auth::user()->role !== 'Admin') {

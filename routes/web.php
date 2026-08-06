@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\AuthController;
@@ -306,19 +307,16 @@ Route::post('/reset-password', function (Request $request) {
     return redirect()->route('login')->with('success', 'Password has been reset successfully! You can now log in.');
 })->name('password.update');
 
-Route::get('/admin/login', [AuthController::class, 'showLoginForm'])
-    ->name('admin.login.form');
-
-Route::post('/admin/login', [AuthController::class, 'adminLogin'])
-    ->name('admin.login.attempt');
-
-// Redirect /admin to the dedicated admin login page unless the user is already authenticated.
+// Redirect /admin to the general login page unless the user is already authenticated.
+// DA Admin and Admin accounts log in through the general /login form, which
+// already requires a password for admin accounts and routes them to the
+// admin dashboard afterward.
 Route::get('/admin', function () {
     if (Auth::check() && Auth::user()->role === 'Admin') {
         return redirect()->route('admin.dashboard');
     }
 
-    return redirect()->route('admin.login.form');
+    return redirect()->route('login');
 })->name('admin.login');
 
 // =============================================================================
@@ -666,15 +664,6 @@ Route::get('/admin/api/rainfall-forecast', [App\Http\Controllers\AdminController
 // Admin API - Provincial Climate Status (Provincial Monitoring)
 Route::get('/admin/api/provincial-climate', [App\Http\Controllers\AdminController::class, 'getProvincialClimateStatus'])
     ->name('admin.api.provincial-climate');
-
-// Admin Users Management Page
-Route::get('/admin/users', function () {
-    $user = Auth::user();
-    if (!Auth::check() || (!$user->is_superadmin && $user->role !== 'Admin' && $user->role !== 'DA Admin')) {
-        return redirect()->route('login');
-    }
-    return view('users');
-})->name('admin.users');
 
 // Admin Market Prices Page
 Route::get('/admin/market-prices', function () {
@@ -1790,6 +1779,9 @@ Route::get('/admin/api/datasets/{id}/records', function ($id) {
 Route::get('/api/dashboard/stats', function (\Illuminate\Http\Request $request) {
     try {
         $municipality = $request->query('municipality', 'La Trinidad');
+        $cacheKey = 'dashboard_stats_' . strtoupper(str_replace(' ', '', $municipality));
+
+        $payload = Cache::remember($cacheKey, 180, function () use ($municipality) {
         $mlService = new \App\Services\MLApiService();
         
         // Normalize municipality name for both ML API and database queries
@@ -1923,7 +1915,7 @@ Route::get('/api/dashboard/stats', function (\Illuminate\Http\Request $request) 
                 ];
             });
 
-        return response()->json([
+        return [
             'stats' => [
                 'expected_harvest' => number_format($expected_harvest, 1),
                 'percentage_change' => round($percentage_change, 1),
@@ -1931,10 +1923,10 @@ Route::get('/api/dashboard/stats', function (\Illuminate\Http\Request $request) 
                 'ml_api_connected' => $mlConnected
             ],
             'recent_harvests' => $recentHarvests
-        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
-         ->header('Pragma', 'no-cache')
-         ->header('Expires', 'Fri, 01 Jan 1990 00:00:00 GMT');
-        
+        ];
+        });
+
+        return response()->json($payload)->header('Cache-Control', 'private, max-age=180');
     } catch (\Throwable $e) {
         safe_log('error', 'Dashboard stats error: ' . $e->getMessage());
         return response()->json([
@@ -2833,7 +2825,9 @@ Route::get('/api/yield/crops', function (\Illuminate\Http\Request $request) {
 Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request) {
     try {
         $municipality = $request->query('municipality', 'La Trinidad');
-        
+        $cacheKey = 'planting_schedule_' . strtoupper(str_replace(' ', '', $municipality));
+
+        $schedules = Cache::remember($cacheKey, 180, function () use ($municipality, $request) {
         // Normalize municipality name for ML API and database
         $mlMunicipality = strtoupper(str_replace(' ', '', $municipality));
         $dbMunicipality = strtoupper(str_replace(' ', '', $municipality));
@@ -3236,15 +3230,15 @@ Route::get('/api/planting/schedule', function (\Illuminate\Http\Request $request
             })->toArray(),
             'timestamp' => now()->toIso8601String()
         ]);
-        
-        // Prevent caching to ensure fresh data for each municipality
+
+        return $schedules;
+        });
+
         return response()
             ->json($schedules)
-            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
-            ->header('Pragma', 'no-cache')
-            ->header('Expires', 'Fri, 01 Jan 1990 00:00:00 GMT')
+            ->header('Cache-Control', 'private, max-age=180')
             ->header('X-Timestamp', now()->timestamp);
-        
+
     } catch (\Throwable $e) {
         safe_log('error', 'Planting schedule error: ' . $e->getMessage(), [
             'exception' => $e->getTraceAsString()
@@ -3544,6 +3538,9 @@ Route::get('/api/ml/yield/analysis', function (\Illuminate\Http\Request $request
 
     $municipality = $request->query('municipality', 'La Trinidad');
     $year = intval($request->query('year', date('Y')));
+    $cacheKey = 'yield_analysis_' . strtoupper(str_replace(' ', '', $municipality)) . '_' . $year;
+
+    $payload = Cache::remember($cacheKey, 180, function () use ($municipality, $year) {
     $mlService = new \App\Services\MLApiService();
 
     $mlMunicipality = strtoupper(str_replace(' ', '', $municipality));
@@ -3650,12 +3647,18 @@ Route::get('/api/ml/yield/analysis', function (\Illuminate\Http\Request $request
 
         $avgYieldAll = count($crops) > 0 ? ($totalYield / count($crops)) : 0.0;
 
+        $monthExpr = match (\DB::connection()->getDriverName()) {
+            'sqlite' => "CAST(strftime('%m', planting_date) AS INTEGER)",
+            'pgsql' => 'EXTRACT(MONTH FROM planting_date)',
+            default => 'MONTH(planting_date)',
+        };
+
         $monthlyRows = \App\Models\CropData::whereRaw('UPPER(municipality) = ?', [$normalizedMunicipality])
             ->where('yield_amount', '>', 0)
             ->where('area_planted', '>', 0)
             ->whereYear('planting_date', '=', $selectedYear)
             ->select(
-                \DB::raw('MONTH(planting_date) as month_num'),
+                \DB::raw("$monthExpr as month_num"),
                 \DB::raw('AVG(yield_amount / NULLIF(area_planted, 0)) as avg_yield')
             )
             ->groupBy('month_num')
@@ -3765,7 +3768,7 @@ Route::get('/api/ml/yield/analysis', function (\Illuminate\Http\Request $request
 
         if (empty($mlRows)) {
             $status = $mlHealthy ? 'api_connected_no_data' : 'fallback';
-            return response()->json($buildDatabaseFallback($dbMunicipality, $year, $status));
+            return $buildDatabaseFallback($dbMunicipality, $year, $status);
         }
 
         usort($mlRows, fn($a, $b) => $b['predicted'] <=> $a['predicted']);
@@ -3858,7 +3861,7 @@ Route::get('/api/ml/yield/analysis', function (\Illuminate\Http\Request $request
             ];
         }
 
-        return response()->json([
+        return [
             'stats' => [
                 'avg_yield' => number_format($avgYield, 1),
                 'best_crop' => $bestCrop,
@@ -3878,13 +3881,16 @@ Route::get('/api/ml/yield/analysis', function (\Illuminate\Http\Request $request
             'forecast' => $forecast,
             'ml_status' => 'success',
             'ml_api_connected' => true,
-        ]);
+        ];
     } catch (\Throwable $e) {
         safe_log('error', 'ML Analysis Error: ' . $e->getMessage());
         safe_log('error', 'Stack trace: ' . $e->getTraceAsString());
 
-        return response()->json($buildDatabaseFallback($dbMunicipality, $year, 'error_database_fallback'));
+        return $buildDatabaseFallback($dbMunicipality, $year, 'error_database_fallback');
     }
+    });
+
+    return response()->json($payload)->header('Cache-Control', 'private, max-age=180');
 })->name('api.ml.yield.analysis');
 
 // Alternate endpoint path for yield analysis data (used to avoid proxy/path conflicts)
@@ -4071,7 +4077,9 @@ Route::post('/settings/password', function () {
 // Weather API endpoint
 Route::get('/api/weather', function (Request $request) {
     $municipality = $request->query('municipality', 'Atok');
-    
+    $cacheKey = 'weather_' . strtoupper(str_replace(' ', '', $municipality));
+
+    $payload = Cache::remember($cacheKey, 600, function () use ($municipality) {
     // Coordinates for Benguet municipalities
     $coordinates = [
         'Atok' => ['lat' => 16.6167, 'lon' => 120.7000],
@@ -4188,7 +4196,7 @@ Route::get('/api/weather', function (Request $request) {
                 }
             }
             
-            return response()->json([
+            return [
                 'current' => [
                     'temp' => round($data['current']['temperature_2m'], 1),
                     'feels_like' => round($data['current']['apparent_temperature'], 1),
@@ -4207,7 +4215,7 @@ Route::get('/api/weather', function (Request $request) {
                 ],
                 'hourly' => $hourly,
                 'daily' => $daily
-            ]);
+            ];
         }
     } catch (\Exception $e) {
         \Log::error('Open-Meteo API error: ' . $e->getMessage());
@@ -4273,7 +4281,7 @@ Route::get('/api/weather', function (Request $request) {
     $windSpeed = round(1.5 + (rand(0, 20) / 10), 1); // 1.5 to 3.5 m/s
     $clouds = 50 + rand(-20, 30); // 30% to 80%
     
-    return response()->json([
+    return [
         'current' => [
             'temp' => $baseTemp,
             'feels_like' => round($baseTemp - 1.5, 1),
@@ -4286,7 +4294,10 @@ Route::get('/api/weather', function (Request $request) {
         ],
         'hourly' => $hourly,
         'daily' => $daily
-    ]);
+    ];
+    });
+
+    return response()->json($payload)->header('Cache-Control', 'private, max-age=600');
 });
 
 // API - Get real rainfall and soil moisture data from database

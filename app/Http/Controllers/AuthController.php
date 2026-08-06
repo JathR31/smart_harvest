@@ -10,15 +10,6 @@ use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
-    public function showLoginForm()
-    {
-        if (Auth::check()) {
-            return $this->redirectBasedOnRole();
-        }
-        
-        return view('admin_login');
-    }
-
     public function login(Request $request)
     {
         $request->validate([
@@ -180,36 +171,6 @@ class AuthController extends Controller
         return $user->role === 'DA Admin' || strtolower((string) $user->admin_type) === 'da_admin';
     }
 
-    public function adminLogin(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|string',
-            'password' => 'required|string',
-        ]);
-
-        $loginIdentifier = trim($request->input('email'));
-        $user = User::where('email', $loginIdentifier)
-            ->orWhere('username', $loginIdentifier)
-            ->first();
-
-        if (!$user || !Hash::check($request->input('password'), $user->password)) {
-            return back()->withErrors([
-                'email' => 'The provided credentials do not match our records.',
-            ])->withInput($request->only('email'));
-        }
-
-        if (!$this->isAdminAccount($user)) {
-            return back()->withErrors([
-                'email' => 'This account does not have admin access.',
-            ])->withInput($request->only('email'));
-        }
-
-        Auth::login($user, $request->boolean('remember'));
-        $request->session()->regenerate();
-
-        return $this->redirectBasedOnRole();
-    }
-
     public function showSignupForm()
     {
         return view('signup');
@@ -250,21 +211,6 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
         
         return redirect()->route('login');
-    }
-
-    protected function redirectBasedOnRole()
-    {
-        $user = Auth::user();
-
-        if ($user->is_superadmin || $user->admin_type === 'superadmin') {
-            return redirect()->route('superadmin.login');
-        }
-        
-        if ($this->isAdminAccount($user)) {
-            return redirect()->route('admin.dashboard');
-        }
-        
-        return redirect()->route('dashboard');
     }
 
     protected function isAdminAccount(User $user): bool

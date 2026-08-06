@@ -245,7 +245,7 @@
                                 </td>
                             </tr>
                         </template>
-                        <template x-if="!loading" x-for="user in filteredUsers" :key="user.id">
+                        <template x-for="user in filteredUsers" :key="user.id">
                             <tr class="hover:bg-gray-50 transition-colors">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center space-x-3">

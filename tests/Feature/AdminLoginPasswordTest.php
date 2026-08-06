@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AdminLoginPasswordTest extends TestCase
@@ -73,23 +72,6 @@ class AdminLoginPasswordTest extends TestCase
         ])->assertRedirect(route('admin.dashboard'));
 
         $this->assertAuthenticatedAs($officer);
-    }
-
-    public function test_da_admin_login_accepts_username_and_hashed_password(): void
-    {
-        $user = User::factory()->create([
-            'email' => 'da.admin@example.com',
-            'username' => 'da.admin',
-            'role' => 'Admin',
-            'password' => Hash::make('AdminPass123!'),
-        ]);
-
-        $this->post('/admin/login', [
-            'email' => 'da.admin',
-            'password' => 'AdminPass123!',
-        ])->assertRedirect(route('admin.dashboard'));
-
-        $this->assertAuthenticatedAs($user);
     }
 
 }
