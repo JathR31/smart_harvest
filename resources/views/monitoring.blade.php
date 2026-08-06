@@ -654,7 +654,7 @@
 
                 generateFallbackMunicipalities() {
                     const names = [
-                        'Atok', 'Bakun', 'Baguio', 'Bokod', 'Buguias', 'Itogon',
+                        'Atok', 'Bakun', 'Bokod', 'Buguias', 'Itogon',
                         'Kabayan', 'Kapangan', 'Kibungan', 'La Trinidad', 'Mankayan',
                         'Sablan', 'Tuba', 'Tublay'
                     ];

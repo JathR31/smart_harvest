@@ -19,7 +19,6 @@ class MonitoringApiController extends Controller
     private $municipalityCoords = [
         'Atok'         => ['lat' => 16.5970, 'lon' => 120.7090],
         'Bakun'        => ['lat' => 16.7880, 'lon' => 120.6590],
-        'Baguio'       => ['lat' => 16.4023, 'lon' => 120.5960],
         'Bokod'        => ['lat' => 16.4860, 'lon' => 120.8230],
         'Buguias'      => ['lat' => 16.7310, 'lon' => 120.8360],
         'Itogon'       => ['lat' => 16.3690, 'lon' => 120.6540],

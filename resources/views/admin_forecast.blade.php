@@ -371,7 +371,6 @@
 
                 municipalities: [
                     { name: 'La Trinidad', lat: 16.4561, lon: 120.5870 },
-                    { name: 'Baguio City', lat: 16.4023, lon: 120.5960 },
                     { name: 'Atok', lat: 16.5970, lon: 120.7090 },
                     { name: 'Bakun', lat: 16.7880, lon: 120.6590 },
                     { name: 'Bokod', lat: 16.4860, lon: 120.8230 },
@@ -414,7 +413,7 @@
 
                 getElevation(name) {
                     const elevations = {
-                        'La Trinidad': '~1,300 m', 'Baguio City': '~1,469 m', 'Atok': '~1,800 m',
+                        'La Trinidad': '~1,300 m', 'Atok': '~1,800 m',
                         'Bakun': '~1,600 m', 'Bokod': '~900 m', 'Buguias': '~1,900 m',
                         'Itogon': '~600 m', 'Kabayan': '~1,500 m', 'Kapangan': '~1,200 m',
                         'Kibungan': '~1,400 m', 'Mankayan': '~1,500 m', 'Sablan': '~800 m',

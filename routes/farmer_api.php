@@ -501,7 +501,7 @@ Route::get('/api/weather/interpretation/temperature', function (Request $request
         return response()->json(['error' => 'Unauthorized'], 401);
     }
     
-    $municipality = $request->query('municipality', Auth::user()->location ?? 'Baguio City');
+    $municipality = $request->query('municipality', Auth::user()->location ?? 'La Trinidad');
     
     try {
         // Get 5-day forecast data
@@ -593,7 +593,7 @@ Route::get('/api/weather/interpretation/hourly', function (Request $request) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
     
-    $municipality = $request->query('municipality', Auth::user()->location ?? 'Baguio City');
+    $municipality = $request->query('municipality', Auth::user()->location ?? 'La Trinidad');
     
     try {
         $apiKey = env('OPENWEATHER_API_KEY');
